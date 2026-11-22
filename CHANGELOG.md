@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### 2026-11-22
+
+#### Changed
+
+- The clay characters have new names in the appearance picker on web, desktop and iOS; bots keep the names you gave them.
+
 ### 2026-11-21
 
 #### Fixed

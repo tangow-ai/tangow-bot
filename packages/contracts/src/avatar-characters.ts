@@ -16,7 +16,7 @@ type AvatarCharacterData = {
 export const AVATAR_CHARACTERS = [
   {
     id: "scout",
-    name: "Scout",
+    name: "Helmut",
     shape: "ball",
     crops: {
       full: { x: 37.0, y: -6.5, side: 944.0 },
@@ -26,7 +26,7 @@ export const AVATAR_CHARACTERS = [
   },
   {
     id: "atlas",
-    name: "Atlas",
+    name: "Dan",
     shape: "capsule",
     crops: {
       full: { x: 87.7, y: 63.1, side: 868.6 },
@@ -36,7 +36,7 @@ export const AVATAR_CHARACTERS = [
   },
   {
     id: "ivy",
-    name: "Ivy",
+    name: "Windsor",
     shape: "block",
     crops: {
       full: { x: 95.8, y: 56.7, side: 847.3 },
@@ -46,7 +46,7 @@ export const AVATAR_CHARACTERS = [
   },
   {
     id: "saint-demon",
-    name: "Saint Démon",
+    name: "Lucifair",
     shape: "ball",
     crops: {
       full: { x: 44.1, y: 6.7, side: 929.9 },
@@ -56,7 +56,7 @@ export const AVATAR_CHARACTERS = [
   },
   {
     id: "sorciere",
-    name: "Sorcière du périph",
+    name: "Witchway",
     shape: "ball",
     crops: {
       full: { x: 97.8, y: 115.0, side: 822.5 },
@@ -66,7 +66,7 @@ export const AVATAR_CHARACTERS = [
   },
   {
     id: "roi",
-    name: "Roi du bac à sable",
+    name: "Dunecan",
     shape: "ball",
     crops: {
       full: { x: 44.1, y: 6.7, side: 929.9 },
@@ -76,7 +76,7 @@ export const AVATAR_CHARACTERS = [
   },
   {
     id: "mariachi",
-    name: "Mariachi d'ailleurs",
+    name: "Ufolito",
     shape: "capsule",
     crops: {
       full: { x: 100.4, y: 93.1, side: 835.3 },
@@ -86,7 +86,7 @@ export const AVATAR_CHARACTERS = [
   },
   {
     id: "viking",
-    name: "Viking végan",
+    name: "Ragnarrot",
     shape: "capsule",
     crops: {
       full: { x: 133.7, y: 158.4, side: 772.5 },
@@ -96,7 +96,7 @@ export const AVATAR_CHARACTERS = [
   },
   {
     id: "monstre",
-    name: "Monstre du lundi",
+    name: "Frankenbot",
     shape: "block",
     crops: {
       full: { x: 102.1, y: 57.3, side: 843.8 },
@@ -116,7 +116,7 @@ export const AVATAR_CHARACTERS = [
   },
   {
     id: "docteur-disquette",
-    name: "Docteur Disquette",
+    name: "Floppy",
     shape: "block",
     crops: {
       full: { x: 151.1, y: 167.5, side: 738.8 },

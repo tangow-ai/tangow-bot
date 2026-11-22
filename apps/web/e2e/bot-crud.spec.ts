@@ -103,9 +103,9 @@ test("bot creation, editing, and deletion persist", async ({ page }, testInfo) =
   const characterSaved = page.waitForResponse(
     (response) => response.url().includes("/rpc/bots/update") && response.ok(),
   );
-  await picker.getByRole("button", { name: "Viking végan" }).click();
+  await picker.getByRole("button", { name: "Ragnarrot" }).click();
   await characterSaved;
-  await expect(picker.getByRole("button", { name: "Viking végan" })).toHaveAttribute(
+  await expect(picker.getByRole("button", { name: "Ragnarrot" })).toHaveAttribute(
     "aria-pressed",
     "true",
   );
@@ -190,7 +190,7 @@ test("bot creation, editing, and deletion persist", async ({ page }, testInfo) =
   await expect(nameInput).toHaveValue("Atlas");
   await expect(titleInput).toHaveValue("Research lead");
   await botPage.getByTestId("bot-appearance-trigger").click();
-  await expect(picker.getByRole("button", { name: "Viking végan" })).toHaveAttribute(
+  await expect(picker.getByRole("button", { name: "Ragnarrot" })).toHaveAttribute(
     "aria-pressed",
     "true",
   );

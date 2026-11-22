@@ -78,8 +78,8 @@ for (const theme of ["light", "dark"] as const) {
 
       await page.getByTestId("bot-appearance-trigger").click();
       const picker = page.getByTestId("bot-appearance-picker");
-      await picker.getByRole("button", { name: "Viking végan" }).click();
-      await expect(picker.getByRole("button", { name: "Viking végan" })).toHaveAttribute(
+      await picker.getByRole("button", { name: "Ragnarrot" }).click();
+      await expect(picker.getByRole("button", { name: "Ragnarrot" })).toHaveAttribute(
         "aria-pressed",
         "true",
       );

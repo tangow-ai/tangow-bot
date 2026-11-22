@@ -11,7 +11,7 @@ describe("avatar characters", () => {
   it("falls back to the neutral character for a missing or unknown id", () => {
     expect(characterById(null)).toBe(AVATAR_CHARACTERS[0]);
     expect(characterById("from-a-newer-server")).toBe(AVATAR_CHARACTERS[0]);
-    expect(characterById("ivy").name).toBe("Ivy");
+    expect(characterById("ivy").name).toBe("Windsor");
   });
 
   it("shows a bot in its character's clay colour, else in its own", () => {

@@ -294,7 +294,7 @@ tags:
 - takeScreenshot: "17-bot-settings"
 - tapOn: "Appearance"
 - extendedWaitUntil:
-    visible: "Docteur Disquette"
+    visible: "Floppy"
     timeout: 10000
 - takeScreenshot: "17b-bot-appearance"
 
