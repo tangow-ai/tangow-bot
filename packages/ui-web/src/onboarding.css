@@ -166,6 +166,26 @@
     color: var(--muted-foreground);
   }
 
+  /* A busy step button keeps its label and its size; the app's shimmer sweeps across it. */
+  .rk-onboarding-actions > [aria-busy="true"] {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .rk-onboarding-actions > [aria-busy="true"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(
+      to right,
+      transparent 35%,
+      color-mix(in oklab, currentColor 28%, transparent) 50%,
+      transparent 65%
+    );
+    background-size: 200% 100%;
+    animation: bui-shimmer-text 1.4s linear infinite;
+  }
+
   .rk-onboarding-stage {
     grid-area: stage;
     position: relative;
@@ -333,6 +353,11 @@
   @media (prefers-reduced-motion: reduce) {
     .rk-floating-field > label {
       transition: none;
+    }
+
+    .rk-onboarding-actions > [aria-busy="true"]::after {
+      animation: none;
+      background-position: 50%;
     }
   }
 }

@@ -37,6 +37,11 @@ afterEach(() => {
 
 async function render(node: ReactNode, url = "/") {
   vi.stubGlobal("IS_REACT_ACT_ENVIRONMENT", true);
+  vi.stubGlobal("matchMedia", () => ({
+    matches: false,
+    addEventListener() {},
+    removeEventListener() {},
+  }));
   const container = document.createElement("div");
   document.body.append(container);
   await act(async () => {

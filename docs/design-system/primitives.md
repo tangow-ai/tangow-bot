@@ -63,7 +63,15 @@ the same place on every step. Under 860 px wide the card sits above the box and
 the actions sit under the thumb; while a phone keyboard is up only the main
 button shows, just above it. Under 760 px tall the form tightens (`fieldShort`).
 A step with no field, such as a sent link, says its sentence in a `p` under the
-title (body size, `muted-foreground`).
+title (body size, `muted-foreground`). A busy main button keeps its label and its
+size while a sweep crosses it (its own rule, on the `rk-shimmer` keyframes) (held still under reduced motion).
+
+The card shows the clay stop-motion (`PlateScene` on web). Its tables live once in
+`@tangow/contracts` (`onboarding-plate.ts`) for every client: the still each step
+rests on, and the frames played at 150 ms each when moving forward. Going back, a
+reload or reduced motion shows the still alone. Once a still has loaded, the
+frames toward the next steps decode in the background; a transition skips a frame
+that has not, rather than wait for it.
 
 `FloatingField` is a Base UI `Field`: its real `<label>` is the accessible name,
 sits inside the empty field at 16 px and rises to 12 px on focus or once filled
