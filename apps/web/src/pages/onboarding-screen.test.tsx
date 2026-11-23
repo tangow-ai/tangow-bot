@@ -54,10 +54,11 @@ afterEach(() => {
 /** Welcome, with its still loaded so the frames toward sign-up preload behind it. */
 async function onWelcome() {
   // A fresh module per test: the plate keeps the step it rested on and what it decoded.
-  const { PlateScene } = await import("./onboarding-screen");
+  const { PlateScene, paveScene } = await import("./onboarding-screen");
   const router = createMemoryRouter([
     { path: "/", element: <PlateScene step="welcome" /> },
     { path: "/sign-up", element: <PlateScene step="signup" /> },
+    { path: "/sign-in", element: paveScene },
   ]);
   await act(async () => root.render(<RouterProvider router={router} />));
   await act(async () => container.querySelector("img")?.dispatchEvent(new Event("load")));
@@ -96,4 +97,10 @@ it("skips a frame that has not loaded instead of waiting for it", async () => {
   undecodable = ["02"];
   const router = await onWelcome();
   expect(await framesAfter(() => router.navigate("/sign-up"))).toEqual(["03", "04"]);
+});
+
+it("plays nothing when sign-up follows a screen off the plate", async () => {
+  const router = await onWelcome();
+  await act(() => router.navigate("/sign-in"));
+  expect(await framesAfter(() => router.navigate("/sign-up"))).toEqual(["04"]);
 });

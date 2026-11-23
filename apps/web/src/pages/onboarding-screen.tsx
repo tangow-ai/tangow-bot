@@ -113,7 +113,11 @@ export function PlateScene({ step, focus }: { step: PlateStep; focus?: string })
       at += ms;
       return setTimeout(() => setShown(index + 1), at);
     });
-    return () => timers.forEach(clearTimeout);
+    return () => {
+      timers.forEach(clearTimeout);
+      // A screen off the plate (sign-in, a reset) breaks the sequence.
+      restedOn = undefined;
+    };
   }, [plan]);
 
   const still = plate[plateStill[plan.step]];
