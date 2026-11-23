@@ -123,12 +123,14 @@ export function PlateScene({ step, focus }: { step: PlateStep; focus?: string })
   const still = plate[plateStill[plan.step]];
   return (
     <>
-      {plan.beats.map(([frame], index) => {
-        const picture = plate[frame];
-        return picture ? (
-          <Scene key={frame} picture={picture} focus={focus} hidden={index > shown} />
-        ) : null;
-      })}
+      {/* Once played, the still stands alone: the frames are not kept decoded. */}
+      {shown < plan.beats.length &&
+        plan.beats.map(([frame], index) => {
+          const picture = plate[frame];
+          return picture ? (
+            <Scene key={frame} picture={picture} focus={focus} hidden={index > shown} />
+          ) : null;
+        })}
       {still ? (
         <Scene
           key="still"

@@ -37,7 +37,6 @@ export const plateForward: Readonly<
   Partial<Record<PlateStep, Partial<Record<PlateStep, readonly PlateBeat[]>>>>
 > = {
   welcome: { signup: run(2, 3) },
-  invite: { signup: run(2, 3) },
   signup: { model: run(5, 10), picker: run(5, 16) },
   check: { model: run(5, 10), picker: run(5, 16) },
   // The eyes opened on the model step (`plateModelConnected`); Dan wakes on arrival.
