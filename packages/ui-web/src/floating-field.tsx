@@ -6,8 +6,6 @@ import { cn } from "./lib/utils.js";
 export type FloatingFieldProps = Omit<ComponentProps<"input">, "children"> & {
   /** The field's accessible name, shown inside it until it has a value or focus. */
   label: ReactNode;
-  /** Shown in the gap under the field, over whatever follows, so nothing moves. */
-  error?: ReactNode;
   /** Marks the value itself as wrong; an error about something else leaves it unset. */
   invalid?: boolean;
   /** A control laid over the field's end, such as a show-password button. */
@@ -17,7 +15,6 @@ export type FloatingFieldProps = Omit<ComponentProps<"input">, "children"> & {
 /** A field whose label sits inside it while empty and rises on focus or once filled. */
 export function FloatingField({
   label,
-  error,
   invalid = false,
   className,
   children,
@@ -34,15 +31,6 @@ export function FloatingField({
       />
       <Field.Label>{label}</Field.Label>
       {children}
-      {error ? (
-        <Field.Error
-          match
-          role="alert"
-          className="absolute start-0 top-full mt-1 text-meta text-foreground"
-        >
-          {error}
-        </Field.Error>
-      ) : null}
     </Field.Root>
   );
 }

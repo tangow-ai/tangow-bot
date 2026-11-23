@@ -12,6 +12,8 @@ export type OnboardingFrameProps = {
   children?: ReactNode;
   /** Anchored at the bottom of the step, main button first. */
   actions: ReactNode;
+  /** One status line under the main button, such as an error. */
+  status?: ReactNode;
   onSubmit: (event: FormEvent<HTMLFormElement>) => void;
   /** The desktop app's window controls, laid in a draggable band across the window's top. */
   chrome?: ReactNode;
@@ -30,12 +32,13 @@ export function OnboardingFrame({
   title,
   children,
   actions,
+  status,
   onSubmit,
   chrome,
   poster = false,
 }: OnboardingFrameProps) {
   const frame = useRef<HTMLDivElement>(null);
-  useKeyboardInset(frame);
+  useKeyboardInset(frame, status);
   return (
     <div
       ref={frame}
@@ -58,7 +61,14 @@ export function OnboardingFrame({
         <form className="rk-onboarding-screen" onSubmit={onSubmit}>
           <h1>{title}</h1>
           {children}
-          <div className="rk-onboarding-actions">{actions}</div>
+          <div className="rk-onboarding-actions">
+            {actions}
+            {status ? (
+              <p className="rk-onboarding-status" role="alert">
+                {status}
+              </p>
+            ) : null}
+          </div>
         </form>
       </div>
       <div className="rk-onboarding-stage">{scene}</div>
@@ -68,11 +78,12 @@ export function OnboardingFrame({
 
 /**
  * Phone keyboard: the actions close up under the fields and the page scrolls the
- * main button to just above the keyboard, the focused field above it. iOS 27
- * Safari measures client rects from the visual viewport's top, so its height is
- * where the keyboard bar starts; a fixed button placed from it floats mid-screen.
+ * main button, or the status line under it, to just above the keyboard, the
+ * focused field above it. iOS 27 Safari measures client rects from the visual
+ * viewport's top, so its height is where the keyboard bar starts; a fixed button
+ * placed from it floats mid-screen.
  */
-function useKeyboardInset(ref: RefObject<HTMLDivElement | null>) {
+function useKeyboardInset(ref: RefObject<HTMLDivElement | null>, status: ReactNode) {
   useEffect(() => {
     const frame = ref.current;
     const viewport = window.visualViewport;
@@ -85,11 +96,7 @@ function useKeyboardInset(ref: RefObject<HTMLDivElement | null>) {
       const opening = open && !frame.hasAttribute("data-keyboard");
       frame.toggleAttribute("data-keyboard", open);
       document.body.style.paddingBottom = open ? `${covered}px` : "";
-      const field = document.activeElement;
-      if (!open || !(opening || reveal) || !(field instanceof HTMLElement)) return;
-      if (!field.matches("input, select")) return;
-      const button = frame.querySelector(".rk-onboarding-actions > :first-child");
-      if (button) window.scrollBy(0, button.getBoundingClientRect().bottom + 12 - viewport.height);
+      if (open && (opening || reveal)) revealActions(frame, viewport);
     };
     const onViewport = () => update(false);
     // Moving between fields with the keyboard already up fires no viewport event.
@@ -108,4 +115,20 @@ function useKeyboardInset(ref: RefObject<HTMLDivElement | null>) {
       document.body.style.paddingBottom = "";
     };
   }, [ref]);
+
+  // Submitting with Enter keeps the keyboard up, so a status that appears would sit under it.
+  useEffect(() => {
+    const frame = ref.current;
+    const viewport = window.visualViewport;
+    if (status && frame?.hasAttribute("data-keyboard") && viewport) revealActions(frame, viewport);
+  }, [ref, status]);
+}
+
+function revealActions(frame: HTMLElement, viewport: VisualViewport) {
+  const field = document.activeElement;
+  if (!(field instanceof HTMLElement) || !field.matches("input, select")) return;
+  const last =
+    frame.querySelector(".rk-onboarding-status") ??
+    frame.querySelector(".rk-onboarding-actions > :first-child");
+  if (last) window.scrollBy(0, last.getBoundingClientRect().bottom + 12 - viewport.height);
 }
