@@ -6,20 +6,32 @@ import { createRoot } from "react-dom/client";
 import { MemoryRouter } from "react-router-dom";
 import { afterEach, expect, it, vi } from "vitest";
 
-const auth = vi.hoisted(() => ({ requestPasswordReset: vi.fn(), resetPassword: vi.fn() }));
+const auth = vi.hoisted(() => ({
+  requestPasswordReset: vi.fn(),
+  resetPassword: vi.fn(),
+  sendVerificationEmail: vi.fn(),
+  signUp: { email: vi.fn() },
+}));
 vi.mock("../lib/auth", () => ({ authClient: auth }));
 vi.mock("../lib/rpc", () => ({ clearSpaceSelection: () => undefined }));
 vi.mock("@lingui/react/macro", () => {
   const t = (parts: TemplateStringsArray) => parts.join("");
-  return { useLingui: () => ({ t }), Trans: ({ children }: { children: ReactNode }) => children };
+  const i18n = { _: (id: string) => id };
+  return {
+    useLingui: () => ({ t, i18n }),
+    Trans: ({ children }: { children: ReactNode }) => children,
+  };
 });
 
 import { AuthPage, PasswordResetPage } from "./Auth";
 
 afterEach(() => {
+  vi.useRealTimers();
   vi.unstubAllGlobals();
   auth.requestPasswordReset.mockReset();
   auth.resetPassword.mockReset();
+  auth.sendVerificationEmail.mockReset();
+  auth.signUp.email.mockReset();
   document.body.innerHTML = "";
 });
 
@@ -110,4 +122,46 @@ it("resets with the link's token and treats a used token as an expired link", as
   expect(container.querySelector("[role=alert]")?.textContent).toBe(
     "This link has expired or was already used.",
   );
+});
+
+async function submitSignup(result: unknown) {
+  const container = await render(<AuthPage mode="up" />, "/sign-up");
+  await type(container.querySelector<HTMLInputElement>("#email")!, "person@example.test");
+  await type(container.querySelector<HTMLInputElement>("#new-password")!, "password12");
+  auth.signUp.email.mockResolvedValue(result);
+  await act(async () => container.querySelector<HTMLButtonElement>("button[type=submit]")!.click());
+  return container;
+}
+
+it("words a sign-up refusal from its code and keeps the server's message for an unknown one", async () => {
+  const refused = await submitSignup({
+    error: { code: "EMAIL_NOT_ALLOWED", message: "Email is not allowed to register" },
+  });
+  expect(refused.querySelector("[role=alert]")?.textContent).toBe(
+    "This email can't sign up on this server.",
+  );
+  expect(refused.querySelector("#email")?.getAttribute("aria-invalid")).toBe("true");
+
+  document.body.innerHTML = "";
+  const unknown = await submitSignup({ error: { code: "SOMETHING_NEW", message: "Try later" } });
+  expect(unknown.querySelector("[role=alert]")?.textContent).toBe("Try later");
+  expect(unknown.querySelector("#email")?.getAttribute("aria-invalid")).toBeNull();
+});
+
+it("sends the link again from the email check, then says Sent for two seconds", async () => {
+  const container = await submitSignup({ data: { token: null } });
+  expect(container.querySelector("h1")?.textContent).toBe("Check your email.The clay will keep.");
+  expect(container.querySelector("p")?.textContent).toBe(
+    "Open the link sent to person@example.test.",
+  );
+
+  vi.useFakeTimers();
+  auth.sendVerificationEmail.mockResolvedValue({ data: { status: true }, error: null });
+  const button = container.querySelector<HTMLButtonElement>("button[type=submit]")!;
+  await act(async () => button.click());
+  expect(auth.sendVerificationEmail.mock.calls).toEqual([[{ email: "person@example.test" }]]);
+  expect([button.textContent, button.disabled]).toEqual(["Sent", true]);
+
+  await act(async () => vi.advanceTimersByTime(2_000));
+  expect([button.textContent, button.disabled]).toEqual(["Send again", false]);
 });

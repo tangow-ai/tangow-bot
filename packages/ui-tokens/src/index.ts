@@ -239,6 +239,8 @@ export const typography = {
   /** An onboarding step's title, and the same at phone width. */
   largeTitle: { size: 34, leading: 37 / 34, tracking: "-0.025em", weight: 650 },
   largeTitleCompact: { size: 30, leading: 33 / 30, tracking: "-0.025em", weight: 650 },
+  /** The welcome statement at phone width; wider screens scale it with the column. */
+  poster: { size: 60, leading: 0.94, tracking: "-0.045em", weight: 760 },
   /** A link standing alone under an onboarding step's main button. */
   link: { size: 15, leading: 20 / 15, tracking: "0", weight: 400 },
 } as const satisfies Record<string, TypographyToken>;
@@ -457,6 +459,10 @@ export const sizes = {
   logo: 30,
   logoTop: 18,
   logoBottom: 12,
+  /** The same on a short phone, where the scene needs the height. */
+  logoShort: 24,
+  logoTopShort: 12,
+  logoBottomShort: 10,
 } as const satisfies Record<string, number>;
 
 /** An onboarding scene dims a little in dark mode so its light plate does not glare. */

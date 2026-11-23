@@ -190,6 +190,10 @@
   --text-large-title-compact--line-height: var(--type-large-title-compact-leading);
   --text-large-title-compact--letter-spacing: var(--type-large-title-compact-tracking);
   --text-large-title-compact--font-weight: var(--type-large-title-compact-weight);
+  --text-poster: var(--type-poster-size);
+  --text-poster--line-height: var(--type-poster-leading);
+  --text-poster--letter-spacing: var(--type-poster-tracking);
+  --text-poster--font-weight: var(--type-poster-weight);
   --text-link: var(--type-link-size);
   --text-link--line-height: var(--type-link-leading);
   --text-link--letter-spacing: var(--type-link-tracking);

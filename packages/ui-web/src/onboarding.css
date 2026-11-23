@@ -29,12 +29,30 @@
     --gap: 16px;
     --title-h: calc(var(--type-large-title-size) * var(--type-large-title-leading) + 8px);
     --actions-h: 156px;
+    /* Under the last field: room for a two-line error, so it never touches the button. */
+    --error-room: calc(2 * var(--type-meta-size) * var(--type-meta-leading) + 8px);
     display: grid;
     grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
     grid-template-areas: "pane stage";
+    position: relative;
     min-height: 100svh;
     background: var(--background);
     color: var(--foreground);
+  }
+
+  /* The desktop app's frameless or inset title bar: a band the window drags by, its
+     controls (which opt out of dragging) at the old title bar's place. */
+  .rk-onboarding-chrome {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: flex-start;
+    height: 44px;
+    padding: 18px 20px 0;
+    user-select: none;
+    -webkit-app-region: drag;
   }
 
   .rk-onboarding-top {
@@ -58,6 +76,7 @@
     flex-direction: column;
     min-width: 0;
     padding: 40px 64px;
+    container-type: inline-size;
   }
 
   .rk-onboarding-screen {
@@ -84,6 +103,20 @@
     letter-spacing: var(--type-large-title-tracking);
     font-weight: var(--type-large-title-weight);
     text-wrap: balance;
+  }
+
+  /* The welcome statement is a poster: it scales with the column, from the proto. */
+  .rk-onboarding[data-poster] .rk-onboarding-screen {
+    max-width: 560px;
+  }
+
+  .rk-onboarding[data-poster] .rk-onboarding-screen > h1 {
+    margin-bottom: 24px;
+    font-size: clamp(44px, 100cqi / 5.1, 112px);
+    line-height: var(--type-poster-leading);
+    letter-spacing: var(--type-poster-tracking);
+    font-weight: var(--type-poster-weight);
+    text-wrap: initial;
   }
 
   .rk-onboarding-screen > p {
@@ -119,7 +152,7 @@
   }
 
   .rk-onboarding-actions > :first-child {
-    margin-top: 8px;
+    margin-top: calc(var(--error-room) - var(--gap));
   }
 
   .rk-onboarding-actions > :first-child + a {
@@ -163,9 +196,8 @@
         8px
       );
       /* The phone step box holds the step's own fields, so the card keeps the room a
-         missing field would leave empty. Under the last field: two lines of error. */
+         missing field would leave empty. */
       --fields: 1;
-      --error-room: calc(2 * var(--type-meta-size) * var(--type-meta-leading) + 8px);
       --box: calc(
         var(--title-h) +
         var(--fields) *
@@ -183,6 +215,21 @@
       );
       display: flex;
       flex-direction: column;
+    }
+
+    /* Under the band, so the logo clears the macOS lights and the window controls. */
+    .rk-onboarding:has(> .rk-onboarding-chrome) {
+      --size-logo-top: 44px;
+    }
+
+    /* Two actions (the main button and one link or line) need less room than three. */
+    .rk-onboarding:not(:has(.rk-onboarding-actions > :nth-child(3))) {
+      --actions-h: calc(
+        var(--lift) +
+        var(--size-primary-button) +
+        var(--actions-gap) +
+        var(--size-mobile-stack)
+      );
     }
 
     .rk-onboarding:has(.rk-floating-field ~ .rk-floating-field) {
@@ -239,6 +286,11 @@
       line-height: var(--type-large-title-compact-leading);
     }
 
+    .rk-onboarding[data-poster] .rk-onboarding-screen > h1 {
+      margin-bottom: 8px;
+      font-size: var(--type-poster-size);
+    }
+
     .rk-onboarding-actions {
       gap: var(--actions-gap);
     }
@@ -247,17 +299,10 @@
       margin-top: var(--lift);
     }
 
-    /* Room for a two-line error under the last field, which sits out of flow. */
+    /* Keyboard up: the button closes up under the error room of the last field. */
     .rk-onboarding[data-keyboard] .rk-onboarding-actions {
       min-height: 0;
-      margin-top: calc(
-        2 *
-        var(--type-meta-size) *
-        var(--type-meta-leading) +
-        8px -
-        var(--gap) -
-        var(--lift)
-      );
+      margin-top: calc(var(--error-room) - var(--gap) - var(--lift));
     }
 
     .rk-onboarding[data-keyboard] .rk-onboarding-actions > :not(:first-child) {
@@ -273,6 +318,11 @@
       --actions-h: 132px;
       --actions-gap: 8px;
       --lift: 0px;
+      /* One line of error: the errors are short, and the scene needs the height. */
+      --error-room: calc(var(--type-meta-size) * var(--type-meta-leading) + 8px);
+      --size-logo: var(--size-logo-short);
+      --size-logo-top: var(--size-logo-top-short);
+      --size-logo-bottom: var(--size-logo-bottom-short);
     }
 
     .rk-onboarding .rk-floating-field {

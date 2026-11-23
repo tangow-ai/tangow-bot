@@ -73,6 +73,15 @@ describe("window chrome", () => {
     expect(overlay).not.toContain("FF5F57");
   });
 
+  it("gives every step before an account the window controls", () => {
+    const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "../pages");
+    const screen = readFileSync(path.join(root, "onboarding-screen.tsx"), "utf8");
+    expect(screen).toContain("chrome={desktopBridge() ? <WindowChrome /> : null}");
+    for (const file of ["Auth.tsx", "Welcome.tsx"]) {
+      expect(readFileSync(path.join(root, file), "utf8"), file).not.toContain("<OnboardingFrame");
+    }
+  });
+
   it("keeps computer overlay controls clickable under the window titlebar", () => {
     const root = path.join(path.dirname(fileURLToPath(import.meta.url)), "../pages");
     const panel = readFileSync(path.join(root, "shell/side-panel.tsx"), "utf8");

@@ -28,6 +28,27 @@ export function signupRequiresEmailVerification(response: unknown): boolean {
   );
 }
 
+/**
+ * One text per refusal an auth request can meet, keyed by the server's stable code: Better
+ * Auth's own codes, then Tangow's three sign-up refusals. The web and the iPhone both read it;
+ * an unknown code keeps the server's message.
+ */
+export const AUTH_ERROR_TEXT = {
+  INVALID_EMAIL_OR_PASSWORD: /*i18n*/ "Wrong email or password.",
+  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: /*i18n*/ "This email already has an account.",
+  REGISTRATION_CLOSED: /*i18n*/ "Sign-ups are closed on this server.",
+  EMAIL_NOT_ALLOWED: /*i18n*/ "This email can't sign up on this server.",
+  EMAIL_DELIVERY_REQUIRED: /*i18n*/ "Email isn't set up on this server.",
+} as const;
+
+export type AuthErrorCode = keyof typeof AUTH_ERROR_TEXT;
+
+export function authErrorText(code: string | undefined): string | undefined {
+  return code !== undefined && Object.hasOwn(AUTH_ERROR_TEXT, code)
+    ? AUTH_ERROR_TEXT[code as AuthErrorCode]
+    : undefined;
+}
+
 export function signupsOpen(enabled: string | undefined): boolean {
   if (enabled === undefined) return true;
   return enabled !== "false" && enabled !== "0";

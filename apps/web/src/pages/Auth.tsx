@@ -1,55 +1,53 @@
 import { Trans, useLingui } from "@lingui/react/macro";
-import pave800 from "@tangow/avatars/onboarding/pave-800.webp";
-import pave1600 from "@tangow/avatars/onboarding/pave-1600.webp";
-import { readBoundedJsonResponse, signupRequiresEmailVerification } from "@tangow/core";
 import {
-  Button,
-  buttonVariants,
-  cn,
-  FloatingField,
-  Input,
-  Label,
-  OnboardingFrame,
-} from "@tangow/ui-web";
+  authErrorText,
+  readBoundedJsonResponse,
+  signupRequiresEmailVerification,
+} from "@tangow/core";
+import { Button, buttonVariants, cn, FloatingField } from "@tangow/ui-web";
 import { Eye, EyeOff } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { authClient } from "../lib/auth";
 import { clearSpaceSelection } from "../lib/rpc";
+import { OnboardingScreen, paveScene, signupScene } from "./onboarding-screen";
 
 type AuthMode = "in" | "up" | "forgot";
 type PasswordResetCapabilities = { passwordReset: boolean; resetUrl: string | null };
+type AuthError = { text: string; code?: string };
 
-const fieldClass =
-  "mt-2 h-12 rounded-xl border-transparent bg-group px-4 text-base shadow-group md:text-base dark:bg-group";
-const submitClass = "mt-3 h-12 w-full rounded-full text-base";
 const AUTH_CAPABILITIES_TIMEOUT_MS = 8_000;
 const MAX_AUTH_CAPABILITIES_RESPONSE_BYTES = 64 * 1024;
-
-const paveScene = (
-  <img
-    src={pave800}
-    srcSet={`${pave800} 800w, ${pave1600} 1600w`}
-    sizes="(max-width: 860px) calc(100vw - 32px), 55vw"
-    alt=""
-  />
-);
+const SENT_MS = 2_000;
 
 export function AuthPage({ mode }: { mode: AuthMode }) {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const [searchParams, setSearchParams] = useSearchParams();
+  const location = useLocation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [credentialsRejected, setCredentialsRejected] = useState(false);
+  const [error, setError] = useState<AuthError | null>(null);
   const [pending, setPending] = useState(false);
   const [resetSent, setResetSent] = useState(false);
-  // Signup triggers a session refresh that remounts the anonymous auth page.
-  const verifying = searchParams.get("verify") === "email";
+  const [verificationSent, setVerificationSent] = useState(false);
+  // Signup triggers a session refresh that remounts the anonymous auth page, so the
+  // address waiting for its link rides in the history entry rather than in state.
+  const pendingEmail: unknown = location.state?.email;
+  const checkEmail =
+    searchParams.get("verify") === "email" && typeof pendingEmail === "string"
+      ? pendingEmail
+      : null;
+
   // undefined while the capabilities request is in flight; null when it failed.
   const [reset, setReset] = useState<PasswordResetCapabilities | null>();
+
+  useEffect(() => {
+    if (!verificationSent) return;
+    const timer = setTimeout(() => setVerificationSent(false), SENT_MS);
+    return () => clearTimeout(timer);
+  }, [verificationSent]);
 
   useEffect(() => {
     if (mode === "up") return;
@@ -83,11 +81,16 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     e.preventDefault();
     setPending(true);
     setError(null);
-    setCredentialsRejected(false);
     try {
+      if (checkEmail) {
+        const result = await authClient.sendVerificationEmail({ email: checkEmail });
+        if (result.error) setError(authError(result.error));
+        else setVerificationSent(true);
+        return;
+      }
       if (mode === "forgot") {
         if (!reset?.passwordReset || !reset.resetUrl) {
-          setError(t`Password recovery is not configured for this server`);
+          setError({ text: t`Password recovery is not configured for this server` });
           return;
         }
         const result = await authClient.requestPasswordReset({
@@ -95,7 +98,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           redirectTo: reset.resetUrl,
         });
         if (result.error) {
-          setError(result.error.message ?? t`Could not send reset email`);
+          setError({ text: result.error.message ?? t`Could not send reset email` });
           return;
         }
         setResetSent(true);
@@ -110,25 +113,26 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
             })
           : await authClient.signIn.email({ email, password });
       if (result.error) {
-        const rejected = result.error.code === "INVALID_EMAIL_OR_PASSWORD";
-        setCredentialsRejected(rejected);
-        setError(
-          rejected ? t`Wrong email or password.` : (result.error.message ?? t`Could not continue`),
-        );
+        setError(authError(result.error));
         return;
       }
       if (mode === "up" && signupRequiresEmailVerification(result.data)) {
-        setSearchParams({ verify: "email" });
+        setSearchParams({ verify: "email" }, { state: { email } });
         return;
       }
       clearSpaceSelection();
       // The session refetch that follows sign-in/sign-up lets the route redirect; navigating
       // first would reach a guarded route without a user and flash the sign-in page.
     } catch {
-      setError(t`Couldn't reach the server.`);
+      setError({ text: t`Couldn't reach the server.` });
     } finally {
       setPending(false);
     }
+  }
+
+  function authError({ code, message }: { code?: string; message?: string }): AuthError {
+    const text = authErrorText(code);
+    return { code, text: text ? i18n._(text) : (message ?? t`Could not continue`) };
   }
 
   const passwordToggle = (
@@ -147,7 +151,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
 
   if (mode === "in") {
     return (
-      <OnboardingFrame
+      <OnboardingScreen
         onSubmit={submit}
         title={<Trans>Got the key?</Trans>}
         scene={paveScene}
@@ -190,19 +194,19 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           minLength={8}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          error={error}
-          invalid={credentialsRejected}
+          error={error?.text}
+          invalid={error?.code === "INVALID_EMAIL_OR_PASSWORD"}
         >
           {passwordToggle}
         </FloatingField>
-      </OnboardingFrame>
+      </OnboardingScreen>
     );
   }
 
   if (mode === "forgot") {
     const sentTo = email.trim();
     return (
-      <OnboardingFrame
+      <OnboardingScreen
         onSubmit={submit}
         title={resetSent ? <Trans>A new key is on its way.</Trans> : <Trans>Lost the key?</Trans>}
         scene={paveScene}
@@ -238,93 +242,107 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            error={error}
+            error={error?.text}
           />
         )}
-      </OnboardingFrame>
+      </OnboardingScreen>
     );
   }
 
+  if (checkEmail) {
+    return (
+      <OnboardingScreen
+        onSubmit={submit}
+        title={
+          <Trans>
+            Check your email.
+            <br />
+            The clay will keep.
+          </Trans>
+        }
+        scene={signupScene}
+        actions={
+          <>
+            <Button
+              type="submit"
+              variant="outline"
+              size="full"
+              disabled={pending || verificationSent}
+              aria-busy={pending}
+            >
+              {verificationSent ? <Trans>Sent</Trans> : <Trans>Send again</Trans>}
+            </Button>
+            <Link to="/sign-up" onClick={() => setError(null)}>
+              <Trans>Use another email</Trans>
+            </Link>
+          </>
+        }
+      >
+        <p>
+          <Trans>
+            Open the link sent to <span className="text-foreground">{checkEmail}</span>.
+          </Trans>
+        </p>
+        {error ? <p role="alert">{error.text}</p> : null}
+      </OnboardingScreen>
+    );
+  }
+
+  const emailRejected =
+    error?.code === "EMAIL_NOT_ALLOWED" || error?.code === "USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL";
   return (
-    <AuthFrame
+    <OnboardingScreen
       onSubmit={submit}
-      title={verifying ? <Trans>Check your email</Trans> : <Trans>Create your Tangow</Trans>}
-    >
-      {verifying ? (
-        <div className="w-full text-center">
-          <Link to="/sign-in" className="font-medium text-foreground">
-            <Trans>Back to sign in</Trans>
-          </Link>
-        </div>
-      ) : (
+      title={<Trans>Grab some clay.</Trans>}
+      scene={signupScene}
+      actions={
         <>
-          <div className="mb-4 w-full">
-            <Label htmlFor="name" className="text-muted-foreground">
-              <Trans>Name</Trans>
-            </Label>
-            <Input
-              id="name"
-              name="name"
-              autoComplete="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder={t`Your name`}
-              className={fieldClass}
-            />
-          </div>
-          <div className="w-full">
-            <Label htmlFor="email" className="text-muted-foreground">
-              <Trans>Email</Trans>
-            </Label>
-            <Input
-              id="email"
-              name="email"
-              autoComplete="username"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t`Your email address`}
-              type="email"
-              required
-              className={fieldClass}
-            />
-          </div>
-          <div className="mt-4 w-full">
-            <Label htmlFor="new-password" className="text-muted-foreground">
-              <Trans>Password</Trans>
-            </Label>
-            <div className="relative">
-              <Input
-                id="new-password"
-                name="password"
-                autoComplete="new-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={t`Password`}
-                type={showPassword ? "text" : "password"}
-                required
-                minLength={8}
-                className={`${fieldClass} pr-12`}
-              />
-              {passwordToggle}
-            </div>
-          </div>
-          {error ? (
-            <p role="alert" className="mt-3 w-full text-sm text-destructive">
-              {error}
-            </p>
-          ) : null}
-          <Button type="submit" size="lg" disabled={pending} className={submitClass}>
-            {pending ? <Trans>Working…</Trans> : <Trans>Create account</Trans>}
+          <Button type="submit" size="full" disabled={pending} aria-busy={pending}>
+            <Trans>Create account</Trans>
           </Button>
-          <p className="mt-8 text-muted-foreground">
+          <p>
             <Trans>Already have an account?</Trans>{" "}
-            <Link to="/sign-in" className="font-medium text-foreground">
+            <Link to="/sign-in">
               <Trans>Sign in</Trans>
             </Link>
           </p>
         </>
-      )}
-    </AuthFrame>
+      }
+    >
+      <FloatingField
+        id="name"
+        name="name"
+        label={<Trans>Name</Trans>}
+        autoComplete="name"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <FloatingField
+        id="email"
+        name="email"
+        label={<Trans>Email</Trans>}
+        autoComplete="username"
+        type="email"
+        required
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        invalid={emailRejected}
+      />
+      <FloatingField
+        id="new-password"
+        name="password"
+        label={<Trans>Password</Trans>}
+        autoComplete="new-password"
+        type={showPassword ? "text" : "password"}
+        required
+        minLength={8}
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        error={error?.text}
+      >
+        {passwordToggle}
+      </FloatingField>
+    </OnboardingScreen>
   );
 }
 
@@ -393,7 +411,7 @@ export function PasswordResetPage() {
     );
 
   return (
-    <OnboardingFrame
+    <OnboardingScreen
       onSubmit={submit}
       title={<Trans>Reset your password</Trans>}
       scene={paveScene}
@@ -435,31 +453,6 @@ export function PasswordResetPage() {
           />
         </>
       )}
-    </OnboardingFrame>
-  );
-}
-
-function AuthFrame({
-  title,
-  onSubmit,
-  children,
-}: {
-  title: React.ReactNode;
-  onSubmit: (event: React.FormEvent) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="rk-ambient flex min-h-full items-center justify-center px-6 py-16 text-foreground">
-      <form onSubmit={onSubmit} className="flex w-[460px] flex-col items-center">
-        <div className="flex h-[74px] w-[74px] items-center justify-center gap-[11px] rounded-full bg-group shadow-group">
-          <span className="h-5 w-[9px] rounded-full bg-primary" />
-          <span className="h-5 w-[9px] rounded-full bg-primary" />
-        </div>
-        <h1 aria-live="polite" className="mb-9 mt-7 text-4xl font-medium tracking-tight">
-          {title}
-        </h1>
-        {children}
-      </form>
-    </div>
+    </OnboardingScreen>
   );
 }

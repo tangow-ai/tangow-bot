@@ -13,6 +13,31 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+#. js-lingui-explicit-id
+#: ../../packages/core/src/signup-policy.ts:37
+msgid "Wrong email or password."
+msgstr "Wrong email or password."
+
+#. js-lingui-explicit-id
+#: ../../packages/core/src/signup-policy.ts:38
+msgid "This email already has an account."
+msgstr "This email already has an account."
+
+#. js-lingui-explicit-id
+#: ../../packages/core/src/signup-policy.ts:39
+msgid "Sign-ups are closed on this server."
+msgstr "Sign-ups are closed on this server."
+
+#. js-lingui-explicit-id
+#: ../../packages/core/src/signup-policy.ts:40
+msgid "This email can't sign up on this server."
+msgstr "This email can't sign up on this server."
+
+#. js-lingui-explicit-id
+#: ../../packages/core/src/signup-policy.ts:41
+msgid "Email isn't set up on this server."
+msgstr "Email isn't set up on this server."
+
 #: src/pages/shell/command-palette.tsx:322
 #: src/pages/shell/sidebar-roster.tsx:281
 msgid " (unread)"
@@ -255,7 +280,7 @@ msgstr "30d"
 msgid "7d"
 msgstr "7d"
 
-#: src/pages/Auth.tsx:207
+#: src/pages/Auth.tsx:210
 msgid "A new key is on its way."
 msgstr "A new key is on its way."
 
@@ -459,7 +484,7 @@ msgstr "Allow writing"
 msgid "Allowed once"
 msgstr "Allowed once"
 
-#: src/pages/Auth.tsx:320
+#: src/pages/Auth.tsx:303
 msgid "Already have an account?"
 msgstr "Already have an account?"
 
@@ -691,10 +716,9 @@ msgstr "Back"
 msgid "Back to all usage"
 msgstr "Back to all usage"
 
-#: src/pages/Auth.tsx:222
-#: src/pages/Auth.tsx:256
-#: src/pages/Auth.tsx:383
-#: src/pages/Auth.tsx:392
+#: src/pages/Auth.tsx:225
+#: src/pages/Auth.tsx:398
+#: src/pages/Auth.tsx:407
 msgid "Back to sign in"
 msgstr "Back to sign in"
 
@@ -898,8 +922,12 @@ msgid "Check in."
 msgstr "Check in."
 
 #: src/pages/Auth.tsx:251
-msgid "Check your email"
-msgstr "Check your email"
+#~ msgid "Check your email"
+#~ msgstr "Check your email"
+
+#: src/pages/Auth.tsx:256
+msgid "Check your email.<0/>The clay will keep."
+msgstr "Check your email.<0/>The clay will keep."
 
 #: src/components/DesktopUpdates.tsx:154
 #: src/components/SoftwareUpdateSection.tsx:77
@@ -1093,7 +1121,7 @@ msgid "Confirm delete"
 msgstr "Confirm delete"
 
 #: src/pages/AccountProfileSettings.tsx:206
-#: src/pages/Auth.tsx:428
+#: src/pages/Auth.tsx:443
 msgid "Confirm password"
 msgstr "Confirm password"
 
@@ -1295,7 +1323,7 @@ msgstr "Could not connect this voice provider"
 msgid "Could not connect to the computer screen"
 msgstr "Could not connect to the computer screen"
 
-#: src/pages/Auth.tsx:116
+#: src/pages/Auth.tsx:134
 #: src/pages/shell/use-computer-control.ts:203
 msgid "Could not continue"
 msgstr "Could not continue"
@@ -1485,7 +1513,7 @@ msgstr "Could not rename connection"
 msgid "Could not rename section"
 msgstr "Could not rename section"
 
-#: src/pages/Auth.tsx:360
+#: src/pages/Auth.tsx:375
 msgid "Could not reset password"
 msgstr "Could not reset password"
 
@@ -1537,7 +1565,7 @@ msgstr "Could not save that voice"
 msgid "Could not save this choice"
 msgstr "Could not save this choice"
 
-#: src/pages/Auth.tsx:98
+#: src/pages/Auth.tsx:100
 msgid "Could not send reset email"
 msgstr "Could not send reset email"
 
@@ -1614,8 +1642,8 @@ msgstr "Couldn't load members"
 msgid "Couldn't load messaging settings"
 msgstr "Couldn't load messaging settings"
 
-#: src/pages/Auth.tsx:128
-#: src/pages/Auth.tsx:363
+#: src/pages/Auth.tsx:126
+#: src/pages/Auth.tsx:378
 msgid "Couldn't reach the server."
 msgstr "Couldn't reach the server."
 
@@ -1657,7 +1685,7 @@ msgstr "Create"
 msgid "Create a section and move {0} into it."
 msgstr "Create a section and move {0} into it."
 
-#: src/pages/Auth.tsx:317
+#: src/pages/Auth.tsx:300
 msgid "Create account"
 msgstr "Create account"
 
@@ -1696,8 +1724,8 @@ msgid "Create space"
 msgstr "Create space"
 
 #: src/pages/Auth.tsx:251
-msgid "Create your Tangow"
-msgstr "Create your Tangow"
+#~ msgid "Create your Tangow"
+#~ msgstr "Create your Tangow"
 
 #: src/components/AskCard.tsx:48
 msgid "Created"
@@ -1934,7 +1962,7 @@ msgstr "Dismissed. Reconnect anytime from MCP settings."
 msgid "Do not type passwords into the demo. Use Take control for credentials."
 msgstr "Do not type passwords into the demo. Use Take control for credentials."
 
-#: src/pages/Auth.tsx:165
+#: src/pages/Auth.tsx:168
 msgid "Don’t have an account?"
 msgstr "Don’t have an account?"
 
@@ -2028,9 +2056,9 @@ msgstr "Editing message from {rewindTime} · {0} messages after it will be remov
 msgid "Effort"
 msgstr "Effort"
 
-#: src/pages/Auth.tsx:176
-#: src/pages/Auth.tsx:235
-#: src/pages/Auth.tsx:277
+#: src/pages/Auth.tsx:179
+#: src/pages/Auth.tsx:238
+#: src/pages/Auth.tsx:322
 msgid "Email"
 msgstr "Email"
 
@@ -2222,7 +2250,7 @@ msgstr "Finishing MCP connection…"
 msgid "Fixed"
 msgstr "Fixed"
 
-#: src/pages/Auth.tsx:161
+#: src/pages/Auth.tsx:164
 msgid "Forgot password?"
 msgstr "Forgot password?"
 
@@ -2264,9 +2292,13 @@ msgstr "Git event"
 msgid "Global"
 msgstr "Global"
 
-#: src/pages/Auth.tsx:152
+#: src/pages/Auth.tsx:155
 msgid "Got the key?"
 msgstr "Got the key?"
+
+#: src/pages/Auth.tsx:295
+msgid "Grab some clay."
+msgstr "Grab some clay."
 
 #: src/pages/MessagingSettingsOverlay.tsx:205
 #: src/pages/shell/thread-header.tsx:110
@@ -2320,7 +2352,7 @@ msgstr "Hide bots"
 msgid "Hide key"
 msgstr "Hide key"
 
-#: src/pages/Auth.tsx:140
+#: src/pages/Auth.tsx:143
 msgid "Hide password"
 msgstr "Hide password"
 
@@ -2367,7 +2399,7 @@ msgstr "I’m done"
 #~ msgid "If {email} has an account, the link is in its inbox."
 #~ msgstr "If {email} has an account, the link is in its inbox."
 
-#: src/pages/Auth.tsx:229
+#: src/pages/Auth.tsx:232
 msgid "If {sentTo} has an account, the link is in its inbox."
 msgstr "If {sentTo} has an account, the link is in its inbox."
 
@@ -2633,7 +2665,7 @@ msgstr "Local"
 msgid "Log out"
 msgstr "Log out"
 
-#: src/pages/Auth.tsx:207
+#: src/pages/Auth.tsx:210
 msgid "Lost the key?"
 msgstr "Lost the key?"
 
@@ -2851,6 +2883,10 @@ msgstr "Models"
 msgid "Models from server"
 msgstr "Models from server"
 
+#: src/pages/Welcome.tsx:12
+msgid "Mold a bot.<0/>Give it a job."
+msgstr "Mold a bot.<0/>Give it a job."
+
 #: src/pages/RoutineSchedule.tsx:164
 msgid "Monthly"
 msgstr "Monthly"
@@ -2878,7 +2914,7 @@ msgstr "Mute"
 
 #: src/components/AskCard.tsx:351
 #: src/components/teach/SkillDraftCard.tsx:79
-#: src/pages/Auth.tsx:263
+#: src/pages/Auth.tsx:314
 #: src/pages/bot-page/BotHero.tsx:45
 #: src/pages/bot-page/RoutineCreateForm.tsx:74
 #: src/pages/bot-page/RoutineDetail.tsx:111
@@ -2929,7 +2965,7 @@ msgid "New open-work item"
 msgstr "New open-work item"
 
 #: src/pages/AccountProfileSettings.tsx:200
-#: src/pages/Auth.tsx:417
+#: src/pages/Auth.tsx:432
 msgid "New password"
 msgstr "New password"
 
@@ -3183,6 +3219,10 @@ msgstr "Open in full screen"
 msgid "Open in full window"
 msgstr "Open in full window"
 
+#: src/pages/Auth.tsx:281
+msgid "Open the link sent to <0>{checkEmail}</0>."
+msgstr "Open the link sent to <0>{checkEmail}</0>."
+
 #: src/pages/ScratchpadSection.tsx:106
 msgid "Open work"
 msgstr "Open work"
@@ -3263,23 +3303,22 @@ msgstr "Park"
 
 #: src/components/AskCard.tsx:122
 #: src/pages/AccountProfileSettings.tsx:180
-#: src/pages/Auth.tsx:186
-#: src/pages/Auth.tsx:293
-#: src/pages/Auth.tsx:302
+#: src/pages/Auth.tsx:189
+#: src/pages/Auth.tsx:333
 msgid "Password"
 msgstr "Password"
 
-#: src/pages/Auth.tsx:90
+#: src/pages/Auth.tsx:92
 msgid "Password recovery is not configured for this server"
 msgstr "Password recovery is not configured for this server"
 
 #: src/pages/AccountProfileSettings.tsx:225
-#: src/pages/Auth.tsx:406
+#: src/pages/Auth.tsx:421
 msgid "Password updated"
 msgstr "Password updated"
 
 #: src/pages/AccountProfileSettings.tsx:150
-#: src/pages/Auth.tsx:352
+#: src/pages/Auth.tsx:367
 msgid "Passwords do not match"
 msgstr "Passwords do not match"
 
@@ -3631,11 +3670,11 @@ msgstr "Reset computer"
 msgid "Reset computer?"
 msgstr "Reset computer?"
 
-#: src/pages/Auth.tsx:389
+#: src/pages/Auth.tsx:404
 msgid "Reset password"
 msgstr "Reset password"
 
-#: src/pages/Auth.tsx:400
+#: src/pages/Auth.tsx:415
 msgid "Reset your password"
 msgstr "Reset your password"
 
@@ -3886,11 +3925,15 @@ msgstr "Send"
 msgid "Send <0>{linkCode}</0> to the line from your chat app within 10 minutes. You'll get a confirmation reply once linked."
 msgstr "Send <0>{linkCode}</0> to the line from your chat app within 10 minutes. You'll get a confirmation reply once linked."
 
-#: src/pages/Auth.tsx:380
+#: src/pages/Auth.tsx:395
 msgid "Send a new link"
 msgstr "Send a new link"
 
-#: src/pages/Auth.tsx:218
+#: src/pages/Auth.tsx:272
+msgid "Send again"
+msgstr "Send again"
+
+#: src/pages/Auth.tsx:221
 msgid "Send reset link"
 msgstr "Send reset link"
 
@@ -3900,6 +3943,7 @@ msgid "Sending…"
 msgstr "Sending…"
 
 #: src/components/DraftSent.tsx:22
+#: src/pages/Auth.tsx:272
 msgid "Sent"
 msgstr "Sent"
 
@@ -4007,16 +4051,17 @@ msgstr "Show less"
 msgid "Show more"
 msgstr "Show more"
 
-#: src/pages/Auth.tsx:140
+#: src/pages/Auth.tsx:143
 msgid "Show password"
 msgstr "Show password"
 
 #: src/lib/localized-provider-hint.ts:7
-#: src/pages/Auth.tsx:157
-#: src/pages/Auth.tsx:322
-#: src/pages/Auth.tsx:372
+#: src/pages/Auth.tsx:160
+#: src/pages/Auth.tsx:305
+#: src/pages/Auth.tsx:387
 #: src/pages/model-settings/subscription-sign-in.tsx:101
 #: src/pages/Onboarding.tsx:187
+#: src/pages/Welcome.tsx:25
 msgid "Sign in"
 msgstr "Sign in"
 
@@ -4024,8 +4069,8 @@ msgstr "Sign in"
 #~ msgid "Sign in to Tangow"
 #~ msgstr "Sign in to Tangow"
 
-#: src/pages/Auth.tsx:167
-#: src/pages/Welcome.tsx:32
+#: src/pages/Auth.tsx:170
+#: src/pages/Welcome.tsx:22
 msgid "Sign up"
 msgstr "Sign up"
 
@@ -4305,7 +4350,7 @@ msgstr "This invite is for {0}."
 msgid "This invite link has expired or was already used."
 msgstr "This invite link has expired or was already used."
 
-#: src/pages/Auth.tsx:410
+#: src/pages/Auth.tsx:425
 msgid "This link has expired or was already used."
 msgstr "This link has expired or was already used."
 
@@ -4502,6 +4547,10 @@ msgstr "Use a found model"
 msgid "Use another account"
 msgstr "Use another account"
 
+#: src/pages/Auth.tsx:275
+msgid "Use another email"
+msgstr "Use another email"
+
 #: src/pages/ExternalConversationSettings.tsx:129
 #: src/pages/ExternalConversationSettings.tsx:130
 msgid "Use default guidance"
@@ -4617,8 +4666,8 @@ msgid "When to use"
 msgstr "When to use"
 
 #: src/pages/Auth.tsx:317
-msgid "Working…"
-msgstr "Working…"
+#~ msgid "Working…"
+#~ msgstr "Working…"
 
 #: src/pages/KnowledgeSection.tsx:803
 msgid "Workspace root"
@@ -4629,8 +4678,8 @@ msgid "Write its first instructions"
 msgstr "Write its first instructions"
 
 #: src/pages/Auth.tsx:116
-msgid "Wrong email or password."
-msgstr "Wrong email or password."
+#~ msgid "Wrong email or password."
+#~ msgstr "Wrong email or password."
 
 #: src/pages/RoutineSchedule.tsx:198
 msgid "Yearly on {date} at {time}"
@@ -4672,13 +4721,13 @@ msgid "Your answer: {answer}"
 msgstr "Your answer: {answer}"
 
 #: src/pages/Auth.tsx:285
-msgid "Your email address"
-msgstr "Your email address"
+#~ msgid "Your email address"
+#~ msgstr "Your email address"
 
 #: src/pages/Auth.tsx:271
-msgid "Your name"
-msgstr "Your name"
+#~ msgid "Your name"
+#~ msgstr "Your name"
 
 #: src/pages/Welcome.tsx:21
-msgid "Your team of always-on agents<0/>that you can give real work to."
-msgstr "Your team of always-on agents<0/>that you can give real work to."
+#~ msgid "Your team of always-on agents<0/>that you can give real work to."
+#~ msgstr "Your team of always-on agents<0/>that you can give real work to."

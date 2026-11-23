@@ -25,23 +25,46 @@ test("restricted signup waits for mailbox verification", async ({ page }, testIn
       json: { passwordReset: false, resetUrl: null },
     }),
   );
+  let refuse = true;
   await page.route("**/api/auth/sign-up/email", (route) =>
-    route.fulfill({
-      json: { token: null, user: { id: "pending-user", emailVerified: false } },
-    }),
+    refuse
+      ? route.fulfill({
+          status: 400,
+          json: { code: "REGISTRATION_CLOSED", message: "Registration is closed" },
+        })
+      : route.fulfill({
+          json: { token: null, user: { id: "pending-user", emailVerified: false } },
+        }),
   );
-  await page.goto("/sign-up");
+  const resent: unknown[] = [];
+  await page.route("**/api/auth/send-verification-email", (route) => {
+    resent.push(route.request().postDataJSON());
+    return route.fulfill({ json: { status: true } });
+  });
+  await page.goto("/");
+  await expect(page.locator('[data-tangow-surface="welcome"]')).toBeVisible();
+  await captureOnboardingStep(page, testInfo, "40-welcome");
+  await page.getByRole("link", { name: "Sign up" }).click();
+  await expect(page.getByRole("heading", { name: "Grab some clay." })).toBeVisible();
+  await captureOnboardingStep(page, testInfo, "40-sign-up");
   await page.getByLabel("Name").fill("Pending User");
   await page.getByLabel("Email").fill("pending@example.test");
   await page.getByLabel("Password", { exact: true }).fill("password12");
   await page.getByRole("button", { name: "Create account", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveText("Sign-ups are closed on this server.");
+  await captureOnboardingStep(page, testInfo, "40-sign-up-refused");
+
+  refuse = false;
+  await page.getByRole("button", { name: "Create account", exact: true }).click();
+  await expect(page.getByRole("heading", { name: "Check your email." })).toBeVisible();
   await expect(page).toHaveURL(/\/sign-up\?verify=email$/);
   await page.reload();
-  await expect(page.getByRole("heading", { name: "Check your email" })).toBeVisible();
-  await captureScreenshot(page, testInfo, "signup-verification-required");
-  await page.getByRole("link", { name: "Back to sign in" }).click();
-  await expect(page.getByRole("heading", { name: "Got the key?" })).toBeVisible();
+  await expect(page.getByText("Open the link sent to pending@example.test.")).toBeVisible();
+  await captureOnboardingStep(page, testInfo, "40-check-email");
+  await page.getByRole("button", { name: "Send again" }).click();
+  await expect.poll(() => resent).toEqual([{ email: "pending@example.test" }]);
+  await page.getByRole("link", { name: "Use another email" }).click();
+  await expect(page.getByRole("heading", { name: "Grab some clay." })).toBeVisible();
 });
 
 test("logout protects bot deep links and sign-in restores the session", async ({
@@ -92,10 +115,10 @@ test("logout protects bot deep links and sign-in restores the session", async ({
   await expect(page.getByRole("heading", { name: "Got the key?" })).toBeVisible();
   await page.goto("/");
   await expect(page.locator('[data-tangow-surface="welcome"]')).toBeVisible();
-  await expect(page.getByText(/Your team of always-on agents/)).toBeVisible();
-  await page.getByRole("button", { name: /Sign up/ }).click();
+  await expect(page.getByRole("heading", { name: /Mold a bot\./ })).toBeVisible();
+  await page.getByRole("link", { name: "Sign up" }).click();
   await expect(page).toHaveURL(/\/sign-up$/);
-  await expect(page.getByRole("heading", { name: "Create your Tangow" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Grab some clay." })).toBeVisible();
   await page.goto("/");
   await captureScreenshot(page, testInfo, "37-logged-out-welcome");
 

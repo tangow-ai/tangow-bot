@@ -256,6 +256,10 @@
   --type-large-title-compact-leading: 1.1;
   --type-large-title-compact-tracking: -0.025em;
   --type-large-title-compact-weight: 650;
+  --type-poster-size: 60px;
+  --type-poster-leading: 0.94;
+  --type-poster-tracking: -0.045em;
+  --type-poster-weight: 760;
   --type-link-size: 15px;
   --type-link-leading: 1.3333333333333333;
   --type-link-tracking: 0;
@@ -318,6 +322,9 @@
   --size-logo: 30px;
   --size-logo-top: 18px;
   --size-logo-bottom: 12px;
+  --size-logo-short: 24px;
+  --size-logo-top-short: 12px;
+  --size-logo-bottom-short: 10px;
   --duration-arrive: 240ms;
   --duration-press: 160ms;
   --duration-hover: 160ms;
