@@ -4,6 +4,9 @@ import { useEffect, useRef } from "react";
 
 const PHONE_MAX_WIDTH = 860;
 
+/** The status line's id: an invalid field points its description at it. */
+export const ONBOARDING_STATUS_ID = "rk-onboarding-status";
+
 export type OnboardingFrameProps = {
   /** The scene card's content: a picture laid over the clay plate. */
   scene: ReactNode;
@@ -64,7 +67,7 @@ export function OnboardingFrame({
           <div className="rk-onboarding-actions">
             {actions}
             {status ? (
-              <p className="rk-onboarding-status" role="alert">
+              <p id={ONBOARDING_STATUS_ID} className="rk-onboarding-status" role="alert">
                 {status}
               </p>
             ) : null}

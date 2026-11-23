@@ -2,6 +2,7 @@ import { Field } from "@base-ui/react/field";
 import type { ComponentProps, ReactNode } from "react";
 import { Input } from "./components/ui/input.js";
 import { cn } from "./lib/utils.js";
+import { ONBOARDING_STATUS_ID } from "./onboarding-frame.js";
 
 export type FloatingFieldProps = Omit<ComponentProps<"input">, "children"> & {
   /** The field's accessible name, shown inside it until it has a value or focus. */
@@ -23,6 +24,7 @@ export function FloatingField({
   return (
     <Field.Root invalid={invalid} className={cn("rk-floating-field", className)}>
       <Input
+        aria-describedby={invalid ? ONBOARDING_STATUS_ID : undefined}
         {...props}
         className={cn(
           "h-(--field-h) rounded-card bg-card px-3.5 pt-5.5 pb-1.5 text-body focus-visible:border-foreground focus-visible:ring-foreground/10 aria-invalid:border-foreground aria-invalid:ring-0 md:text-body dark:bg-card dark:aria-invalid:border-foreground",
