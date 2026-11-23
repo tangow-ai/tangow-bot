@@ -1,7 +1,7 @@
 import { Trans } from "@lingui/react/macro";
 import { buttonVariants, cn } from "@tangow/ui-web";
 import { Link } from "react-router-dom";
-import { OnboardingScreen, welcomeScene } from "./onboarding-screen";
+import { OnboardingScreen, PlateScene } from "./onboarding-screen";
 
 export function WelcomePage() {
   return (
@@ -16,7 +16,7 @@ export function WelcomePage() {
             Give it a job.
           </Trans>
         }
-        scene={welcomeScene}
+        scene={<PlateScene step="welcome" />}
         actions={
           <>
             <Link to="/sign-up" className={cn(buttonVariants({ size: "full" }), "no-underline")}>

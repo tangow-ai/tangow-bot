@@ -10,7 +10,7 @@ import { useEffect, useState } from "react";
 import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { authClient } from "../lib/auth";
 import { clearSpaceSelection } from "../lib/rpc";
-import { OnboardingScreen, paveScene, signupScene } from "./onboarding-screen";
+import { OnboardingScreen, PlateScene, paveScene } from "./onboarding-screen";
 
 type AuthMode = "in" | "up" | "forgot";
 type PasswordResetCapabilities = { passwordReset: boolean; resetUrl: string | null };
@@ -19,6 +19,9 @@ type AuthError = { text: string; code?: string };
 const AUTH_CAPABILITIES_TIMEOUT_MS = 8_000;
 const MAX_AUTH_CAPABILITIES_RESPONSE_BYTES = 64 * 1024;
 const SENT_MS = 2_000;
+
+/** Keeps the clay in frame when a short phone trims the card's height. */
+const signupFocus = "50% 62%";
 
 export function AuthPage({ mode }: { mode: AuthMode }) {
   const { t, i18n } = useLingui();
@@ -260,7 +263,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
             The clay will keep.
           </Trans>
         }
-        scene={signupScene}
+        scene={<PlateScene step="check" focus={signupFocus} />}
         actions={
           <>
             <Button
@@ -294,7 +297,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
     <OnboardingScreen
       onSubmit={submit}
       title={<Trans>Grab some clay.</Trans>}
-      scene={signupScene}
+      scene={<PlateScene step="signup" focus={signupFocus} />}
       actions={
         <>
           <Button type="submit" size="full" disabled={pending} aria-busy={pending}>

@@ -3,7 +3,7 @@ import { captureScreenshot, completeOnboarding, signup } from "./helpers";
 import { expect, test } from "./test";
 
 async function captureOnboardingStep(page: Page, testInfo: TestInfo, name: string) {
-  await expect(page.locator('[data-slot="onboarding-frame"] img')).toHaveJSProperty(
+  await expect(page.locator('[data-slot="onboarding-frame"] img').last()).toHaveJSProperty(
     "complete",
     true,
   );
@@ -17,6 +17,32 @@ async function captureOnboardingStep(page: Page, testInfo: TestInfo, name: strin
   }
   await page.emulateMedia({ colorScheme: "light" });
 }
+
+test("the clay plays forward into sign-up and stands still going back", async ({
+  page,
+}, testInfo) => {
+  await page.route("**/api/auth/get-session**", (route) => route.fulfill({ json: null }));
+  await page.setViewportSize({ width: 390, height: 844 });
+  const preloaded = ["p02", "p03", "p04"].map((frame) =>
+    page.waitForResponse((response) => response.url().includes(`/${frame}-800`)),
+  );
+  await page.goto("/");
+  await Promise.all(preloaded);
+  await page.clock.install();
+  const plate = page.locator(".rk-onboarding-stage > img");
+  const onTop = plate.locator("visible=true").last();
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    await page.getByRole("link", { name: "Sign up" }).click();
+    for (const frame of ["p02", "p03", "p04"]) {
+      await expect(onTop).toHaveAttribute("src", new RegExp(`/${frame}-800`));
+      await captureScreenshot(page, testInfo, `40-plate-${frame}-${colorScheme}-phone`);
+      await page.clock.runFor(150);
+    }
+    await page.goBack();
+    await expect(plate).toHaveCount(1);
+  }
+});
 
 test("restricted signup waits for mailbox verification", async ({ page }, testInfo) => {
   await page.route("**/api/auth/get-session**", (route) => route.fulfill({ json: null }));
