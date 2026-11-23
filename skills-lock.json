@@ -1,6 +1,13 @@
 {
-  "version": 1,
+  "version": 2,
   "skills": {
+    "board": {
+      "source": "vercel/board",
+      "commit": "371a557916f8f1fb5feb0bc6603ed8396ed34e82",
+      "sourceType": "github",
+      "skillPath": "skills/board/SKILL.md",
+      "computedHash": "88c2450e0d1742a7949c22fdc84671a24d438ab9b031b1b3dd5ad4141e4c16ca"
+    },
     "stageshow": {
       "source": "benjitaylor/skills",
       "sourceType": "github",

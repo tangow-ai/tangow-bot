@@ -27,4 +27,5 @@ packages/ui-web/src/shadcn.css linguist-vendored
 packages/adapters/src/fixtures/composio-search-corpus.json linguist-vendored
 
 .agents/skills/statechart/** linguist-vendored
+.agents/skills/board/** linguist-vendored
 .agents/skills/stageshow/** linguist-vendored
