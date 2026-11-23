@@ -44,6 +44,33 @@ test("the clay plays forward into sign-up and stands still going back", async ({
   }
 });
 
+test("a busy step button keeps its label and its size", async ({ page }, testInfo) => {
+  await page.route("**/api/auth/get-session**", (route) => route.fulfill({ json: null }));
+  await page.route("**/api/auth/sign-up/email", () => {});
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/sign-up");
+  await page.getByLabel("Name").fill("Busy User");
+  await page.getByLabel("Email").fill("busy@example.test");
+  await page.getByLabel("Password", { exact: true }).fill("password12");
+  const create = page.getByRole("button", { name: "Create account", exact: true });
+  const idle = await create.boundingBox();
+  await create.click();
+  await expect(create).toHaveAttribute("aria-busy", "true");
+  expect(await create.boundingBox()).toEqual(idle);
+  for (const colorScheme of ["light", "dark"] as const) {
+    await page.emulateMedia({ colorScheme });
+    const path = testInfo.outputPath(`40-sign-up-busy-${colorScheme}-phone.png`);
+    // The sweep is the state under test, so the capture keeps animations running and
+    // lets the theme's colour transitions settle first.
+    await page.waitForTimeout(600);
+    await page.screenshot({ path, fullPage: true });
+    await testInfo.attach(`40-sign-up-busy-${colorScheme}-phone`, {
+      contentType: "image/png",
+      path,
+    });
+  }
+});
+
 test("restricted signup waits for mailbox verification", async ({ page }, testInfo) => {
   await page.route("**/api/auth/get-session**", (route) => route.fulfill({ json: null }));
   await page.route("**/api/auth/capabilities", (route) =>
