@@ -97,3 +97,27 @@ test("account settings language picker includes Russian and persists it", async 
   await expect(page.locator("html")).toHaveAttribute("lang", "ru");
   await captureScreenshot(page, testInfo, "ui-locale-settings-ru");
 });
+
+test("account settings language picker includes French and persists it", async ({
+  page,
+}, testInfo) => {
+  const stamp = Date.now();
+  await signup(page, `ui-locale-fr-${stamp}@tangow.test`, "password12", "Locale QA");
+  await completeOnboarding(page, testInfo);
+
+  const settings = await openUserSettings(page);
+  const picker = settings.getByTestId("ui-locale-select");
+  await picker.click();
+  await expect(settings.getByRole("option", { name: "Français", exact: true })).toBeVisible();
+
+  await settings.getByRole("option", { name: "Français", exact: true }).click();
+  await expect(settings.getByRole("heading", { name: "Profil", exact: true })).toBeVisible();
+  await expect(settings.getByRole("heading", { name: "Langue", exact: true })).toBeVisible();
+  await expect(picker).toHaveText("Français");
+  await expect(page.locator("html")).toHaveAttribute("lang", "fr");
+  await captureScreenshot(page, testInfo, "ui-locale-settings-fr");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await captureScreenshot(page, testInfo, "ui-locale-settings-fr-phone");
+  await page.reload();
+  await expect(page.locator("html")).toHaveAttribute("lang", "fr");
+});
