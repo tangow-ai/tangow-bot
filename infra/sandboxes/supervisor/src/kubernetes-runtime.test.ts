@@ -7,6 +7,7 @@ import { duplexPair } from "node:stream";
 import type { V1Pod, V1Status } from "@kubernetes/client-node";
 import { ApiException, Exec, KubeConfig } from "@kubernetes/client-node";
 import { resolveSupervisorToken } from "@tangow/core";
+import { createLogger, createTestSink, getLogger, installLogger } from "@tangow/logging";
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.hoisted(() => {
@@ -552,6 +553,55 @@ describe("Kubernetes computers", () => {
     expect(await response.json()).toEqual({
       error: `computer pod ${pod} was refused: pods "${pod}" is forbidden: exceeded quota: sandboxes`,
     });
+  });
+
+  it("logs bounded error details for supervisor 5xx responses only", async () => {
+    const sink = createTestSink();
+    const logger = getLogger();
+    installLogger(createLogger({ service: "test", sinks: [sink] }));
+    try {
+      const cluster = fakeCluster();
+      cluster.client.pods.createNamespacedPod = async () => {
+        throw podApiError(
+          403,
+          "Forbidden",
+          `admission refused Bearer fixture-credential ${"x".repeat(5_000)}`,
+        );
+      };
+      const { app, provision } = kubernetes(cluster);
+      const response = await provision();
+      expect(response.status).toBe(500);
+      expect(await response.text()).toContain("Bearer fixture-credential");
+      expect(
+        (
+          await app.request(`/computers/${pod}/actions`, {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ actions: [] }),
+          })
+        ).status,
+      ).toBe(500);
+      expect((await app.request("/health")).status).toBe(200);
+      expect((await app.request("/computers", { method: "POST" })).status).toBe(401);
+
+      const failures = sink.events.filter((event) => event.message === "http.response.failed");
+      expect(failures).toMatchObject([
+        {
+          "http.route": "/computers",
+          "http.status": 500,
+          "http.response.detail": expect.stringContaining("admission refused Bearer [Redacted]"),
+        },
+        {
+          "http.route": "/computers/:id/actions",
+          "http.status": 500,
+          "http.response.detail": JSON.stringify({ error: `computer ${pod} not found` }),
+        },
+      ]);
+      expect(failures[0]?.["http.response.detail"]).toHaveLength(1024);
+      expect(failures[0]?.["http.response.detail"]).not.toContain("fixture-credential");
+    } finally {
+      installLogger(logger);
+    }
   });
 
   it("gives up at the deadline with the pod's last reason and deletes the pod", async () => {

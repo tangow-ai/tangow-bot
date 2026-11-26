@@ -68,12 +68,32 @@ const limitSupervisorRequestBody: MiddlewareHandler = async (c, next) => {
 };
 
 const PathSegment = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/);
+const MAX_ERROR_LOG_BYTES = 4096;
 const MAX_ERROR_LOG_LENGTH = 1024;
-const desktopErrorRoutes = new Set([
-  "/computers/:id/actions",
-  "/computers/:id/input",
-  "/computers/:id/observe",
-]);
+
+async function responseErrorDetail(response: Response): Promise<string> {
+  const reader = response.clone().body?.getReader();
+  if (!reader) return "";
+  const prefix = new Uint8Array(MAX_ERROR_LOG_BYTES);
+  let length = 0;
+  try {
+    while (length < prefix.length) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const chunk = value.subarray(0, prefix.length - length);
+      prefix.set(chunk, length);
+      length += chunk.length;
+    }
+  } finally {
+    // The original response still needs to be sent before cancellation can settle.
+    void reader.cancel().catch(() => undefined);
+    reader.releaseLock();
+  }
+  return redactSensitiveText(new TextDecoder().decode(prefix.subarray(0, length))).slice(
+    0,
+    MAX_ERROR_LOG_LENGTH,
+  );
+}
 
 /** The HTTP routes over one backend. Lifecycle decisions and locks live here, above it. */
 export function createSupervisor(runtime: ComputerRuntime) {
@@ -105,14 +125,10 @@ export function createSupervisor(runtime: ComputerRuntime) {
   app.use("*", async (c, next) => {
     await next();
     if (c.res.status < 500) return;
-    const route = c.req.routePath;
-    // Desktop failures can echo arbitrary text from inside the sandbox.
-    const detail = desktopErrorRoutes.has(route)
-      ? undefined
-      : redactSensitiveText(await c.res.clone().text()).slice(0, MAX_ERROR_LOG_LENGTH);
+    const detail = await responseErrorDetail(c.res).catch(() => undefined);
     getLogger().error("http.response.failed", {
       "http.method": c.req.method,
-      "http.route": route,
+      "http.route": c.req.routePath,
       "http.status": c.res.status,
       "http.response.detail": detail,
     });
