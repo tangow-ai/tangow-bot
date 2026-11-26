@@ -25,6 +25,9 @@ vi.mock("./messaging-delivery.js", () => ({
   mirrorMessagingOutbound: vi.fn(async () => undefined),
 }));
 
+// None of these jobs boots a computer, so no home ever needs volumes.
+const workers = { provisionHomeVolumes: async () => undefined };
+
 describe("createBackgroundJobHandlers", () => {
   it("delivers directly when shutdown rejects a completed run's mirror job", async () => {
     const enqueueError = new Error("Background job publisher is closing");
@@ -50,6 +53,7 @@ describe("createBackgroundJobHandlers", () => {
       secretStore: {} as unknown as EncryptedSecretStore,
       memory: {} as unknown as MemoryStore,
       memoryProviders: { resolve: vi.fn(async () => null) },
+      workers,
       messaging: {} as unknown as MessagingSurface,
     });
 
@@ -92,6 +96,7 @@ describe("createBackgroundJobHandlers", () => {
       secretStore,
       memory,
       memoryProviders,
+      workers,
       deploymentModelKey: "openrouter-key",
     });
 
@@ -186,6 +191,7 @@ describe("createBackgroundJobHandlers", () => {
         secretStore: {} as unknown as EncryptedSecretStore,
         memory: {} as unknown as MemoryStore,
         memoryProviders: { resolve: vi.fn(async () => null) },
+        workers,
         ...(withArtifacts ? { artifacts } : {}),
       });
 

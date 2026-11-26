@@ -7,6 +7,7 @@ import {
   skillTeachingExpireJob,
   skillTeachingExpireJobKey,
 } from "@tangow/adapter-kit";
+import type { WorkerLifecycle } from "@tangow/adapters";
 import {
   acquireComputerExecutionLease,
   appendRecordingEvent,
@@ -77,6 +78,7 @@ export interface TaughtSkillsDeps {
   sandbox: SandboxProvider;
   home: AgentHomeStore;
   dataDir: string;
+  workers?: Pick<WorkerLifecycle, "provisionHomeVolumes">;
 }
 
 function computerContext(actor: Actor, botId: string, operationId: string): AdapterContext {

@@ -221,6 +221,7 @@ async function main() {
   const jobHandlers = createBackgroundJobHandlers({
     executor,
     prisma,
+    workers: workers.lifecycle,
     sessionLog,
     sandbox,
     home,

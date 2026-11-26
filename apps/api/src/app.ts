@@ -428,6 +428,7 @@ export async function createApp(
   const jobHandlers = createBackgroundJobHandlers({
     executor,
     prisma,
+    workers: workers.lifecycle,
     sessionLog,
     sandbox,
     home,
@@ -469,6 +470,7 @@ export async function createApp(
   const router = createRouter({
     prisma,
     workerLifecycle: workers.lifecycle,
+    workers: workers.lifecycle,
     skillLock,
     events,
     sessionLog,

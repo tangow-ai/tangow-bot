@@ -425,6 +425,7 @@ export async function startWorkerRun<
         secretStore,
         memory: options.memory ?? emptyMemory,
         memoryProviders: options.memoryProviders ?? { resolve: async () => null },
+        workers: current.lifecycle,
       })["history.compact"]({ threadId: thread.id, historyBudget });
     },
     /** Builds a new controller on the same database; the old one's guests are left as they are. */

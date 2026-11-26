@@ -46,6 +46,8 @@ export function createBackgroundJobHandlers(deps: {
   messaging?: MessagingSurface;
   /** Where link preview images are kept; without it `link.preview` jobs do nothing. */
   artifacts?: ArtifactStore;
+  /** Creates a home's missing volumes before `computer.update` boots its new machine. */
+  workers: Pick<WorkerLifecycle, "provisionHomeVolumes">;
   /** Moves Docker homes onto volumes as their computers suspend. */
   homeMove?: { prisma: PrismaClient; workers: WorkerLifecycle; dataDir: string };
 }): BackgroundJobHandlers {

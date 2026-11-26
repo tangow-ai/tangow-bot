@@ -472,6 +472,8 @@ export interface RouterDeps {
   jobs: JobPublisher;
   sandbox: SandboxProvider;
   workerLifecycle?: Pick<WorkerLifecycle, "releaseOwnerWorkers" | "sweepVolumes">;
+  /** Creates a home's missing volumes before its computer boots outside a run. */
+  workers: Pick<WorkerLifecycle, "provisionHomeVolumes">;
   memory: MemoryStore;
   memoryProviders: MemoryProviderResolver;
   home: AgentHomeStore;
@@ -596,6 +598,7 @@ export function createRouter(deps: RouterDeps): Router<typeof appContract, Route
     sandbox: deps.sandbox,
     home: deps.home,
     dataDir: deps.dataDir,
+    workers: deps.workers,
   });
   const agentSkills = createAgentSkillsService(deps.prisma, deps.dataDir, deps.skillLock);
 
