@@ -62,3 +62,32 @@ test("screen connection failures stay visible and can be retried", async ({ page
   await expect(page.locator('iframe[title="Bot screen"]')).toHaveAttribute("src", screenUrl);
   await expect(page.getByRole("alert")).toHaveCount(0);
 });
+
+test("the computer panel shows retry guidance when capacity is full", async ({
+  page,
+}, testInfo) => {
+  await signup(
+    page,
+    `computer-capacity-${Date.now()}@tangow.test`,
+    "password12",
+    "Computer Capacity",
+  );
+  await completeOnboarding(page);
+
+  const message = "No room right now. Try again in a moment.";
+  await page.route("**/rpc/computer/boot", (route) =>
+    route.fulfill({
+      status: 429,
+      json: { json: { defined: false, code: "TOO_MANY_REQUESTS", status: 429, message } },
+    }),
+  );
+  await page.getByTestId("open-computer-panel").click();
+  await page.getByTestId("computer-preview-open").click();
+  const alert = page.getByRole("alert").filter({ hasText: message });
+  await expect(alert).toBeVisible();
+  await captureScreenshot(page, testInfo, "computer-capacity-desktop");
+
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect(alert).toBeVisible();
+  await captureScreenshot(page, testInfo, "computer-capacity-phone");
+});

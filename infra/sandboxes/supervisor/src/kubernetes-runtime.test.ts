@@ -66,7 +66,6 @@ function podApiError(code: number, reason: string, message: string) {
 function fakeCluster() {
   const pods = new Map<string, V1Pod>();
   const state = {
-    quotaExceeded: false,
     /** What a pending pod becomes on its next read. */
     boot: "running" as "running" | "image-missing",
     nextIp: 1,
@@ -79,13 +78,6 @@ function fakeCluster() {
     pods: {
       createNamespacedPod: async ({ body }) => {
         const name = body.metadata!.name!;
-        if (state.quotaExceeded) {
-          throw podApiError(
-            403,
-            "Forbidden",
-            `pods "${name}" is forbidden: exceeded quota: sandboxes`,
-          );
-        }
         // The API refuses a name that is not a DNS label.
         if (!/^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$/.test(name)) {
           throw podApiError(422, "Invalid", "invalid name");
@@ -542,17 +534,25 @@ describe("Kubernetes computers", () => {
     expect(pods.size).toBe(0);
   });
 
-  it("returns the quota refusal from the create", async () => {
-    const cluster = fakeCluster();
-    cluster.state.quotaExceeded = true;
-    const { provision } = kubernetes(cluster);
+  it("returns 429 when the namespace quota refuses a computer and logs the full message", async () => {
+    const sink = createTestSink();
+    const logger = getLogger();
+    installLogger(createLogger({ service: "test", sinks: [sink] }));
+    try {
+      const cluster = fakeCluster();
+      const message = `pods "${pod}" is forbidden: exceeded quota: ${"x".repeat(200)}, used: pods=10, limited: pods=10`;
+      cluster.client.pods.createNamespacedPod = async () => {
+        throw podApiError(403, "Forbidden", message);
+      };
+      const { provision } = kubernetes(cluster);
 
-    const response = await provision();
+      const response = await provision();
 
-    expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({
-      error: `computer pod was refused: pods "${pod}" is forbidden: exceeded quota: sandboxes`,
-    });
+      expect(response.status).toBe(429);
+      expect(sink.events.filter((event) => event.errorDetail === message)).toHaveLength(1);
+    } finally {
+      installLogger(logger);
+    }
   });
 
   it("logs bounded error details for supervisor 5xx responses only", async () => {

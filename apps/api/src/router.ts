@@ -37,6 +37,7 @@ import {
   archiveBot,
   buildModelConnectPlaintext,
   ComputerBusyError,
+  ComputerCapacityError,
   cancelComputerRunWork,
   checkpointAndRecordComputerWorkspace,
   clearInactiveUserComputerControl,
@@ -2120,6 +2121,11 @@ export function createRouter(deps: RouterDeps): Router<typeof appContract, Route
           });
           scheduleComputerSleep(deps.jobs, bot.computer.id);
         } catch (error) {
+          if (error instanceof ComputerCapacityError) {
+            throw new ORPCError("TOO_MANY_REQUESTS", {
+              message: "No room right now. Try again in a moment.",
+            });
+          }
           if (error instanceof ComputerBusyError) {
             throw new ORPCError("CONFLICT", { message: "Computer is busy" });
           }

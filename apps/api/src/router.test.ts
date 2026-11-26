@@ -1,6 +1,10 @@
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { RPCHandler } from "@orpc/server/fetch";
 import {
   COMPUTER_SCREEN_UNAVAILABLE,
+  ComputerCapacityError,
   ComputerScreenUnavailableError,
   createSkillLineSweep,
 } from "@tangow/adapters";
@@ -1173,6 +1177,61 @@ describe("integration setup authorization", () => {
     expect(response.status).toBe(403);
     expect(save).not.toHaveBeenCalled();
   });
+});
+
+it("returns retry guidance when a computer boot reaches provider capacity", async () => {
+  const dataDir = await mkdtemp(path.join(tmpdir(), "computer-capacity-"));
+  try {
+    const computer = {
+      id: "computer-1",
+      kind: "fake",
+      scope: "dedicated",
+      state: "stopped",
+      homeKey: "bot-1",
+      updatedAt: new Date(),
+      providerRef: null,
+    };
+    const prisma = {
+      bot: { findFirst: vi.fn().mockResolvedValueOnce({ id: "bot-1", computer }) },
+      computer: {
+        findUniqueOrThrow: vi.fn().mockResolvedValue(computer),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+    };
+    const handler = new RPCHandler(
+      createRouter({
+        dataDir,
+        prisma,
+        env: { sandboxProvider: "fake" },
+        sandbox: { provision: vi.fn().mockRejectedValue(new ComputerCapacityError()) },
+      } as unknown as RouterDeps),
+    );
+    const { response } = await handler.handle(
+      new Request("https://tangow.test/rpc/computer/boot", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ json: { botId: "bot-1" } }),
+      }),
+      {
+        prefix: "/rpc",
+        context: {
+          actor: {
+            spaceId: "workspace-1",
+            userId: "user-1",
+            email: "user@tangow.test",
+            isDeploymentOwner: true,
+          },
+        },
+      },
+    );
+
+    expect(response.status).toBe(429);
+    expect(await response.json()).toMatchObject({
+      json: { message: "No room right now. Try again in a moment." },
+    });
+  } finally {
+    await rm(dataDir, { recursive: true, force: true });
+  }
 });
 
 describe("interrupted computer reservation release", () => {

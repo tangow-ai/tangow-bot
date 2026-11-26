@@ -185,16 +185,11 @@ export function createSupervisor(runtime: ComputerRuntime) {
         // take the lock so a temporary free slot cannot be stolen by another bot's create.
         // Lock order is always bot → space; never take a bot lock while holding a space lock.
         const createComputer = async () => {
-          try {
-            const created = await runtime.ensureComputer(
-              spec,
-              existing && { ...existing, replace: true },
-            );
-            return c.json({ ...created, image: COMPUTER_IMAGE });
-          } catch (error) {
-            if (error instanceof ComputerLimitError) return c.json({ error: error.message }, 429);
-            throw error;
-          }
+          const created = await runtime.ensureComputer(
+            spec,
+            existing && { ...existing, replace: true },
+          );
+          return c.json({ ...created, image: COMPUTER_IMAGE });
         };
         if (resolveSpaceComputerLimit() > 0) {
           return await withSpaceComputerLock(body.spaceId, createComputer);
@@ -202,6 +197,7 @@ export function createSupervisor(runtime: ComputerRuntime) {
         return await createComputer();
       });
     } catch (error) {
+      if (error instanceof ComputerLimitError) return c.json({ error: error.message }, 429);
       const message = error instanceof Error ? error.message : String(error);
       return c.json({ error: message }, 500);
     }
