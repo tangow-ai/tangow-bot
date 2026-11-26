@@ -71,9 +71,13 @@ The suite covers artifacts and calculations, inbox grounding and injected
 instructions, precise and read-only CRM operations, approval payloads, uncertain
 writes, durable preferences, workspace memory isolation, saved taught playbooks,
 GitHub release monitoring, and a Slack-to-Salesforce-and-Zendesk customer update.
-The recorded baseline above covers the original 15 cases; the current 16-case
-suite also verifies that a real model selects matching records across two local
-service emulators and posts a grounded reply to the originating Slack-like DM.
+The recorded baseline above covers the original 15 cases. Later cases also
+verify that a real model selects matching records across two local service
+emulators and posts a grounded reply to the originating Slack-like DM, and that
+a bot hands a request in a teammate's domain to that teammate while keeping its
+own work (`teammate-owns-request`, `own-role-stays-home`). Run those two after
+changing delegation, helpers or the teammate list in the prompt. Teammates run
+in the trial's space and their tool calls count toward `--max-tool-calls`.
 It does not evaluate visual teaching or native mobile recording.
 
 The other cases run with the default `SKILL_LEARNING`, as a deployment does.

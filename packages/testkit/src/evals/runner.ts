@@ -81,7 +81,8 @@ export async function runTrial(
   const skillCalls: Evidence["skillCalls"] = [];
   const secrets = [options.connection.apiKey ?? "", options.connection.baseUrl ?? ""];
   let phase: FailureCategory = "harness";
-  const seenTools = new Map<string, { name: string }>();
+  const seenTools = new Map<string, { name: string; botId: string | null }>();
+  const teammates = new Map<string, string>();
   let clearedToolCount = 0;
   const seenUsage = new Map<string, { inputTokens: number; outputTokens: number }>();
   // The bots' own tool calls; a helper's run in its own session is not one of them.
@@ -102,11 +103,12 @@ export async function runTrial(
         ...toolCalls(),
         ...(seenTools.size ? { id: { notIn: [...seenTools.keys()] } } : {}),
       },
-      select: { id: true, payload: true },
+      select: { id: true, payload: true, botId: true },
     });
     for (const call of calls)
       seenTools.set(call.id, {
         name: redact(String((call.payload as { name?: string }).name ?? "unknown"), secrets),
+        botId: call.botId,
       });
     return seenTools.size;
   };
@@ -140,13 +142,25 @@ export async function runTrial(
           provider,
           displayName: provider,
         });
-      const bot = await rpc<{ id: string }>(app, cookie, "bots/create", {
-        name: "Assistant",
-        title: "",
-        description: "",
-        instructions: "",
-        notifyOnFinish: false,
-      });
+      const createBot = (name: string, title: string, description: string) =>
+        rpc<{ id: string }>(app, cookie, "bots/create", {
+          name,
+          title,
+          description,
+          instructions: "",
+          notifyOnFinish: false,
+        });
+      const useTrialModel = (id: string) =>
+        rpc(app, cookie, "bots/update", {
+          botId: id,
+          modelProvider: options.connection.provider,
+          modelId: options.connection.modelId,
+        });
+      const bot = await createBot(
+        "Assistant",
+        scenario.bot?.title ?? "",
+        scenario.bot?.description ?? "",
+      );
       botId = bot.id;
       await handles?.prepareBot?.(botId);
       const persistedBot = await prisma.bot.findUniqueOrThrow({
@@ -154,11 +168,13 @@ export async function runTrial(
         select: { userId: true, spaceId: true },
       });
       actors.push({ botId, cookie, ...persistedBot });
-      await rpc(app, cookie, "bots/update", {
-        botId,
-        modelProvider: options.connection.provider,
-        modelId: options.connection.modelId,
-      });
+      await useTrialModel(botId);
+      for (const teammate of scenario.teammates ?? []) {
+        const created = await createBot(teammate.name, teammate.title, teammate.description);
+        await handles?.prepareBot?.(created.id);
+        await useTrialModel(created.id);
+        teammates.set(created.id, teammate.name);
+      }
       messagingLinked = false;
       messagingAddress = `U-eval-${randomUUID()}`;
       messaging.resetWitnesses();
@@ -425,6 +441,14 @@ export async function runTrial(
       select: { status: true, request: true, result: true },
     });
     await captureTools();
+    const teammateRuns = (
+      await prisma.run.findMany({
+        where: { botId: { in: [...teammates.keys()] } },
+        orderBy: { createdAt: "asc" },
+        select: { botId: true, trigger: true },
+      })
+    ).map((run) => ({ name: teammates.get(run.botId)!, trigger: run.trigger }));
+    const ownBotIds = new Set(actors.map((actor) => actor.botId));
     const skillsWritten: Evidence["skillsWritten"] = [];
     const listed = await rpc<Array<{ id: string; source: string }>>(
       app,
@@ -471,6 +495,10 @@ export async function runTrial(
       priorMemory,
       destinationWrites: handles.connector?.records.length ?? 0,
       toolNames: [...seenTools.values()].map((event) => event.name),
+      botToolNames: [...seenTools.values()]
+        .filter((event) => event.botId !== null && ownBotIds.has(event.botId))
+        .map((event) => event.name),
+      teammateRuns,
       messaging: {
         originThreadId: messagingOriginThreadId,
         outbound: structuredClone(messaging.sent),

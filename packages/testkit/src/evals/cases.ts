@@ -29,6 +29,10 @@ export type Evidence = {
   priorMemory: string;
   destinationWrites: number;
   toolNames: string[];
+  /** Tools called by the evaluated bot's own runs; a teammate's calls are not in it. */
+  botToolNames: string[];
+  /** Every persisted run of the case's teammates, oldest first. */
+  teammateRuns: Array<{ name: string; trigger: string }>;
   messaging: {
     originThreadId: string | null;
     outbound: Array<{ threadId: string; body: string; handle: string }>;
@@ -55,6 +59,10 @@ export type EvalCase = {
   /** A run may end waiting on a card the bot showed on its own. */
   expectsCard?: true;
   connections?: string[];
+  /** The evaluated bot's profile; it has none unless the case gives one. */
+  bot?: { title: string; description: string };
+  /** Bots of the same account, created after the evaluated bot and using the same model. */
+  teammates?: Array<{ name: string; title: string; description: string }>;
   taughtSkill?: true;
   /** Runs with SKILL_LEARNING=on: bots keep their methods. */
   skillLearning?: true;
@@ -114,6 +122,16 @@ const CUSTOMER_FALLBACK_TOOLS = new Set([
   "shell",
   "computer_exec",
 ]);
+
+/** A bot doing a teammate's request itself: a helper, the web, the computer or its shell. */
+const DOING_IT_ITSELF =
+  /^(?:run_subagent|web_search|web_fetch|open_path|launch_app|bash|shell|browser_\w+|computer_\w+)$/;
+const ASSISTANT = { title: "Personal assistant", description: "Calendar, email and reminders" };
+const SCOUT = {
+  name: "Scout",
+  title: "Household shopping",
+  description: "Finds products and the best deals, and remembers past purchases",
+};
 
 export const EVAL_CASES: EvalCase[] = [
   {
@@ -681,6 +699,41 @@ export const EVAL_CASES: EvalCase[] = [
       ),
       noWrites(e),
     ],
+  },
+  {
+    id: "teammate-owns-request",
+    purpose:
+      "Hand a request that falls in a teammate's domain to that teammate instead of browsing or starting a helper.",
+    bot: ASSISTANT,
+    teammates: [SCOUT],
+    steps: [{ ask: "What's the best price right now for CR2032 coin batteries?" }],
+    grade: (e) => [
+      check(
+        "teammate-woken",
+        e.teammateRuns.some((run) => run.name === SCOUT.name && run.trigger === "bot_message"),
+      ),
+      check("no-helper-or-browsing", !e.botToolNames.some((name) => DOING_IT_ITSELF.test(name))),
+    ],
+  },
+  {
+    id: "own-role-stays-home",
+    purpose: "Do a request that fits the bot's own role without waking a teammate.",
+    bot: ASSISTANT,
+    teammates: [SCOUT],
+    steps: [{ ask: "Add Dentist Tuesday 3pm to results/agenda.txt in your home." }],
+    files: ["results/agenda.txt"],
+    grade: (e) => {
+      const agenda = file(e, "results/agenda.txt");
+      return [
+        check("teammate-not-woken", e.teammateRuns.length === 0),
+        check(
+          "appointment-saved",
+          /dentist/i.test(agenda) &&
+            /tue/i.test(agenda) &&
+            /\b(?:3(?::00)?\s*p\.?m|15(?:[:h.]00|h)?(?![:h.]?\d))/i.test(agenda),
+        ),
+      ];
+    },
   },
 ];
 

@@ -36,6 +36,8 @@ function evidence(): Evidence {
     priorMemory: "",
     destinationWrites: 0,
     toolNames: [],
+    botToolNames: [],
+    teammateRuns: [],
     messaging: { originThreadId: null, outbound: [] },
     skillsWritten: [],
     skillCalls: [],
@@ -189,9 +191,9 @@ describe("independent outcome graders", () => {
     e.files["results/language.txt"] = "French";
     expect(passes("updated-preference", e)).toBe(false);
   });
-  it("has 25 distinct cases, each rejects empty evidence and a completion claim", () => {
-    expect(EVAL_CASES).toHaveLength(25);
-    expect(new Set(EVAL_CASES.map((c) => c.id)).size).toBe(25);
+  it("has 27 distinct cases, each rejects empty evidence and a completion claim", () => {
+    expect(EVAL_CASES).toHaveLength(27);
+    expect(new Set(EVAL_CASES.map((c) => c.id)).size).toBe(27);
     for (const scenario of EVAL_CASES) {
       expect(
         passes(scenario.id, { ...evidence(), text: "Done! I completed everything." }),
@@ -375,6 +377,74 @@ describe("independent outcome graders", () => {
     expect(passes("routine-proposal-declined", e)).toBe(false);
     e.proposals = [typedOver];
     expect(passes("routine-proposal-declined", e)).toBe(false);
+  });
+});
+
+describe("teammate routing graders", () => {
+  const woken = { name: "Scout", trigger: "bot_message" };
+
+  it("credits a request handed to the teammate that owns it, with no helper or browsing", () => {
+    const e = evidence();
+    e.teammateRuns = [woken];
+    e.botToolNames = ["message_bot", "recall_memory"];
+    expect(grades("teammate-owns-request", e)).toEqual([
+      { id: "teammate-woken", pass: true },
+      { id: "no-helper-or-browsing", pass: true },
+    ]);
+  });
+
+  it("fails when the teammate is never woken, or woken by something other than a bot message", () => {
+    const e = evidence();
+    e.botToolNames = ["message_user"];
+    expect(grades("teammate-owns-request", e)).toEqual([
+      { id: "teammate-woken", pass: false },
+      { id: "no-helper-or-browsing", pass: true },
+    ]);
+    e.teammateRuns = [{ name: "Scout", trigger: "user" }];
+    expect(passes("teammate-owns-request", e)).toBe(false);
+  });
+
+  it.each(["run_subagent", "browser_run", "web_search", "bash"])(
+    "fails when the bot also does the work itself with %s",
+    (tool) => {
+      const e = evidence();
+      e.teammateRuns = [woken];
+      e.botToolNames = ["message_bot", tool];
+      expect(grades("teammate-owns-request", e)).toEqual([
+        { id: "teammate-woken", pass: true },
+        { id: "no-helper-or-browsing", pass: false },
+      ]);
+    },
+  );
+
+  it("credits an appointment the bot saved itself, however the time is written", () => {
+    for (const line of ["Dentist - Tuesday 3pm", "Tue 15:00 dentist", "dentist, tuesday, 3 PM"]) {
+      const e = evidence();
+      e.files["results/agenda.txt"] = line;
+      expect(grades("own-role-stays-home", e), line).toEqual([
+        { id: "teammate-not-woken", pass: true },
+        { id: "appointment-saved", pass: true },
+      ]);
+    }
+  });
+
+  it("fails an own-role request that woke the teammate, left no file or got the slot wrong", () => {
+    const e = evidence();
+    e.files["results/agenda.txt"] = "Dentist Tuesday 3pm";
+    e.teammateRuns = [woken];
+    expect(grades("own-role-stays-home", e)).toEqual([
+      { id: "teammate-not-woken", pass: false },
+      { id: "appointment-saved", pass: true },
+    ]);
+    e.teammateRuns = [];
+    e.files["results/agenda.txt"] = null;
+    expect(passes("own-role-stays-home", e)).toBe(false);
+    e.files["results/agenda.txt"] = "Dentist Wednesday 3pm";
+    expect(passes("own-role-stays-home", e)).toBe(false);
+    e.files["results/agenda.txt"] = "Dentist Tuesday 3:45";
+    expect(passes("own-role-stays-home", e)).toBe(false);
+    e.files["results/agenda.txt"] = "Dentist Tuesday 15:30";
+    expect(passes("own-role-stays-home", e)).toBe(false);
   });
 });
 
