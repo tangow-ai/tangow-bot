@@ -19,6 +19,7 @@ import type {
 import { boundedSandboxCommandTimeoutMs, resolveSupervisorToken } from "@tangow/core";
 import { outgoingCorrelationHeaders } from "@tangow/logging";
 import { z } from "zod";
+import { ComputerCapacityError } from "./computer-lifecycle.js";
 import { ComputerScreenUnavailableError, screenSessionKey } from "./computer-screens.js";
 import {
   boundedComputerActions,
@@ -180,13 +181,12 @@ export class DockerSandboxProvider implements SandboxProvider {
       }),
       signal: context.signal,
     });
+    if (res.status === 429) {
+      cancelResponseBody(res);
+      throw new ComputerCapacityError();
+    }
     if (!res.ok) {
       const detail = await safeBody(res, context.signal);
-      // Match team-screen style: regex on safeBody (already ≤200 chars), not JSON.parse.
-      const limitError = detail.match(/Computer limit reached for space \(max: \d+\)/i)?.[0];
-      if (res.status === 429 && limitError) {
-        throw new Error(limitError);
-      }
       throw new Error(`sandbox provision failed: ${res.status} ${detail}`.trim());
     }
     const body = z

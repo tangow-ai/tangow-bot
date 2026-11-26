@@ -1,118 +1,54 @@
-import { randomUUID } from "node:crypto";
-import { existsSync } from "node:fs";
-import { mkdir } from "node:fs/promises";
-import http from "node:http";
+import type http from "node:http";
 import path from "node:path";
 import type { Duplex } from "node:stream";
-import { Writable } from "node:stream";
 import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
-import {
-  boundedSandboxCommandTimeoutMs,
-  readBoundedJsonResponse,
-  resolveSupervisorToken,
-  SANDBOX_SKILL_MOUNTS,
-} from "@tangow/core";
+import { boundedSandboxCommandTimeoutMs, resolveSupervisorToken } from "@tangow/core";
 import { loadRootEnv } from "@tangow/core/node/load-root-env";
-import { getLogger, SERVICE_NAMES } from "@tangow/logging";
+import { getLogger, redactSensitiveText, SERVICE_NAMES } from "@tangow/logging";
 import { createRootLogger } from "@tangow/logging/axiom";
 import { requestLogging } from "@tangow/logging/hono";
-import Docker from "dockerode";
 import type { MiddlewareHandler } from "hono";
 import { Hono } from "hono";
 import { bodyLimit } from "hono/body-limit";
 import { z } from "zod";
+import type { ComputerRuntime, ComputerSpec } from "./computer-runtime.js";
 import {
-  assertVolumeSubpathSupport,
-  COMPUTER_GID,
+  ComputerIdentityError,
+  ComputerLimitError,
+  ComputerNotFoundError,
+} from "./computer-runtime.js";
+import { createComputerSession } from "./computer-session.js";
+import {
   COMPUTER_IMAGE,
-  COMPUTER_UID,
-  COMPUTER_USER,
-  computerHomeStorage,
-  computerNetworkNameFor,
-  computerNetworkNamesForCleanup,
   computerResourceLimits,
-  computerVolumeHome,
-  computerWorkspace,
-  containerCreateOptions,
-  containerNameFor,
-  controlPortPublicationMatches,
-  homeVolumeMatches,
-  hostComputerUser,
-  legacyNetworkOwnedSolelyBy,
-  publishedLoopbackControlHostPort,
-  resolveComputerControlEndpoint,
-  resolveScreenNetworkMode,
-  resolveScreenPublishTarget,
   resolveSpaceComputerLimit,
-  resolveTeamScreenLimit,
-  SCREEN_HOST,
+  resolveSupervisorBackend,
   screenPorts,
-  screenUrlFor,
-  screenUrlWithToken,
-  volumeHomeMatches,
-  WORKER_GUEST_ENTRY,
-  WORKER_NETWORK,
-  workerCreateOptions,
-  workerMounts,
-  xdotoolCommand,
 } from "./computer-spec.js";
-import { assertComputerHomeWritable } from "./home-ownership.js";
+import { createDockerComputerRuntime } from "./docker-runtime.js";
+import { createKubernetesComputerRuntime } from "./kubernetes-runtime.js";
 import { syncManagedSkills } from "./managed-skills.js";
-import type { ScreenAssignment } from "./supervisor-logic.js";
+import { registerScreenRoutes } from "./screen-routes.js";
 import {
   assertRequestIdentity,
-  attemptComputerControl,
-  browserProfilePathForScreen,
-  ComputerControlUnavailableError,
   clearComputerScreenRegistry,
   commandWorkingDir,
-  computerActionSchema,
-  computerControlTimeoutMs,
-  containerActionSteps,
-  demuxDockerStream,
-  ensureScreenCommand,
-  hasComputerIdentity,
   hasValidBearerToken,
-  interactiveScreenCommand,
-  isComputerControlUnavailable,
-  keepReleasedScreen,
-  nextScreenIndex,
   normalizeWorkspaceRelative,
-  parseObservation,
-  preferComputerControl,
-  releaseAssignedScreen,
-  resetManagedScreensCommand,
-  sandboxCommandTimedOut,
-  sandboxTimeoutCommand,
-  screenReleaseStopCommand,
-  shouldReplayComputerActions,
-  stopExtraScreenCommand,
   stopScreensCommand,
-  teardownReleasedScreen,
-  toSandboxInput,
   withKeyedLock,
   workspaceTarget,
 } from "./supervisor-logic.js";
 
 loadRootEnv();
 
-const dockerSocketPath = resolveDockerSocketPath();
-const docker = dockerSocketPath ? new Docker({ socketPath: dockerSocketPath }) : new Docker();
 const computerContext =
   process.env.TANGOW_COMPUTER_CONTEXT ??
   path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../computer");
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 const dataDir = path.resolve(repositoryRoot, process.env.DATA_DIR ?? "./data");
-let imageReady: Promise<void> | undefined;
-let supervisorInfo: Docker.ContainerInspectInfo | undefined;
 const supervisorToken = resolveSupervisorToken(process.env);
-const screenNetworkMode = resolveScreenNetworkMode(process.env.SANDBOX_SCREEN_NETWORK);
-const teamScreenLimit = resolveTeamScreenLimit();
-// Host-run supervisors on Docker Desktop (macOS/Windows) cannot reach container
-// IPs, so computer control must use a published loopback port instead.
-const controlViaLoopback = process.env.SANDBOX_CONTROL_VIA_LOOPBACK === "true";
-const computerScreens = new Map<string, Map<string, ScreenAssignment>>();
 
 export const MAX_SUPERVISOR_REQUEST_BYTES = 1024 * 1024;
 export const MAX_SUPERVISOR_FILE_REQUEST_BYTES = 16 * 1024 * 1024 + 64 * 1024;
@@ -131,265 +67,178 @@ const limitSupervisorRequestBody: MiddlewareHandler = async (c, next) => {
   })(c, next);
 };
 
-const app = new Hono();
-
-export { app as supervisorApp };
-
-app.use("*", requestLogging());
-
-export function resolveDockerSocketPath(
-  env: NodeJS.ProcessEnv = process.env,
-  platform: NodeJS.Platform = process.platform,
-) {
-  if (env.DOCKER_HOST) return undefined;
-  return (
-    env.DOCKER_SOCKET ?? (platform === "win32" ? "//./pipe/docker_engine" : "/var/run/docker.sock")
-  );
-}
-
-app.get("/health", (c) => c.json({ ok: true, image: COMPUTER_IMAGE }));
-
-app.use("/computers", async (c, next) => {
-  if (!hasValidBearerToken(c.req.header("authorization"), supervisorToken)) {
-    return c.json({ error: "unauthorized" }, 401);
-  }
-  await next();
-});
-app.use("/computers/*", async (c, next) => {
-  if (!hasValidBearerToken(c.req.header("authorization"), supervisorToken)) {
-    return c.json({ error: "unauthorized" }, 401);
-  }
-  await next();
-});
-app.use("/computers", limitSupervisorRequestBody);
-app.use("/computers/*", limitSupervisorRequestBody);
-
-app.get("/computers/release", async (c) => {
-  const image = await docker.getImage(COMPUTER_IMAGE).inspect();
-  return c.json({ releaseRef: image.Id });
-});
-
 const PathSegment = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/);
+const MAX_ERROR_LOG_LENGTH = 200;
 
-/** Computers and workers write the same volumes, so both run as this user. */
-function sandboxUser(supervisorContainer: unknown): string {
-  return supervisorContainer ? COMPUTER_USER : hostComputerUser();
-}
-
-/**
- * Skills mounts are derived from ids + dataDir, never from client paths (design Q10). A shared
- * bot's computer mounts the bot's copy, the same whoever runs it; any other the person's library.
- */
-export function skillsBindsFor(
-  dataDir: string,
-  owner: { spaceId: string; userId: string; skillsBotId?: string },
-  translate: (p: string) => string,
-): string[] {
-  const skills = owner.skillsBotId
-    ? path.join(dataDir, "skills", "bot", owner.spaceId, owner.skillsBotId)
-    : path.join(dataDir, "skills", "user", owner.spaceId, owner.userId);
-  return [
-    `${translate(skills)}:${SANDBOX_SKILL_MOUNTS.user}:ro`,
-    `${translate(path.join(dataDir, "managed-skills"))}:${SANDBOX_SKILL_MOUNTS.managed}:ro`,
-  ];
-}
-
-app.post("/computers", async (c) => {
-  const body = z
-    .object({
-      botId: z.string().min(1),
-      homePath: z.string().min(1),
-      spaceId: PathSegment,
-      userId: PathSegment,
-      skillsBotId: PathSegment.optional(),
-      volumeHome: z
-        .object({
-          root: z.string(),
-          mounts: z
-            .array(z.object({ volume: z.string(), path: z.string() }))
-            .min(1)
-            .max(64),
-        })
-        .optional(),
-    })
-    .parse(await c.req.json());
+async function responseErrorDetail(response: Response): Promise<string> {
+  const body = await response.clone().text();
+  let detail = body;
   try {
-    assertRequestIdentity(c.req.header("x-tangow-bot-id"), c.req.header("x-tangow-space-id"), {
-      botId: body.botId,
-      spaceId: body.spaceId,
+    const payload: unknown = JSON.parse(body);
+    detail =
+      payload &&
+      typeof payload === "object" &&
+      "error" in payload &&
+      typeof payload.error === "string"
+        ? payload.error
+        : "";
+  } catch {
+    // Hono can return plain-text errors.
+  }
+  return redactSensitiveText(detail).slice(0, MAX_ERROR_LOG_LENGTH);
+}
+
+/** The HTTP routes over one backend. Lifecycle decisions and locks live here, above it. */
+export function createSupervisor(runtime: ComputerRuntime) {
+  const botLifecycleLocks = new Map<string, Promise<unknown>>();
+  const spaceComputerLocks = new Map<string, Promise<unknown>>();
+
+  // Serialize create/delete for one bot so DELETE cannot remove a per-bot network
+  // while POST still needs it between ensureBotNetwork and container attach.
+  const withBotLifecycleLock = <T>(botId: string, task: () => Promise<T>) =>
+    withKeyedLock(botLifecycleLocks, botId, task);
+  // Serialize per-space create admission (count + create) so different bots cannot
+  // race past SANDBOX_MAX_COMPUTERS_PER_SPACE. Callers must already hold the bot
+  // lifecycle lock; never acquire a bot lock while holding this lock.
+  const withSpaceComputerLock = <T>(spaceId: string, task: () => Promise<T>) =>
+    withKeyedLock(spaceComputerLocks, spaceId, task);
+
+  const session = createComputerSession(runtime);
+  const {
+    computerScreens,
+    withComputerScreenLock,
+    managedComputer,
+    runCommand,
+    writeComputerFile,
+  } = session;
+
+  const app = new Hono();
+
+  app.use("*", requestLogging());
+  app.use("*", async (c, next) => {
+    await next();
+    if (c.res.status < 500) return;
+    const detail = await responseErrorDetail(c.res).catch(() => undefined);
+    getLogger().error("http.response.failed", {
+      "http.method": c.req.method,
+      "http.route": c.req.routePath,
+      "http.status": c.res.status,
+      "http.response.detail": detail,
     });
-    return await withBotLifecycleLock(body.botId, async () => {
-      await ensureComputerImage();
-      const runtimeInfo = await inspectSupervisorContainer();
-      const networkMode = computerNetworkName(body.botId, runtimeInfo);
-      const serviceHomePath = path.resolve(body.homePath);
-      assertBotHomePath(serviceHomePath, body.botId);
-      const hostUid = process.getuid?.();
-      const hostGid = process.getgid?.();
-      // The API normally creates the home. A non-root standalone supervisor may
-      // do so as the same user, but a root supervisor must never create or chown
-      // user-controlled paths at runtime; Compose data-init handles legacy data.
-      if (hostUid !== 0) await mkdir(serviceHomePath, { recursive: true });
-      const storage = computerHomeStorage(serviceHomePath, dataDir, runtimeInfo);
-      // The volume directories are the provider's: the supervisor never creates or deletes them.
-      const volumeHome = body.volumeHome
-        ? computerVolumeHome(body.volumeHome, dataDir, runtimeInfo)
-        : undefined;
-      if (storage.homeVolume) {
-        assertVolumeSubpathSupport((await docker.version()).ApiVersion);
-      }
-      const computerUser = sandboxUser(runtimeInfo);
-      // Bind sources are created by the worker before provision; a root supervisor never mkdirs them.
-      const skillsBinds = skillsBindsFor(dataDir, body, (p) => hostHomePath(p, runtimeInfo));
-      const existing = await findBotContainer(body.botId, body.spaceId);
-      if (existing) {
-        const info = await existing.inspect();
-        const desired = await docker.getImage(COMPUTER_IMAGE).inspect();
-        const controlPublishOk = controlPortPublicationMatches(
-          info.HostConfig.PortBindings,
-          controlViaLoopback,
-        );
-        if (
-          info.Image === desired.Id &&
-          (!networkMode || info.HostConfig.NetworkMode === networkMode) &&
-          info.Config.User === computerUser &&
-          skillsBinds.every((bind) => info.HostConfig.Binds?.includes(bind)) &&
-          controlPublishOk &&
-          (!storage.homeVolume || homeVolumeMatches(info.HostConfig.Mounts, storage.homeVolume)) &&
-          volumeHomeMatches(info.Config.Labels, volumeHome)
-        ) {
-          if (!info.State.Running) await existing.start();
-          return c.json({
-            id: existing.id,
-            image: COMPUTER_IMAGE,
-            releaseRef: info.Image,
-            resumed: true,
-          });
-        }
-      }
+  });
 
-      // Under a space cap, serialize count+create and incompatible replace (remove+create)
-      // per space inside the bot lock. Replacements skip the admission check but still
-      // take the lock so a temporary free slot cannot be stolen by another bot's create.
-      // Lock order is always bot → space; never take a bot lock while holding a space lock.
-      const spaceComputerLimit = resolveSpaceComputerLimit();
-      const createComputer = async () => {
-        if (!existing && spaceComputerLimit > 0) {
-          const currentCount = await countSpaceContainers(body.spaceId);
-          if (currentCount >= spaceComputerLimit) {
-            return c.json(
-              { error: `Computer limit reached for space (max: ${spaceComputerLimit})` },
-              429,
-            );
-          }
+  app.get("/health", (c) => c.json({ ok: true, image: COMPUTER_IMAGE }));
+
+  app.use("/computers", async (c, next) => {
+    if (!hasValidBearerToken(c.req.header("authorization"), supervisorToken)) {
+      return c.json({ error: "unauthorized" }, 401);
+    }
+    await next();
+  });
+  app.use("/computers/*", async (c, next) => {
+    if (!hasValidBearerToken(c.req.header("authorization"), supervisorToken)) {
+      return c.json({ error: "unauthorized" }, 401);
+    }
+    await next();
+  });
+  app.use("/computers", limitSupervisorRequestBody);
+  app.use("/computers/*", limitSupervisorRequestBody);
+
+  app.get("/computers/release", async (c) => c.json({ releaseRef: await runtime.release() }));
+
+  app.post("/computers", async (c) => {
+    const body = z
+      .object({
+        botId: z.string().min(1),
+        homePath: z.string().min(1),
+        spaceId: PathSegment,
+        userId: PathSegment,
+        skillsBotId: PathSegment.optional(),
+        volumeHome: z
+          .object({
+            root: z.string(),
+            mounts: z
+              .array(z.object({ volume: z.string(), path: z.string() }))
+              .min(1)
+              .max(64),
+          })
+          .optional(),
+      })
+      .parse(await c.req.json());
+    try {
+      assertRequestIdentity(c.req.header("x-tangow-bot-id"), c.req.header("x-tangow-space-id"), {
+        botId: body.botId,
+        spaceId: body.spaceId,
+      });
+      return await withBotLifecycleLock(body.botId, async () => {
+        const spec: ComputerSpec = { ...body, homePath: path.resolve(body.homePath) };
+        assertBotHomePath(spec.homePath, body.botId);
+        const existing = await runtime.getComputer({ spec });
+        // A computer from another release or spec is replaced; anything else is resumed.
+        if (existing?.matchesSpec && existing.releaseRef === (await runtime.release())) {
+          const resumed = await runtime.ensureComputer(spec, { ...existing, replace: false });
+          return c.json({ ...resumed, image: COMPUTER_IMAGE });
         }
 
-        // Existing containers with the current image already use the selected user.
-        // Before replacing or creating a container, validate its home without
-        // privileged filesystem mutations that could escape via concurrent renames.
-        // Match hostComputerUser(): missing/root host identity falls back to 1000:1000.
-        const effectiveUid =
-          runtimeInfo || hostUid === undefined || hostGid === undefined || hostUid === 0
-            ? COMPUTER_UID
-            : hostUid;
-        const effectiveGid =
-          runtimeInfo || hostUid === undefined || hostGid === undefined || hostUid === 0
-            ? COMPUTER_GID
-            : hostGid;
-        await assertComputerHomeWritable(serviceHomePath, effectiveUid, effectiveGid);
-        const name = containerNameFor(body.botId);
-        const createdNetwork =
-          screenNetworkMode === "internal" ? undefined : await ensureBotNetwork(body.botId);
-        let container: Docker.Container | undefined;
-        try {
-          if (existing) {
-            await existing.remove({ force: true }).catch(() => undefined);
-          }
-          container = await docker.createContainer(
-            containerCreateOptions({
-              name,
-              image: COMPUTER_IMAGE,
-              botId: body.botId,
-              spaceId: body.spaceId,
-              ...storage,
-              volumeHome,
-              user: computerUser,
-              networkMode,
-              controlToken: randomUUID(),
-              skillsBinds,
-              publishControlPort: controlViaLoopback,
-            }),
+        // Under a space cap, serialize count+create and incompatible replace (remove+create)
+        // per space inside the bot lock. Replacements skip the admission check but still
+        // take the lock so a temporary free slot cannot be stolen by another bot's create.
+        // Lock order is always bot → space; never take a bot lock while holding a space lock.
+        const createComputer = async () => {
+          const created = await runtime.ensureComputer(
+            spec,
+            existing && { ...existing, replace: true },
           );
-          await container.start();
-        } catch (error) {
-          // Never force removal: a lost start response may hide a running computer.
-          // Docker also refuses network removal while any endpoint is attached.
-          await container?.remove().catch(() => undefined);
-          await createdNetwork?.remove().catch(() => undefined);
-          throw error;
+          return c.json({ ...created, image: COMPUTER_IMAGE });
+        };
+        if (resolveSpaceComputerLimit() > 0) {
+          return await withSpaceComputerLock(body.spaceId, createComputer);
         }
-        return c.json({
-          id: container.id,
-          image: COMPUTER_IMAGE,
-          releaseRef: (await container.inspect()).Image,
-          resumed: false,
-        });
-      };
+        return await createComputer();
+      });
+    } catch (error) {
+      if (error instanceof ComputerLimitError) return c.json({ error: error.message }, 429);
+      const message = error instanceof Error ? error.message : String(error);
+      return c.json({ error: message }, 500);
+    }
+  });
 
-      if (spaceComputerLimit > 0) {
-        return await withSpaceComputerLock(body.spaceId, createComputer);
-      }
-      return await createComputer();
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return c.json({ error: message }, 500);
-  }
-});
+  app.get("/computers/:id", async (c) => {
+    const id = c.req.param("id");
+    try {
+      const computer = await managedComputer(
+        id,
+        c.req.header("x-tangow-bot-id"),
+        c.req.header("x-tangow-space-id"),
+      );
+      return c.json({ id, running: computer.running, image: computer.image });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return c.json({ error: message }, 404);
+    }
+  });
 
-app.get("/computers/:id", async (c) => {
-  const id = c.req.param("id");
-  try {
-    const { info } = await managedContainer(
-      id,
-      c.req.header("x-tangow-bot-id"),
-      c.req.header("x-tangow-space-id"),
-    );
-    return c.json({
-      id,
-      running: Boolean(info.State.Running),
-      image: info.Config.Image,
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return c.json({ error: message }, 404);
-  }
-});
-
-app.post("/computers/:id/exec", async (c) => {
-  const id = c.req.param("id");
-  const body = z
-    .object({
-      argv: z.array(z.string()),
-      cwd: z.string().optional(),
-      env: z.record(z.string(), z.string()).optional(),
-      timeoutMs: z.number().int().positive().optional(),
-    })
-    .parse(await c.req.json());
-  try {
-    const { container, info } = await managedContainer(
-      id,
-      c.req.header("x-tangow-bot-id"),
-      c.req.header("x-tangow-space-id"),
-    );
-    const screenId = c.req.header("x-tangow-screen-id") || c.req.header("x-tangow-bot-id") || id;
-    const screenIndex = computerScreens.get(id)?.get(screenId)?.index ?? 0;
-    const layout = screenPorts(screenIndex);
-    const result = await runContainerCommand(
-      container,
-      body.argv.length ? body.argv : ["/bin/echo", "ready"],
-      {
-        workingDir: commandWorkingDir(body.cwd, computerWorkspace(info.Config.Labels)),
+  app.post("/computers/:id/exec", async (c) => {
+    const id = c.req.param("id");
+    const body = z
+      .object({
+        argv: z.array(z.string()),
+        cwd: z.string().optional(),
+        env: z.record(z.string(), z.string()).optional(),
+        timeoutMs: z.number().int().positive().optional(),
+      })
+      .parse(await c.req.json());
+    try {
+      const computer = await managedComputer(
+        id,
+        c.req.header("x-tangow-bot-id"),
+        c.req.header("x-tangow-space-id"),
+      );
+      const screenId = c.req.header("x-tangow-screen-id") || c.req.header("x-tangow-bot-id") || id;
+      const screenIndex = computerScreens.get(id)?.get(screenId)?.index ?? 0;
+      const layout = screenPorts(screenIndex);
+      const result = await runCommand(id, body.argv.length ? body.argv : ["/bin/echo", "ready"], {
+        workingDir: commandWorkingDir(body.cwd, computer.workspace),
         env: [
           `DISPLAY=${layout.display}`,
           "HOME=/home/tangow",
@@ -399,696 +248,257 @@ app.post("/computers/:id/exec", async (c) => {
           ...Object.entries(body.env ?? {}).map(([k, v]) => `${k}=${v}`),
         ],
         timeoutMs: boundedSandboxCommandTimeoutMs(body.timeoutMs),
-      },
-    );
-    return c.json(result);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return c.json({ stdout: "", stderr: message, code: 1 }, 200);
-  }
-});
-
-app.post("/computers/:id/browser", async (c) => {
-  // Read eagerly so the Node HTTP adapter observes disconnects during screen setup too.
-  const signal = c.req.raw.signal;
-  signal.throwIfAborted();
-  const body = z
-    .discriminatedUnion("command", [
-      z.object({
-        command: z.literal("navigate"),
-        url: z
-          .string()
-          .url()
-          .max(8192)
-          .refine((value) => {
-            if (!URL.canParse(value)) return false;
-            const url = new URL(value);
-            return /^https?:$/.test(url.protocol) && !url.username && !url.password;
-          }),
-      }),
-      z.object({ command: z.literal("snapshot") }),
-      z.object({
-        command: z.literal("act"),
-        actions: z
-          .array(
-            z.discriminatedUnion("kind", [
-              z.object({ kind: z.literal("click"), ref: z.string().min(1).max(200) }),
-              z.object({
-                kind: z.enum(["fill", "type"]),
-                ref: z.string().min(1).max(200),
-                text: z.string().max(32_000),
-              }),
-            ]),
-          )
-          .min(1)
-          .max(24),
-      }),
-    ])
-    .parse(await c.req.json());
-  try {
-    const { container, layout } = await managedScreen(
-      c.req.param("id"),
-      c.req.header("x-tangow-bot-id"),
-      c.req.header("x-tangow-space-id"),
-      c.req.header("x-tangow-screen-id"),
-      c.req.header("x-tangow-screen-lease-id"),
-    );
-    const result = await runContainerCommand(
-      container,
-      ["/usr/local/bin/tangow-page-browser", body.command, JSON.stringify(body)],
-      {
-        env: [
-          `DISPLAY=${layout.display}`,
-          `TANGOW_CDP_PORT=${layout.debugPort}`,
-          "HOME=/home/tangow",
-          "TANGOW_BROWSER_WATCH_STDIN=1",
-        ],
-        timeoutMs: 25_000,
-        signal,
-      },
-    );
-    // A nonzero exit or malformed output cannot establish which mutations ran.
-    if (result.code !== 0 || Buffer.byteLength(result.stdout) > 512 * 1024) {
-      throw new Error("Page browser unavailable or interrupted");
+      });
+      return c.json(result);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return c.json({ stdout: "", stderr: message, code: 1 }, 200);
     }
-    return c.json(JSON.parse(result.stdout));
-  } catch {
-    return c.json({
-      ok: false,
-      fallback: "computer_act",
-      uncertain: body.command === "act",
-      error: "Page browser unavailable or interrupted. Inspect the screen before continuing.",
-    });
-  }
-});
+  });
 
-app.post("/computers/:id/observe", async (c) => {
-  try {
-    const { container, info, layout, browserProfile } = await managedScreen(
-      c.req.param("id"),
-      c.req.header("x-tangow-bot-id"),
-      c.req.header("x-tangow-space-id"),
-      c.req.header("x-tangow-screen-id"),
-      c.req.header("x-tangow-screen-lease-id"),
-    );
-    const control = computerControlEndpoint(info);
-    const observation = await preferComputerControl(
-      control
-        ? async () => {
-            const result = await controlDesktop(
-              control,
-              [],
-              layout.display,
-              browserProfile,
-              true,
-              0,
-            );
-            if (!result.observation) throw new Error("computer control returned no observation");
-            return result.observation;
-          }
-        : undefined,
-      () => observeContainer(container, layout.display),
-    );
-    return c.json(observation);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return c.json({ error: message }, 500);
-  }
-});
-
-app.post("/computers/:id/actions", async (c) => {
-  const body = z
-    .object({
-      actions: z.array(computerActionSchema).max(24),
-      observe: z.boolean().optional(),
-      settleMs: z.number().min(0).max(5_000).optional(),
-    })
-    .parse(await c.req.json());
-  try {
-    const { container, info, layout, browserProfile } = await managedScreen(
-      c.req.param("id"),
-      c.req.header("x-tangow-bot-id"),
-      c.req.header("x-tangow-space-id"),
-      c.req.header("x-tangow-screen-id"),
-      c.req.header("x-tangow-screen-lease-id"),
-    );
-    const control = computerControlEndpoint(info);
-    const workspace = computerWorkspace(info.Config.Labels);
-    const attempt = await attemptComputerControl(
-      control
-        ? () =>
-            controlDesktop(
-              control,
-              body.actions,
-              layout.display,
-              browserProfile,
-              body.observe !== false,
-              body.settleMs ?? 0,
-              workspace,
-            )
-        : undefined,
-    );
-    if (attempt.status === "failed") throw attempt.error;
-    const controlResult = attempt.status === "ok" ? attempt.value : undefined;
-    if (shouldReplayComputerActions(attempt) && body.actions.length)
-      await applyContainerActions(
-        container,
-        body.actions,
-        layout.display,
-        browserProfile,
-        workspace,
+  app.get("/computers/:id/files", async (c) => {
+    try {
+      const id = c.req.param("id");
+      const computer = await managedComputer(
+        id,
+        c.req.header("x-tangow-bot-id"),
+        c.req.header("x-tangow-space-id"),
       );
-    if (shouldReplayComputerActions(attempt) && body.settleMs)
-      await new Promise((resolve) => setTimeout(resolve, body.settleMs));
-    return c.json({
-      completed: controlResult?.completed ?? body.actions.length,
-      ...(body.observe === false
-        ? {}
-        : {
-            observation:
-              controlResult?.observation ?? (await observeContainer(container, layout.display)),
-          }),
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return c.json({ error: message }, 500);
-  }
-});
-
-app.get("/computers/:id/files", async (c) => {
-  try {
-    const { container, info } = await managedContainer(
-      c.req.param("id"),
-      c.req.header("x-tangow-bot-id"),
-      c.req.header("x-tangow-space-id"),
-    );
-    const relative = normalizeWorkspaceRelative(c.req.query("path") ?? "");
-    const target = workspaceTarget(relative, computerWorkspace(info.Config.Labels));
-    if (c.req.query("mode") === "read") {
-      const maxBytesRaw = c.req.query("maxBytes");
-      const maxBytes = maxBytesRaw === undefined ? undefined : Number(maxBytesRaw);
-      if (maxBytes !== undefined && (!Number.isSafeInteger(maxBytes) || maxBytes < 0)) {
-        return c.json({ error: "invalid maxBytes" }, 400);
+      const relative = normalizeWorkspaceRelative(c.req.query("path") ?? "");
+      const target = workspaceTarget(relative, computer.workspace);
+      if (c.req.query("mode") === "read") {
+        const maxBytesRaw = c.req.query("maxBytes");
+        const maxBytes = maxBytesRaw === undefined ? undefined : Number(maxBytesRaw);
+        if (maxBytes !== undefined && (!Number.isSafeInteger(maxBytes) || maxBytes < 0)) {
+          return c.json({ error: "invalid maxBytes" }, 400);
+        }
+        const script = [
+          "import base64, sys",
+          "target, limit = sys.argv[1], int(sys.argv[2])",
+          "with open(target, 'rb') as source:",
+          "  content = source.read() if limit < 0 else source.read(limit + 1)",
+          "if limit >= 0 and len(content) > limit: sys.exit(42)",
+          "sys.stdout.write(base64.b64encode(content).decode())",
+        ].join("\n");
+        const result = await runCommand(id, [
+          "python3",
+          "-c",
+          script,
+          target,
+          String(maxBytes ?? -1),
+        ]);
+        if (result.code === 42) {
+          return c.json({ error: `computer file exceeds ${maxBytes} bytes` }, 413);
+        }
+        if (result.code !== 0) return c.json({ error: result.stderr || "file not found" }, 404);
+        return c.json({ content: result.stdout.trim() });
       }
       const script = [
-        "import base64, sys",
-        "target, limit = sys.argv[1], int(sys.argv[2])",
-        "with open(target, 'rb') as source:",
-        "  content = source.read() if limit < 0 else source.read(limit + 1)",
-        "if limit >= 0 and len(content) > limit: sys.exit(42)",
-        "sys.stdout.write(base64.b64encode(content).decode())",
+        "import json, os, stat, sys",
+        "root, rel = sys.argv[1], sys.argv[2]",
+        "out = []",
+        "for item in os.scandir(root):",
+        "  if item.is_symlink(): continue",
+        "  info = item.stat(follow_symlinks=False)",
+        "  child = '/'.join(x for x in (rel, item.name) if x)",
+        "  out.append({'path': child, 'kind': 'dir' if item.is_dir(follow_symlinks=False) else 'file', 'size': info.st_size, **({'executable': True} if item.is_file(follow_symlinks=False) and bool(info.st_mode & stat.S_IXUSR) else {})})",
+        "print(json.dumps(sorted(out, key=lambda x: x['path'])))",
       ].join("\n");
-      const result = await runContainerCommand(container, [
-        "python3",
-        "-c",
-        script,
-        target,
-        String(maxBytes ?? -1),
-      ]);
-      if (result.code === 42) {
-        return c.json({ error: `computer file exceeds ${maxBytes} bytes` }, 413);
-      }
-      if (result.code !== 0) return c.json({ error: result.stderr || "file not found" }, 404);
-      return c.json({ content: result.stdout.trim() });
+      const result = await runCommand(id, ["python3", "-c", script, target, relative]);
+      if (result.code !== 0) return c.json({ error: result.stderr || "directory not found" }, 404);
+      return c.json(JSON.parse(result.stdout));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return c.json({ error: message }, 400);
     }
-    const script = [
-      "import json, os, stat, sys",
-      "root, rel = sys.argv[1], sys.argv[2]",
-      "out = []",
-      "for item in os.scandir(root):",
-      "  if item.is_symlink(): continue",
-      "  info = item.stat(follow_symlinks=False)",
-      "  child = '/'.join(x for x in (rel, item.name) if x)",
-      "  out.append({'path': child, 'kind': 'dir' if item.is_dir(follow_symlinks=False) else 'file', 'size': info.st_size, **({'executable': True} if item.is_file(follow_symlinks=False) and bool(info.st_mode & stat.S_IXUSR) else {})})",
-      "print(json.dumps(sorted(out, key=lambda x: x['path'])))",
-    ].join("\n");
-    const result = await runContainerCommand(container, [
-      "python3",
-      "-c",
-      script,
-      target,
-      relative,
-    ]);
-    if (result.code !== 0) return c.json({ error: result.stderr || "directory not found" }, 404);
-    return c.json(JSON.parse(result.stdout));
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return c.json({ error: message }, 400);
-  }
-});
+  });
 
-app.post("/computers/:id/files", async (c) => {
-  const body = z
-    .object({
-      path: z.string(),
-      content: z.string().max(16 * 1024 * 1024),
-      executable: z.boolean().optional(),
-    })
-    .parse(await c.req.json());
-  try {
-    const { container, info } = await managedContainer(
-      c.req.param("id"),
-      c.req.header("x-tangow-bot-id"),
-      c.req.header("x-tangow-space-id"),
-    );
-    const target = workspaceTarget(
-      normalizeWorkspaceRelative(body.path),
-      computerWorkspace(info.Config.Labels),
-    );
-    await writeContainerFile(
-      container,
-      target,
-      Buffer.from(body.content, "base64"),
-      body.executable,
-    );
-    return c.json({ ok: true });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return c.json({ error: message }, 400);
-  }
-});
+  app.post("/computers/:id/files", async (c) => {
+    const body = z
+      .object({
+        path: z.string(),
+        content: z.string().max(16 * 1024 * 1024),
+        executable: z.boolean().optional(),
+      })
+      .parse(await c.req.json());
+    try {
+      const id = c.req.param("id");
+      const computer = await managedComputer(
+        id,
+        c.req.header("x-tangow-bot-id"),
+        c.req.header("x-tangow-space-id"),
+      );
+      const target = workspaceTarget(normalizeWorkspaceRelative(body.path), computer.workspace);
+      await writeComputerFile(id, target, Buffer.from(body.content, "base64"), body.executable);
+      return c.json({ ok: true });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      return c.json({ error: message }, 400);
+    }
+  });
 
-app.get("/computers/:id/screen", async (c) => {
-  const id = c.req.param("id");
-  try {
-    const { container, info, layout, viewToken } = await managedScreen(
-      id,
-      c.req.header("x-tangow-bot-id"),
-      c.req.header("x-tangow-space-id"),
-      c.req.header("x-tangow-screen-id"),
-      c.req.header("x-tangow-screen-lease-id"),
-    );
-    const screenUrl = await publishedScreenUrl(container, info, layout.viewPort);
-    return c.redirect(screenUrlWithToken(screenUrl, viewToken));
-  } catch {
-    return c.json({ error: "computer not found" }, 404);
-  }
-});
+  registerScreenRoutes(app, session);
 
-app.post("/computers/:id/screen-mode", async (c) => {
-  const body = z
-    .object({
-      interactive: z.boolean(),
-      controlToken: z
-        .string()
-        .regex(/^[A-Za-z0-9_-]{1,128}$/)
-        .optional(),
-      revokeControl: z.boolean().optional(),
-    })
-    .refine((value) => !value.interactive || value.controlToken, {
-      message: "interactive screen requires a control token",
-    })
-    .parse(await c.req.json());
-  try {
+  app.post("/computers/:id/stop", async (c) => {
     const id = c.req.param("id");
     const botId = c.req.header("x-tangow-bot-id");
     const spaceId = c.req.header("x-tangow-space-id");
-    const screenId = c.req.header("x-tangow-screen-id");
-    const screenLeaseId = c.req.header("x-tangow-screen-lease-id");
-    const { container, info } = await managedContainer(id, botId, spaceId);
-    const { layout, viewToken } = await withComputerScreenLock(id, async () => {
-      const screen = await ensureManagedScreen(id, container, info, botId, screenId, screenLeaseId);
-      if (body.interactive || body.revokeControl !== false) {
-        await setInteractiveScreen(container, body.interactive, body.controlToken, screen.layout);
-      }
-      return screen;
-    });
-    const screenUrl = await publishedScreenUrl(
-      container,
-      info,
-      body.interactive ? layout.controlPort : layout.viewPort,
-    );
-    return c.json({
-      screenUrl: screenUrlWithToken(screenUrl, body.interactive ? body.controlToken! : viewToken),
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return c.json({ error: message }, 400);
-  }
-});
-
-app.post("/computers/:id/input", async (c) => {
-  const id = c.req.param("id");
-  const body = z
-    .object({
-      input: z.object({
-        kind: z.enum(["key", "pointer", "clipboard"]),
-        key: z.string().optional(),
-        modifiers: z.array(z.string()).optional(),
-        x: z.number().optional(),
-        y: z.number().optional(),
-        button: z.enum(["left", "right"]).optional(),
-        type: z.enum(["move", "down", "up", "click"]).optional(),
-        text: z.string().optional(),
-      }),
-      leaseId: z.string().optional(),
-    })
-    .parse(await c.req.json());
-  const input = toSandboxInput(body.input);
-  try {
-    const { container, layout } = await managedScreen(
-      id,
-      c.req.header("x-tangow-bot-id"),
-      c.req.header("x-tangow-space-id"),
-      c.req.header("x-tangow-screen-id"),
-      c.req.header("x-tangow-screen-lease-id"),
-    );
-    const result = await runContainerCommand(container, [
-      "env",
-      `DISPLAY=${layout.display}`,
-      ...xdotoolCommand(input),
-    ]);
-    if (result.code !== 0) {
-      return c.json({ ok: false, error: "input failed" }, 500);
-    }
-    return c.json({ ok: true, leaseId: body.leaseId ?? null });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return c.json({ ok: false, error: message }, 500);
-  }
-});
-
-app.delete("/computers/:id/screen", async (c) => {
-  try {
-    const id = c.req.param("id");
-    const { container } = await managedContainer(
-      id,
-      c.req.header("x-tangow-bot-id"),
-      c.req.header("x-tangow-space-id"),
-    );
-    const screenId = c.req.header("x-tangow-screen-id") || c.req.header("x-tangow-bot-id") || id;
-    const cancelRunWork = c.req.header("x-tangow-cancel-run-work") === "1";
-    const screenLeaseId = c.req.header("x-tangow-screen-lease-id");
-    // Only a leased release can be kept: a bot's deletion or archive has none and must close it.
-    const preserve =
-      c.req.header("x-tangow-preserve-screen") === "1" && !cancelRunWork && Boolean(screenLeaseId);
-    let kept = false;
-    let refused = false;
-    await withComputerScreenLock(id, async () => {
-      const assigned = computerScreens.get(id);
-      const index = assigned ? releaseAssignedScreen(assigned, screenId, screenLeaseId) : undefined;
-      // A newer run owns the slot: the caller must not treat its screen as released.
-      refused = Boolean(screenLeaseId && assigned?.has(screenId) && index === undefined);
-      if (preserve && assigned && index !== undefined) {
-        // Revoking control disconnects the run's input while the display and browser stay up.
-        // A revoke that fails or throws falls through to the normal teardown.
-        const revoked = await runContainerCommand(container, [
-          "bash",
-          "-c",
-          interactiveScreenCommand(false, undefined, screenPorts(index)),
-        ]).catch(() => undefined);
-        if (revoked?.code === 0) {
-          keepReleasedScreen(assigned, screenId, index);
-          kept = true;
-          return;
-        }
-      }
-      const stop = screenReleaseStopCommand(index, {
-        hasRegistry: Boolean(assigned),
-        cancelRunWork,
-        screenId,
-      });
-      if (assigned && index !== undefined) {
-        await teardownReleasedScreen(assigned, screenId, index, () =>
-          runContainerCommand(container, ["bash", "-c", stop]),
-        );
-      } else if (stop) {
-        const result = await runContainerCommand(container, ["bash", "-c", stop]);
-        if (result.code !== 0) {
-          throw new Error(result.stderr || "computer screen failed to stop");
-        }
-      }
-      if (assigned?.size === 0) computerScreens.delete(id);
-    });
-    if (kept) return c.json({ ok: true, kept });
-    return c.json(refused ? { ok: true, released: false } : { ok: true });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return c.json({ error: message }, 404);
-  }
-});
-
-app.post("/computers/:id/stop", async (c) => {
-  const id = c.req.param("id");
-  try {
-    const { container } = await managedContainer(
-      id,
-      c.req.header("x-tangow-bot-id"),
-      c.req.header("x-tangow-space-id"),
-    );
-    await withComputerScreenLock(id, async () => {
-      const info = await container.inspect();
-      if (info.State.Running) {
-        const screens = [...(computerScreens.get(id) ?? [])].map(([screenId, slot]) => ({
-          screenId,
-          index: slot.index,
-        }));
-        try {
-          const checkpoint = await runContainerCommand(container, [
-            "bash",
-            "-c",
-            stopScreensCommand(screens),
-          ]);
-          if (checkpoint.code !== 0)
-            throw new Error(checkpoint.stderr || "bot browsers failed to stop");
-        } finally {
-          // Failed profiles remain on the durable home for recovery after restart.
-          await container.stop();
+    try {
+      await managedComputer(id, botId, spaceId);
+      // Under the bot's lifecycle lock, no start reuses the pod name while this stop waits for it
+      // to go: the wait cannot time out on the new pod, and no retried stop then kills it.
+      await withBotLifecycleLock(botId!, () =>
+        withComputerScreenLock(id, async () => {
+          // A concurrent stop may have finished while this one waited for the lock.
+          if ((await managedComputer(id, botId, spaceId)).running) {
+            const screens = [...(computerScreens.get(id) ?? [])].map(([screenId, slot]) => ({
+              screenId,
+              index: slot.index,
+            }));
+            try {
+              const checkpoint = await runCommand(id, ["bash", "-c", stopScreensCommand(screens)]);
+              if (checkpoint.code !== 0)
+                throw new Error(checkpoint.stderr || "bot browsers failed to stop");
+            } finally {
+              // Failed profiles remain on the durable home for recovery after restart.
+              await runtime.stopComputer(id);
+              clearComputerScreenRegistry(computerScreens, id);
+            }
+          }
           clearComputerScreenRegistry(computerScreens, id);
-        }
-      }
-      clearComputerScreenRegistry(computerScreens, id);
-    });
-    return c.json({ ok: true });
-  } catch (error) {
-    if (error instanceof ComputerIdentityError)
-      return c.json({ error: "invalid computer identity" }, 403);
-    if (error && typeof error === "object" && "statusCode" in error && error.statusCode === 404)
-      return c.json({ error: "computer not found" }, 404);
-    return c.json({ error: "computer failed to stop" }, 500);
-  }
-});
-
-app.delete("/computers/:id", async (c) => {
-  const id = c.req.param("id");
-  const botId = c.req.header("x-tangow-bot-id");
-  try {
-    if (!botId) throw new Error("missing computer identity");
-    return await withBotLifecycleLock(botId, async () => {
-      const { container } = await managedContainer(id, botId, c.req.header("x-tangow-space-id"));
-      await withComputerScreenLock(id, async () => {
-        await container.remove({ force: true }).catch(() => undefined);
-        clearComputerScreenRegistry(computerScreens, id);
-      });
-      if (screenNetworkMode !== "internal") {
-        await removeBotNetwork(botId);
-      }
+        }),
+      );
       return c.json({ ok: true });
-    });
-  } catch {
-    return c.json({ error: "computer not found" }, 404);
-  }
-});
-
-app.use("/workers", async (c, next) => {
-  if (!hasValidBearerToken(c.req.header("authorization"), supervisorToken)) {
-    return c.json({ error: "unauthorized" }, 401);
-  }
-  await next();
-});
-app.use("/workers", limitSupervisorRequestBody);
-
-const attemptWorkers = (attemptId: string) =>
-  docker.listContainers({
-    all: true,
-    filters: { label: ["tangow.worker=true", `tangow.attempt=${attemptId}`] },
-  });
-
-let workersNetwork: Promise<unknown> | undefined;
-/** Workers share one bridge, off the Compose network, where they cannot reach each other. */
-function ensureWorkersNetwork() {
-  workersNetwork ??= docker
-    .createNetwork({
-      Name: WORKER_NETWORK,
-      Driver: "bridge",
-      CheckDuplicate: true,
-      Labels: { "tangow.managed": "true" },
-      Options: { "com.docker.network.bridge.enable_icc": "false" },
-    })
-    .catch((error) => {
-      if (!/already exists/i.test(String(error))) {
-        workersNetwork = undefined;
-        throw error;
-      }
-    });
-  return workersNetwork;
-}
-
-app.post("/workers", async (c) => {
-  try {
-    const body = z
-      .object({
-        attemptId: PathSegment,
-        ttlSeconds: z.number().int().min(1).max(86_400),
-        mounts: z.array(z.object({ volume: z.string(), path: z.string(), readOnly: z.boolean() })),
-      })
-      .parse(await c.req.json());
-    const runtimeInfo = await inspectSupervisorContainer();
-    const mounts = workerMounts(body.mounts, dataDir, runtimeInfo);
-    const [existing] = await attemptWorkers(body.attemptId);
-    if (existing) return c.json({ id: existing.Id });
-    await ensureWorkersNetwork();
-    const container = await docker.createContainer(
-      workerCreateOptions({
-        attemptId: body.attemptId,
-        ttlSeconds: body.ttlSeconds,
-        mounts,
-        user: sandboxUser(runtimeInfo),
-      }),
-    );
-    await container.start();
-    return c.json({ id: container.id });
-  } catch (error) {
-    return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
-  }
-});
-
-app.delete("/workers", async (c) => {
-  const attemptId = PathSegment.safeParse(c.req.query("attempt"));
-  if (!attemptId.success) return c.json({ error: "invalid attempt" }, 400);
-  try {
-    const found = await attemptWorkers(attemptId.data);
-    await Promise.all(
-      found.map((info) =>
-        docker
-          .getContainer(info.Id)
-          .remove({ force: true })
-          .catch((error: unknown) => {
-            if ((error as { statusCode?: number }).statusCode !== 404) throw error;
-          }),
-      ),
-    );
-    // The controller frees the volumes' writer leases on this answer: confirm nothing is left.
-    if ((await attemptWorkers(attemptId.data)).length > 0) {
-      return c.json({ error: "worker still present" }, 500);
+    } catch (error) {
+      if (error instanceof ComputerIdentityError)
+        return c.json({ error: "invalid computer identity" }, 403);
+      if (error instanceof ComputerNotFoundError)
+        return c.json({ error: "computer not found" }, 404);
+      return c.json({ error: "computer failed to stop" }, 500);
     }
-    return c.json({ destroyed: found.length > 0 });
-  } catch (error) {
-    return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
-  }
-});
-
-/** How much of a guest's stderr is kept for the log, as `e2b-worker.ts` does. */
-const GUEST_STDERR_TAIL_CHARS = 2048;
-
-/**
- * `GET /workers/:id/guest` as an HTTP upgrade: the guest runs by `docker exec` with the attempt's
- * capability, and the socket carries its stdin and stdout, raw. The Node `upgrade` event bypasses
- * Hono, so the token is checked here.
- */
-export async function upgradeWorkerGuest(
-  request: http.IncomingMessage,
-  socket: Duplex,
-  head: Buffer = Buffer.alloc(0),
-) {
-  // Node drops its own error listener on upgrade: an unhandled reset would kill the supervisor.
-  socket.on("error", () => socket.destroy());
-  const refuse = (status: string) => {
-    socket.end(`HTTP/1.1 ${status}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
-  };
-  if (!hasValidBearerToken(request.headers.authorization, supervisorToken)) {
-    return refuse("401 Unauthorized");
-  }
-  const match = /^\/workers\/([A-Za-z0-9]{1,64})\/guest$/.exec(request.url ?? "");
-  if (!match) return refuse("404 Not Found");
-  const capability = request.headers["x-tangow-worker-capability"];
-  if (typeof capability !== "string" || capability.length === 0) return refuse("400 Bad Request");
-  try {
-    const container = docker.getContainer(match[1]!);
-    const info = await container.inspect();
-    if (info.Config.Labels?.["tangow.worker"] !== "true") return refuse("404 Not Found");
-    const exec = await container.exec({
-      Cmd: ["node", WORKER_GUEST_ENTRY],
-      AttachStdin: true,
-      AttachStdout: true,
-      AttachStderr: true,
-      Tty: false,
-      User: info.Config.User || COMPUTER_USER,
-      WorkingDir: "/workspace",
-      Env: [`TANGOW_WORKER_CAPABILITY=${capability}`],
-    });
-    const stream = await exec.start({ hijack: true, stdin: true });
-    // The client left while the exec was starting: closing stdin ends the guest.
-    if (socket.destroyed) return stream.end();
-    socket.write(
-      "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: tangow-guest\r\n\r\n",
-    );
-    if (head.length > 0) stream.write(head);
-    relayWorkerGuest({
-      socket,
-      stream,
-      attemptId: info.Config.Labels?.["tangow.attempt"],
-      exitCode: () => guestExitCode(exec),
-    });
-  } catch {
-    refuse("404 Not Found");
-  }
-}
-
-/**
- * Pipes the socket into the exec's stdin and its demuxed stdout back. Stderr is kept as a tail and
- * logged with the exit code when the guest fails.
- */
-export function relayWorkerGuest(input: {
-  socket: Duplex;
-  stream: Duplex;
-  attemptId: string | undefined;
-  exitCode: () => Promise<number | null>;
-}) {
-  const { socket, stream } = input;
-  let stderr = "";
-  const stderrTail = new Writable({
-    write: (chunk: Buffer, _encoding, done) => {
-      stderr = (stderr + chunk.toString("utf8")).slice(-GUEST_STDERR_TAIL_CHARS);
-      done();
-    },
   });
-  docker.modem.demuxStream(stream, socket, stderrTail);
-  socket.pipe(stream);
-  stream.on("end", () => {
-    socket.end();
-    input.exitCode().then(
-      (exitCode) => {
-        if (exitCode === 0) return;
-        getLogger().info("docker worker guest exited with an error", {
-          attemptId: input.attemptId,
-          exitCode,
-          stderrTail: stderr,
+
+  app.delete("/computers/:id", async (c) => {
+    const id = c.req.param("id");
+    const botId = c.req.header("x-tangow-bot-id");
+    try {
+      if (!botId) throw new Error("missing computer identity");
+      return await withBotLifecycleLock(botId, async () => {
+        await managedComputer(id, botId, c.req.header("x-tangow-space-id"));
+        await withComputerScreenLock(id, async () => {
+          await runtime.removeComputer(id, botId);
+          clearComputerScreenRegistry(computerScreens, id);
         });
-      },
-      (error: unknown) => {
-        getLogger().info("docker worker guest exit code unavailable", {
-          attemptId: input.attemptId,
-          errorText: error instanceof Error ? error.message : String(error),
-          stderrTail: stderr,
-        });
-      },
-    );
+        return c.json({ ok: true });
+      });
+    } catch {
+      return c.json({ error: "computer not found" }, 404);
+    }
   });
-  stream.on("error", () => socket.destroy());
-  socket.on("error", () => stream.destroy());
-  socket.on("close", () => stream.end());
+
+  app.use("/workers", async (c, next) => {
+    if (!hasValidBearerToken(c.req.header("authorization"), supervisorToken)) {
+      return c.json({ error: "unauthorized" }, 401);
+    }
+    await next();
+  });
+  app.use("/workers", limitSupervisorRequestBody);
+
+  app.post("/workers", async (c) => {
+    try {
+      const body = z
+        .object({
+          attemptId: PathSegment,
+          ttlSeconds: z.number().int().min(1).max(86_400),
+          mounts: z.array(
+            z.object({ volume: z.string(), path: z.string(), readOnly: z.boolean() }),
+          ),
+        })
+        .parse(await c.req.json());
+      return c.json(await runtime.workers.ensure(body));
+    } catch (error) {
+      return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
+    }
+  });
+
+  app.delete("/workers", async (c) => {
+    const attemptId = PathSegment.safeParse(c.req.query("attempt"));
+    if (!attemptId.success) return c.json({ error: "invalid attempt" }, 400);
+    try {
+      // The controller frees the volumes' writer leases on this answer: it means nothing is left.
+      return c.json(await runtime.workers.destroy(attemptId.data));
+    } catch (error) {
+      return c.json({ error: error instanceof Error ? error.message : String(error) }, 500);
+    }
+  });
+
+  /**
+   * `GET /workers/:id/guest` as an HTTP upgrade: the guest runs inside the worker with the
+   * attempt's capability, and the socket carries its stdin and stdout, raw. The Node `upgrade`
+   * event bypasses Hono, so the token is checked here.
+   */
+  async function upgradeWorkerGuest(
+    request: http.IncomingMessage,
+    socket: Duplex,
+    head: Buffer = Buffer.alloc(0),
+  ) {
+    // Node drops its own error listener on upgrade: an unhandled reset would kill the supervisor.
+    socket.on("error", () => socket.destroy());
+    const refuse = (status: string) => {
+      socket.end(`HTTP/1.1 ${status}\r\nConnection: close\r\nContent-Length: 0\r\n\r\n`);
+    };
+    if (!hasValidBearerToken(request.headers.authorization, supervisorToken)) {
+      return refuse("401 Unauthorized");
+    }
+    const match = /^\/workers\/([A-Za-z0-9]{1,64})\/guest$/.exec(request.url ?? "");
+    if (!match) return refuse("404 Not Found");
+    const capability = request.headers["x-tangow-worker-capability"];
+    if (typeof capability !== "string" || capability.length === 0) return refuse("400 Bad Request");
+    try {
+      const guest = await runtime.workers.openGuest(match[1]!, capability);
+      if (!guest) return refuse("404 Not Found");
+      // The client left while the guest was starting: closing stdin ends it.
+      if (socket.destroyed) return guest.close();
+      socket.write(
+        "HTTP/1.1 101 Switching Protocols\r\nConnection: Upgrade\r\nUpgrade: tangow-guest\r\n\r\n",
+      );
+      guest.attach(socket, head);
+    } catch {
+      refuse("404 Not Found");
+    }
+  }
+
+  return { app, upgradeWorkerGuest };
 }
 
-/** The exec's stream can end a moment before Docker records the exit. */
-async function guestExitCode(exec: Docker.Exec): Promise<number | null> {
-  for (let attempt = 0; attempt < 20; attempt += 1) {
-    const state = await exec.inspect();
-    if (!state.Running) return state.ExitCode;
-    await new Promise((resolve) => setTimeout(resolve, 100));
+function assertBotHomePath(homePath: string, botId: string) {
+  const expected = path.join(dataDir, "homes", botId);
+  if (homePath !== expected) {
+    throw new Error("computer home must be the bot's home directory");
   }
-  return null;
 }
+
+function requiredSetting(name: string) {
+  const value = process.env[name];
+  if (!value) throw new Error(`${name} is required with SUPERVISOR_BACKEND=kubernetes`);
+  return value;
+}
+
+/** Docker by default; Kubernetes reaches its cluster from inside it, through its ServiceAccount. */
+function createComputerRuntime(): ComputerRuntime {
+  if (resolveSupervisorBackend(process.env.SUPERVISOR_BACKEND) === "docker") {
+    return createDockerComputerRuntime({ dataDir, computerContext });
+  }
+  return createKubernetesComputerRuntime({
+    namespace: requiredSetting("SUPERVISOR_KUBERNETES_NAMESPACE"),
+    dataClaim: requiredSetting("SUPERVISOR_KUBERNETES_DATA_CLAIM"),
+    dataDir,
+  });
+}
+
+const supervisor = createSupervisor(createComputerRuntime());
+export const supervisorApp = supervisor.app;
+export const upgradeWorkerGuest = supervisor.upgradeWorkerGuest;
 
 async function startSupervisor() {
   const logger = createRootLogger(SERVICE_NAMES.supervisor);
@@ -1101,7 +511,7 @@ async function startSupervisor() {
   computerResourceLimits();
   const port = Number(process.env.SUPERVISOR_PORT ?? 7091);
   const hostname = process.env.SUPERVISOR_HOST ?? "127.0.0.1";
-  const server = serve({ fetch: app.fetch, hostname, port }, () => {
+  const server = serve({ fetch: supervisorApp.fetch, hostname, port }, () => {
     logger.info("supervisor listening", { "http.host": hostname, "http.port": port });
   });
   server.on("upgrade", (request, socket, head) => void upgradeWorkerGuest(request, socket, head));
@@ -1130,620 +540,4 @@ function closeListeningServer(server: {
 
 if (process.argv[1] && fileURLToPath(import.meta.url) === path.resolve(process.argv[1])) {
   void startSupervisor();
-}
-
-async function ensureComputerImage() {
-  if (!imageReady) {
-    imageReady = (async () => {
-      try {
-        await docker.getImage(COMPUTER_IMAGE).inspect();
-        return;
-      } catch {
-        // build below
-      }
-      const dockerfile = path.join(computerContext, "Dockerfile");
-      if (!existsSync(dockerfile)) {
-        throw new Error(
-          `Missing ${COMPUTER_IMAGE}. Build it with: docker build -t ${COMPUTER_IMAGE} infra/sandboxes/computer`,
-        );
-      }
-      const stream = await docker.buildImage(
-        {
-          context: computerContext,
-          src: [
-            "Dockerfile",
-            "start.sh",
-            "control.py",
-            "xcapture.c",
-            "tangow-browser",
-            "tangow-page-browser",
-            "tangow-terminal",
-            "terminalrc",
-            "zshrc",
-            "tangow-browser.desktop",
-            "fluxbox.init",
-            "fluxbox.apps",
-            "fluxbox.menu",
-            "libreoffice.xcd",
-          ],
-        },
-        { t: COMPUTER_IMAGE },
-      );
-      await new Promise<void>((resolve, reject) => {
-        docker.modem.followProgress(stream, (err) => (err ? reject(err) : resolve()));
-      });
-      await docker.getImage(COMPUTER_IMAGE).inspect();
-    })();
-  }
-  await imageReady;
-}
-
-async function findBotContainer(botId: string, spaceId: string) {
-  const listed = await docker.listContainers({
-    all: true,
-    filters: {
-      // Space IDs were preserved when workspaces became Spaces. Search by the
-      // stable bot label, then validate either generation of the Space label.
-      label: [`tangow.botId=${botId}`],
-    },
-  });
-  for (const item of listed) {
-    const container = docker.getContainer(item.Id);
-    const info = await container.inspect();
-    if (isTangowContainer(info, botId, spaceId)) return container;
-  }
-  return undefined;
-}
-
-/** Count managed computers for a space, including legacy workspaceId / unlabeled-managed. */
-export async function countSpaceContainers(spaceId: string): Promise<number> {
-  // Do not filter by tangow.managed=true: legacy computers are still managed via
-  // COMPUTER_IMAGE + tangow.workspaceId (same rule as isTangowContainer).
-  const listed = await docker.listContainers({ all: true });
-  let count = 0;
-  for (const item of listed) {
-    if (await isManagedSpaceContainer(item, spaceId)) count++;
-  }
-  return count;
-}
-
-async function isManagedSpaceContainer(
-  item: Docker.ContainerInfo,
-  spaceId: string,
-): Promise<boolean> {
-  const labels = item.Labels;
-  if (labels) {
-    const listedSpaceId = labels["tangow.spaceId"] ?? labels["tangow.workspaceId"];
-    // Labeled for another space (or no space identity) cannot count toward this cap.
-    if (listedSpaceId !== spaceId) return false;
-    if (labels["tangow.managed"] === "true" || item.Image === COMPUTER_IMAGE) return true;
-    // Space matches but Image may be an ID after the tag moved — confirm via inspect.
-  }
-  // Missing list Labels: inspect with the same managed rule as isTangowContainer.
-  try {
-    const info = await docker.getContainer(item.Id).inspect();
-    const infoLabels = info.Config?.Labels ?? {};
-    const managed =
-      infoLabels["tangow.managed"] === "true" || info.Config?.Image === COMPUTER_IMAGE;
-    const infoSpaceId = infoLabels["tangow.spaceId"] ?? infoLabels["tangow.workspaceId"];
-    return managed && infoSpaceId === spaceId;
-  } catch {
-    // Container might have been removed concurrently
-    return false;
-  }
-}
-
-class ComputerIdentityError extends Error {}
-
-async function managedContainer(id: string, botId?: string, spaceId?: string) {
-  if (!botId || !spaceId) throw new ComputerIdentityError("missing computer identity");
-  const container = docker.getContainer(id);
-  const info = await container.inspect();
-  if (!isTangowContainer(info, botId, spaceId))
-    throw new ComputerIdentityError("computer identity mismatch");
-  return { container, info };
-}
-
-async function managedScreen(
-  id: string,
-  botId: string | undefined,
-  spaceId: string | undefined,
-  screenId: string | undefined,
-  screenLeaseId: string | undefined,
-) {
-  const { container, info } = await managedContainer(id, botId, spaceId);
-  return withComputerScreenLock(id, () =>
-    ensureManagedScreen(id, container, info, botId, screenId, screenLeaseId),
-  );
-}
-
-async function ensureManagedScreen(
-  id: string,
-  container: Docker.Container,
-  info: Docker.ContainerInspectInfo,
-  botId: string | undefined,
-  screenId: string | undefined,
-  screenLeaseId: string | undefined,
-) {
-  let assigned = computerScreens.get(id);
-  if (!assigned) {
-    const reset = await runContainerCommand(container, [
-      "bash",
-      "-c",
-      resetManagedScreensCommand(),
-    ]);
-    if (reset.code !== 0) throw new Error(reset.stderr || "computer screens failed to reset");
-    assigned = new Map();
-    computerScreens.set(id, assigned);
-  }
-  const screenKey = screenId || botId || id;
-  const index = nextScreenIndex(assigned, screenKey, screenLeaseId, teamScreenLimit);
-  const layout = screenPorts(index);
-  const slot = assigned.get(screenKey)!;
-  slot.viewToken ??= randomUUID();
-  const viewToken = slot.viewToken;
-  const ensured = await runContainerCommand(container, [
-    "bash",
-    "-c",
-    ensureScreenCommand(index, screenKey, viewToken),
-  ]);
-  if (ensured.code !== 0) {
-    releaseAssignedScreen(assigned, screenKey);
-    await teardownReleasedScreen(assigned, screenKey, index, () =>
-      runContainerCommand(container, ["bash", "-c", stopExtraScreenCommand(index, screenKey)]),
-    );
-    if (assigned.size === 0) computerScreens.delete(id);
-    throw new Error(ensured.stderr || `computer screen ${layout.display} failed to start`);
-  }
-  return {
-    container,
-    info,
-    layout,
-    index,
-    screenKey,
-    browserProfile: browserProfilePathForScreen(screenKey),
-    viewToken,
-  };
-}
-
-function isTangowContainer(info: Docker.ContainerInspectInfo, botId: string, spaceId: string) {
-  const labels = info.Config.Labels ?? {};
-  const managed = labels["tangow.managed"] === "true" || info.Config.Image === COMPUTER_IMAGE;
-  return managed && hasComputerIdentity(labels, botId, spaceId);
-}
-
-function assertBotHomePath(homePath: string, botId: string) {
-  const expected = path.join(dataDir, "homes", botId);
-  if (homePath !== expected) {
-    throw new Error("computer home must be the bot's home directory");
-  }
-}
-
-// computerHomeStorage covers the bot home; skills binds still need the same
-// service-path -> host-path translation for the data dir bind mount.
-function hostHomePath(serviceHomePath: string, info: Docker.ContainerInspectInfo | undefined) {
-  const dataMount = info?.Mounts.find((mount) => mount.Destination === dataDir);
-  if (!dataMount?.Source) return serviceHomePath;
-  return path.join(dataMount.Source, path.relative(dataDir, serviceHomePath));
-}
-
-function computerControlEndpoint(info: Docker.ContainerInspectInfo) {
-  const token = info.Config.Env?.find((value) =>
-    value.startsWith("TANGOW_COMPUTER_CONTROL_TOKEN="),
-  )?.slice("TANGOW_COMPUTER_CONTROL_TOKEN=".length);
-  const publishedHostPort = controlViaLoopback
-    ? publishedLoopbackControlHostPort(info.NetworkSettings?.Ports)
-    : undefined;
-  return resolveComputerControlEndpoint({
-    token,
-    networkMode: info.HostConfig.NetworkMode,
-    networks: info.NetworkSettings?.Networks,
-    publishedHostPort,
-    requirePublishedHostPort: controlViaLoopback,
-  });
-}
-
-export const MAX_COMPUTER_CONTROL_RESPONSE_BYTES = 16 * 1024 * 1024;
-
-export async function controlDesktop(
-  endpoint: { url: string; token: string },
-  actions: Array<z.infer<typeof computerActionSchema>>,
-  display: string,
-  browserProfile: string,
-  observe: boolean,
-  settleMs: number,
-  workspace?: string,
-) {
-  const signal = AbortSignal.timeout(computerControlTimeoutMs(actions, settleMs));
-  let response: Response;
-  try {
-    response = await fetch(endpoint.url, {
-      method: "POST",
-      // The computer can replace its listener; keep requests on the inspected
-      // computer's fixed endpoint instead of following it across sandbox networks.
-      redirect: "error",
-      headers: {
-        authorization: `Bearer ${endpoint.token}`,
-        "content-type": "application/json",
-      },
-      body: JSON.stringify({
-        steps: containerActionSteps(actions, display, browserProfile, workspace),
-        display,
-        observe,
-        settleMs,
-      }),
-      signal,
-    });
-  } catch (error) {
-    if (isComputerControlUnavailable(error)) {
-      throw new ComputerControlUnavailableError(
-        error instanceof Error ? error.message : "computer control unavailable",
-      );
-    }
-    throw error;
-  }
-  const payload = await readBoundedJsonResponse<{
-    completed?: unknown;
-    observation?: unknown;
-    error?: unknown;
-  }>(response, MAX_COMPUTER_CONTROL_RESPONSE_BYTES, signal);
-  if (!response.ok) throw new Error(String(payload.error ?? "computer control failed"));
-  if (typeof payload.completed !== "number")
-    throw new Error("computer control returned no completion count");
-  return {
-    completed: payload.completed,
-    ...(payload.observation ? { observation: payload.observation } : {}),
-  };
-}
-
-const SCREEN_READY_TIMEOUT_MS = 45_000;
-
-// Docker publishes a container's port mapping (or assigns its internal IP)
-// almost immediately on start, well before the process inside the container
-// is actually listening on it (Xvfb, the browser, x11vnc, then websockify
-// all start in sequence — see infra/sandboxes/computer/start.sh). Returning
-// the URL as soon as the mapping exists lets the frontend iframe race the
-// container's own boot sequence and hit "socket hang up" on first load.
-//
-// A bare TCP connect isn't a strong enough signal either: it only proves the
-// port is accepting connections, not that websockify is actually up and
-// serving — the same race can still slip through between "port open" and
-// "websockify ready" (e.g. right after setInteractiveScreen starts a new
-// x11vnc/websockify pair on the control port for a takeover). An HTTP GET
-// for noVNC's stock page only succeeds once websockify itself is answering
-// requests, closing that gap too.
-export async function waitForScreenReady(host: string, port: number, timeoutMs: number) {
-  const deadline = Date.now() + timeoutMs;
-  do {
-    const ready = await new Promise<boolean>((resolve) => {
-      const req = http.get({ host, port, path: "/vnc.html", timeout: 1_500 }, (res) => {
-        res.resume();
-        const status = res.statusCode ?? 0;
-        resolve(status >= 200 && status < 300);
-      });
-      req.once("timeout", () => {
-        req.destroy();
-        resolve(false);
-      });
-      req.once("error", () => resolve(false));
-    });
-    if (ready) return true;
-    await new Promise((resolve) => setTimeout(resolve, 300));
-  } while (Date.now() < deadline);
-  return false;
-}
-
-async function publishedScreenUrl(
-  container: Docker.Container,
-  initialInfo?: Docker.ContainerInspectInfo,
-  containerPort = "6080",
-) {
-  for (let i = 0; i < 30; i += 1) {
-    const info = i === 0 && initialInfo ? initialInfo : await container.inspect();
-    if (screenNetworkMode === "isolated") {
-      const runtime = supervisorInfo ?? (await inspectSupervisorContainer());
-      const networkName = info.HostConfig.NetworkMode;
-      if (runtime && networkName) await connectComposeScreenPeers(networkName, runtime);
-    }
-    const target = resolveScreenPublishTarget({
-      screenNetwork: screenNetworkMode,
-      networkMode: info.HostConfig.NetworkMode,
-      networks: info.NetworkSettings?.Networks,
-      hostPort: info.NetworkSettings?.Ports?.[`${containerPort}/tcp`]?.[0]?.HostPort,
-      containerPort,
-      screenHost: SCREEN_HOST,
-    });
-    if (target) {
-      const ready = await waitForScreenReady(
-        target.host,
-        Number(target.port),
-        SCREEN_READY_TIMEOUT_MS,
-      );
-      if (!ready) throw new Error("computer screen did not become ready in time");
-      return screenUrlFor(target.port, target.host);
-    }
-    await new Promise((resolve) => setTimeout(resolve, 100));
-  }
-  throw new Error("computer screen port was not published");
-}
-
-async function setInteractiveScreen(
-  container: Docker.Container,
-  interactive: boolean,
-  controlToken: string | undefined,
-  layout: ReturnType<typeof screenPorts>,
-) {
-  const result = await runContainerCommand(container, [
-    "bash",
-    "-c",
-    interactiveScreenCommand(interactive, controlToken, layout),
-  ]);
-  if (result.code !== 0) throw new Error(result.stderr || "control screen failed to start");
-  return interactive || !controlToken || result.stdout.includes("TANGOW_CONTROL_RELEASED\n");
-}
-
-// Each bot's computer gets its own Docker network so containers cannot reach
-// one another (Docker's default "bridge" network allows any container to
-// dial any other container's exposed ports, which would let one bot's
-// computer reach another bot's desktop/VNC endpoint with no authentication).
-function computerNetworkName(botId: string, info: Docker.ContainerInspectInfo | undefined) {
-  if (screenNetworkMode === "internal") {
-    // The supervisor itself runs in this shared network in that topology and
-    // needs to address child containers by their in-network IP, so children
-    // stay on the supervisor's network rather than an isolated one.
-    return info ? Object.keys(info.NetworkSettings.Networks)[0] : undefined;
-  }
-  if (screenNetworkMode === "isolated" && !info) {
-    throw new Error("isolated Compose screens require a containerized supervisor");
-  }
-  return computerNetworkNameFor(botId);
-}
-
-async function connectComposeScreenPeers(networkName: string, info: Docker.ContainerInspectInfo) {
-  const peerIds = new Set([info.Id]);
-  const project = info.Config.Labels?.["com.docker.compose.project"];
-  if (project) {
-    const webContainers = await docker.listContainers({
-      all: true,
-      filters: {
-        label: [`com.docker.compose.project=${project}`, "com.docker.compose.service=web"],
-      },
-    });
-    for (const container of webContainers) peerIds.add(container.Id);
-  }
-  const network = docker.getNetwork(networkName);
-  const networkInfo = await network.inspect();
-  const connectedIds = new Set(Object.keys(networkInfo.Containers ?? {}));
-  await Promise.all(
-    [...peerIds]
-      .filter((containerId) => !connectedIds.has(containerId))
-      .map((containerId) =>
-        network.connect({ Container: containerId }).catch((error) => {
-          if (!/already exists|already connected/i.test(String(error))) throw error;
-        }),
-      ),
-  );
-}
-
-async function ensureBotNetwork(botId: string) {
-  const name = computerNetworkNameFor(botId);
-  return docker
-    .createNetwork({ Name: name, Driver: "bridge", CheckDuplicate: true })
-    .catch((error) => {
-      // Existing networks and concurrent provision requests are both safe.
-      if (!/already exists/i.test(String(error))) throw error;
-    });
-}
-
-async function removeBotNetwork(botId: string) {
-  const currentName = computerNetworkNameFor(botId);
-  for (const name of computerNetworkNamesForCleanup(botId)) {
-    const network = docker.getNetwork(name);
-    const info = await network.inspect().catch(() => undefined);
-    if (!info) continue;
-    const containerIds = Object.keys(info.Containers ?? {});
-    if (name !== currentName) {
-      const owners: Array<string | undefined> = [];
-      for (const containerId of containerIds) {
-        const labels =
-          (
-            await docker
-              .getContainer(containerId)
-              .inspect()
-              .catch(() => undefined)
-          )?.Config.Labels ?? {};
-        const owner = labels["tangow.botId"];
-        owners.push(owner);
-        if (owner === botId) {
-          await network.disconnect({ Container: containerId, Force: true }).catch(() => undefined);
-        }
-      }
-      if (!legacyNetworkOwnedSolelyBy(botId, owners)) continue;
-    }
-    const remaining = await network.inspect().catch(() => undefined);
-    for (const containerId of Object.keys(remaining?.Containers ?? {})) {
-      await network.disconnect({ Container: containerId, Force: true }).catch(() => undefined);
-    }
-    await network.remove().catch(() => undefined);
-  }
-}
-
-const botLifecycleLocks = new Map<string, Promise<unknown>>();
-const computerScreenLocks = new Map<string, Promise<unknown>>();
-const spaceComputerLocks = new Map<string, Promise<unknown>>();
-
-// Serialize create/delete for one bot so DELETE cannot remove a per-bot network
-// while POST still needs it between ensureBotNetwork and container attach.
-async function withBotLifecycleLock<T>(botId: string, task: () => Promise<T>): Promise<T> {
-  return withKeyedLock(botLifecycleLocks, botId, task);
-}
-
-// Serialize screen claim/release/cancel for one computer so a restart-orphan
-// cancel cannot race a replacement claim and kill the newer Chromium session.
-async function withComputerScreenLock<T>(computerId: string, task: () => Promise<T>): Promise<T> {
-  return withKeyedLock(computerScreenLocks, computerId, task);
-}
-
-// Serialize per-space create admission (count + create) so different bots cannot
-// race past SANDBOX_MAX_COMPUTERS_PER_SPACE. Callers must already hold the bot
-// lifecycle lock; never acquire a bot lock while holding this lock.
-async function withSpaceComputerLock<T>(spaceId: string, task: () => Promise<T>): Promise<T> {
-  return withKeyedLock(spaceComputerLocks, spaceId, task);
-}
-
-async function inspectSupervisorContainer() {
-  if (supervisorInfo || !process.env.HOSTNAME) return supervisorInfo;
-  try {
-    supervisorInfo = await docker.getContainer(process.env.HOSTNAME).inspect();
-    return supervisorInfo;
-  } catch {
-    return undefined;
-  }
-}
-
-async function runContainerCommand(
-  container: Docker.Container,
-  argv: string[],
-  options: { workingDir?: string; env?: string[]; timeoutMs?: number; signal?: AbortSignal } = {},
-): Promise<{ stdout: string; stderr: string; code: number }> {
-  options.signal?.throwIfAborted();
-  const timeoutMs = options.timeoutMs;
-  const completionMarker = timeoutMs
-    ? `/tmp/tangow-command-${randomUUID()}.completed-124`
-    : undefined;
-  const command =
-    completionMarker && timeoutMs !== undefined
-      ? sandboxTimeoutCommand(argv, timeoutMs, completionMarker)
-      : argv;
-  const exec = await container.exec({
-    Cmd: command,
-    AttachStdout: true,
-    AttachStderr: true,
-    ...(options.signal ? { AttachStdin: true } : {}),
-    WorkingDir: options.workingDir ?? "/home/tangow",
-    Env: options.env ?? ["DISPLAY=:1", "HOME=/home/tangow"],
-  });
-  options.signal?.throwIfAborted();
-  const stream = await exec.start({ hijack: true, stdin: Boolean(options.signal) });
-  const chunks: Buffer[] = [];
-  let onAbort: (() => void) | undefined;
-  try {
-    await new Promise<void>((resolve, reject) => {
-      stream.on("data", (data: Buffer) => chunks.push(data));
-      stream.on("end", resolve);
-      stream.on("error", reject);
-      onAbort = () => {
-        // The page helper watches stdin EOF and exits even inside a blocked CDP call.
-        stream.destroy();
-        reject(options.signal?.reason ?? new Error("command cancelled"));
-      };
-      options.signal?.addEventListener("abort", onAbort, { once: true });
-      if (options.signal?.aborted) onAbort();
-    });
-  } finally {
-    if (onAbort) options.signal?.removeEventListener("abort", onAbort);
-  }
-  const inspect = await exec.inspect();
-  const code = inspect.ExitCode ?? 0;
-  const completedWithExit124 =
-    code === 124 && completionMarker
-      ? await consumeCompletionMarker(container, completionMarker)
-      : false;
-  const timedOut = sandboxCommandTimedOut(code, completedWithExit124);
-  const output = demuxDockerStream(Buffer.concat(chunks));
-  return {
-    stdout: output.stdout,
-    stderr: timedOut
-      ? `${output.stderr}${output.stderr.endsWith("\n") || output.stderr === "" ? "" : "\n"}command timed out after ${timeoutMs} ms\n`
-      : output.stderr,
-    code,
-  };
-}
-
-async function consumeCompletionMarker(container: Docker.Container, marker: string) {
-  const result = await runContainerCommand(container, [
-    "sh",
-    "-c",
-    'if [ -f "$0" ]; then rm -f "$0"; exit 0; fi; exit 1',
-    marker,
-  ]);
-  return result.code === 0;
-}
-
-async function applyContainerActions(
-  container: Docker.Container,
-  actions: Array<z.infer<typeof computerActionSchema>>,
-  display = ":1",
-  browserProfile?: string,
-  workspace?: string,
-) {
-  const script = [
-    "import json, subprocess, sys, time",
-    "for step in json.loads(sys.argv[1]):",
-    "  if 'waitMs' in step: time.sleep(step['waitMs'] / 1000)",
-    "  else:",
-    "    result = subprocess.run(step['argv'])",
-    "    if result.returncode: sys.exit(result.returncode)",
-  ].join("\n");
-  const result = await runContainerCommand(container, [
-    "python3",
-    "-c",
-    script,
-    JSON.stringify(containerActionSteps(actions, display, browserProfile, workspace)),
-  ]);
-  if (result.code !== 0) throw new Error(result.stderr || "computer action failed");
-}
-
-async function observeContainer(container: Docker.Container, display = ":1") {
-  const command = [
-    "set -e",
-    `export DISPLAY=${display}`,
-    'printf "GEOM %s\\n" "$(xdotool getdisplaygeometry 2>/dev/null || echo 1280 800)"',
-    'printf "CURSOR %s\\n" "$(xdotool getmouselocation --shell 2>/dev/null | tr "\\n" " " || true)"',
-    'wid="$(xdotool getactivewindow 2>/dev/null || true)"',
-    'printf "WINDOW %s\\n" "$wid"',
-    'printf "TITLE %s\\n" "$(test -n "$wid" && xdotool getwindowname "$wid" 2>/dev/null || true)"',
-    'printf "IMAGE "',
-    "import -window root png:- 2>/dev/null | base64 -w0",
-    'printf "\\n"',
-  ].join("; ");
-  const result = await runContainerCommand(container, ["bash", "-lc", command]);
-  if (result.code !== 0) throw new Error(result.stderr || "screen capture failed");
-  return parseObservation(result.stdout);
-}
-
-async function writeContainerFile(
-  container: Docker.Container,
-  target: string,
-  content: Buffer,
-  executable = false,
-) {
-  const script = [
-    "import os, sys",
-    "target = sys.argv[1]",
-    "os.makedirs(os.path.dirname(target), exist_ok=True)",
-    "with open(target, 'wb') as f: f.write(sys.stdin.buffer.read())",
-    `os.chmod(target, ${executable ? "0o700" : "0o600"})`,
-  ].join("\n");
-  const exec = await container.exec({
-    Cmd: ["python3", "-c", script, target],
-    AttachStdin: true,
-    AttachStdout: true,
-    AttachStderr: true,
-    WorkingDir: "/home/tangow",
-    Env: ["HOME=/home/tangow"],
-  });
-  const stream = await exec.start({ hijack: true, stdin: true });
-  const chunks: Buffer[] = [];
-  stream.on("data", (data: Buffer) => chunks.push(data));
-  stream.end(content);
-  await new Promise<void>((resolve, reject) => {
-    stream.on("end", resolve);
-    stream.on("error", reject);
-  });
-  const inspect = await exec.inspect();
-  if ((inspect.ExitCode ?? 0) !== 0) {
-    const output = demuxDockerStream(Buffer.concat(chunks));
-    throw new Error(output.stderr || output.stdout || "file write failed");
-  }
 }

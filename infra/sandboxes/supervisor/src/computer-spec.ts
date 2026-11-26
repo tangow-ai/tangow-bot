@@ -137,6 +137,13 @@ export function computerResourceLimits() {
   };
 }
 
+/** Where computers run. Read once at startup: an unknown value stops the supervisor. */
+export function resolveSupervisorBackend(value: string | undefined): "docker" | "kubernetes" {
+  if (!value || value === "docker") return "docker";
+  if (value === "kubernetes") return value;
+  throw new Error(`Unsupported SUPERVISOR_BACKEND value: ${value} (use docker or kubernetes)`);
+}
+
 export function resolveScreenNetworkMode(value: string | undefined): ScreenNetworkMode {
   if (!value || value === "published") return "published";
   if (value === "internal" || value === "isolated") return value;
@@ -525,8 +532,12 @@ export function xdotoolCommand(input: SandboxInput): string[] {
     if (input.type === "up") return ["xdotool", "mouseup", btn];
     return ["xdotool", "mousemove", "--", String(input.x), String(input.y), "click", btn];
   }
-  return ["xdotool", "type", "--clearmodifiers", "--", input.text];
+  return [...XDOTOOL_TYPE_ARGV, input.text];
 }
+
+export const XDOTOOL_TYPE_ARGV = ["xdotool", "type", "--clearmodifiers", "--"];
+/** Types its stdin, so the text stays out of every argv and exec URL. */
+export const XDOTOOL_TYPE_STDIN = ["xdotool", "type", "--clearmodifiers", "--file", "-"];
 
 function mapKey(key: string) {
   const lower = key.toLowerCase();
@@ -546,7 +557,7 @@ export const WORKER_IMAGE = process.env.TANGOW_WORKER_IMAGE ?? "tangow/worker:lo
 export const WORKER_NETWORK = "tangow-workers";
 export const WORKER_GUEST_ENTRY = "/opt/tangow/agent-run-worker.mjs";
 /** The E2B worker profile (`apps/agent-run-worker/template/template.ts`), and #343's pids ceiling. */
-const WORKER_LIMITS = {
+export const WORKER_LIMITS = {
   Memory: 1024 ** 3,
   MemorySwap: 1024 ** 3,
   NanoCpus: 1e9,

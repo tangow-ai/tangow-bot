@@ -17,11 +17,29 @@ loader.exec_module(helper)
 
 class PageBrowserTest(unittest.TestCase):
     def test_closed_stdin_cancels_helper_without_a_browser(self):
-        with subprocess.Popen([sys.executable, str(Path(__file__).with_name("tangow-page-browser")), "snapshot", "{}"],
+        with subprocess.Popen([sys.executable, str(Path(__file__).with_name("tangow-page-browser")), "snapshot"],
                               env={**os.environ, "TANGOW_BROWSER_WATCH_STDIN": "1", "TANGOW_CDP_PORT": "0"},
                               stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE) as process:
             process.stdin.close()
             self.assertEqual(process.wait(timeout=3), 130)
+
+    def test_request_line_read_leaves_the_next_line_in_the_pipe(self):
+        read, write = os.pipe()
+        try:
+            os.write(write, b'{"command": "act", "text": "a \\"q\\" \\\\ b"}\nplaceholder-password\n')
+            self.assertEqual(helper.read_stdin_line(read), b'{"command": "act", "text": "a \\"q\\" \\\\ b"}')
+            self.assertEqual(helper.read_stdin_line(read), b"placeholder-password")
+        finally:
+            os.close(read)
+            os.close(write)
+
+    def test_request_is_read_before_the_stdin_watch_can_consume_a_later_line(self):
+        order = []
+        with patch.object(helper, "read_stdin_line", side_effect=lambda: order.append("read") or b""), \
+                patch.object(helper.threading, "Thread", side_effect=lambda **_: order.append("watch") or Mock()), \
+                patch.dict(os.environ, {"TANGOW_BROWSER_WATCH_STDIN": "1"}), patch("builtins.print"):
+            helper.run(["tangow-page-browser"])
+        self.assertEqual(order, ["read", "watch"])
 
     def test_closed_extended_frame_does_not_spin(self):
         for partial in (b"\x81\x7e", b"\x81\x7f", b"\x81\x80"):

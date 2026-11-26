@@ -46,7 +46,7 @@ function fixture(
   let execution: CommandStartOpts | undefined;
   const handle = {
     pid: 123,
-    sendStdin: vi.fn(async () => options.send?.()),
+    sendStdin: vi.fn(async (_input: string) => options.send?.()),
     closeStdin: vi.fn(async () => undefined),
     disconnect: vi.fn(async () => undefined),
     wait: async () => {
@@ -96,6 +96,18 @@ describe("E2B page browser transport boundary", () => {
     if (!ok) expect(result.fallback).toBe("computer_act");
     expect(f.handle.sendStdin).toHaveBeenCalledTimes(1);
     expect(f.handle.closeStdin).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends the request after the permit on stdin, never in the command line", async () => {
+    const f = fixture({ output: JSON.stringify({ ...snapshot, completed: 2 }) });
+    await f.provider.pageBrowser(computer, act, context);
+    expect(f.handle.sendStdin.mock.calls[0]?.[0]).toBe(
+      'TANGOW_DESKTOP_OPERATION\n{"command":"act","actions":[{"kind":"click","ref":"e1"},{"kind":"fill","ref":"e2","text":"value"}]}\n',
+    );
+    const started = vi
+      .mocked(f.machine.sandbox.commands.run)
+      .mock.calls.find(([, opts]) => opts?.background);
+    expect(started?.[0]).not.toContain('"text"');
   });
 
   it.each([0, 1])(

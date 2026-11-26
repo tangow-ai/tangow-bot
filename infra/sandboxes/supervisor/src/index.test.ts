@@ -6,16 +6,14 @@ import { resolveSupervisorToken } from "@tangow/core";
 import { stopBrowserCommand } from "@tangow/core/node/desktop-runtime";
 import { createLogger, createTestSink, installLogger } from "@tangow/logging";
 import { afterEach, describe, expect, it } from "vitest";
+import { waitForScreenReady } from "./computer-session.js";
+import { relayWorkerGuest, resolveDockerSocketPath, skillsBindsFor } from "./docker-engine.js";
 import {
   MAX_SUPERVISOR_FILE_REQUEST_BYTES,
   MAX_SUPERVISOR_REQUEST_BYTES,
-  relayWorkerGuest,
-  resolveDockerSocketPath,
-  skillsBindsFor,
   supervisorApp,
   supervisorRequestBodyLimit,
   upgradeWorkerGuest,
-  waitForScreenReady,
 } from "./index.js";
 import type { ScreenAssignment } from "./supervisor-logic.js";
 import {

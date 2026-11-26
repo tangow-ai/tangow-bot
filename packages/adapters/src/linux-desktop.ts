@@ -211,11 +211,15 @@ export class LinuxDesktop {
           key,
           context.screenLeaseId,
           env,
-          ["/usr/local/bin/tangow-page-browser", request.command, JSON.stringify(request)],
+          ["/usr/local/bin/tangow-page-browser", request.command],
           timeoutMs,
         ),
         boundedContext,
-        { input: `${DESKTOP_OPERATION_PERMIT}\n`, deadline, maxOutputBytes: 512 * 1024 },
+        {
+          input: `${DESKTOP_OPERATION_PERMIT}\n${JSON.stringify(request)}\n`,
+          deadline,
+          maxOutputBytes: 512 * 1024,
+        },
       );
       inputDispatched = result.inputDispatched === true;
       signal.throwIfAborted();

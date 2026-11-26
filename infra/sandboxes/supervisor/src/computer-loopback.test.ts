@@ -202,7 +202,8 @@ describe("computer loopback provision lifecycle", () => {
     { enabled: false, hosts: [], resumed: true },
   ])("matches publication on stopped container reuse: %j", async ({ enabled, hosts, resumed }) => {
     vi.stubEnv("SANDBOX_CONTROL_VIA_LOOPBACK", String(enabled));
-    const { skillsBindsFor, supervisorApp } = await import("./index.js");
+    const { supervisorApp } = await import("./index.js");
+    const { skillsBindsFor } = await import("./docker-engine.js");
     const homePath = path.join(process.env.DATA_DIR!, "homes", "bot");
     // Reuse also requires the read-only skills mounts to be already bound.
     const skillsBinds = skillsBindsFor(
@@ -547,7 +548,7 @@ describe("space computer limit enforcement", () => {
     setupContainerFixture();
     vi.stubEnv("SANDBOX_MAX_COMPUTERS_PER_SPACE", "1");
 
-    const { skillsBindsFor } = await import("./index.js");
+    const { skillsBindsFor } = await import("./docker-engine.js");
     // Reuse also requires the read-only skills mounts to be already bound.
     const skillsBinds = skillsBindsFor(
       process.env.DATA_DIR!,
@@ -667,7 +668,7 @@ describe("space computer limit enforcement", () => {
   it("replaces an existing container that predates the /managed-skills bind", async () => {
     const { container } = setupContainerFixture();
 
-    const { skillsBindsFor } = await import("./index.js");
+    const { skillsBindsFor } = await import("./docker-engine.js");
     const existing = {
       id: "existing-no-managed",
       inspect: vi.fn().mockResolvedValue({

@@ -123,6 +123,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### 2026-11-13
 
+#### Added
+
+- **Run bot computers and workers on Kubernetes.** A self-hosted server sets `SUPERVISOR_BACKEND=kubernetes`, and the supervisor starts each computer and each bot run as a pod in a dedicated namespace instead of a Docker container, with Docker and E2B still available. The namespace, storage, permissions and network it needs are in [Kubernetes computers](docs/self-host-kubernetes.md).
+
 #### Changed
 
 - In a phone browser, a long press on a bot, a group or a section now opens its menu, as a right click does on desktop, with the sections to move a bot to listed in the menu itself, and the bot picker's info buttons are now visible without hovering.

@@ -54,13 +54,14 @@ export function assertRequestIdentity(
   }
 }
 
+/** `tags` are a Docker container's labels, or a Kubernetes pod's annotations. */
 export function hasComputerIdentity(
-  labels: Record<string, string> | undefined,
+  tags: Record<string, string> | undefined,
   botId: string,
   spaceId: string,
 ) {
-  const labeledSpaceId = labels?.["tangow.spaceId"] ?? labels?.["tangow.workspaceId"];
-  return labels?.["tangow.botId"] === botId && labeledSpaceId === spaceId;
+  const taggedSpaceId = tags?.["tangow.spaceId"] ?? tags?.["tangow.workspaceId"];
+  return tags?.["tangow.botId"] === botId && taggedSpaceId === spaceId;
 }
 
 export function hasValidBearerToken(authorization: string | undefined, expectedToken: string) {

@@ -39,10 +39,12 @@ test("live page helper preserves identity, masks passwords, and reports partial 
       expect(port).toMatch(/^\d+$/);
     }).toPass({ timeout: 5_000 });
     async function command(name: string, args: Record<string, unknown> = {}) {
-      const { stdout } = await execute("python3", [helper, name, JSON.stringify(args)], {
+      const run = execute("python3", [helper, name], {
         env: { ...process.env, TANGOW_CDP_PORT: port },
         timeout: 30_000,
       });
+      run.child.stdin?.end(`${JSON.stringify(args)}\n`);
+      const { stdout } = await run;
       return JSON.parse(stdout);
     }
     const page = context.pages()[0]!;

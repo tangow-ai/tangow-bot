@@ -10,4 +10,5 @@ RUN corepack enable && pnpm install --frozen-lockfile --prod --filter "@tangow/s
 # After the install layer so a skill edit does not reinstall; --chmod survives a restrictive host umask.
 COPY --chmod=755 skills skills
 WORKDIR /app/infra/sandboxes/supervisor
-CMD ["pnpm", "exec", "tsx", "src/index.ts"]
+# Not through pnpm: corepack would download it at startup for a user other than root.
+CMD ["node_modules/.bin/tsx", "src/index.ts"]

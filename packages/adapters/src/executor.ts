@@ -307,7 +307,11 @@ import {
   planLiveConnectionSync,
 } from "./composio-connector.js";
 import { BACKGROUND_WORK_LAUNCH, scheduleComputerSleep } from "./computer-idle.js";
-import { ComputerBusyError, screenLeaseIdForRun } from "./computer-lifecycle.js";
+import {
+  ComputerBusyError,
+  ComputerCapacityError,
+  screenLeaseIdForRun,
+} from "./computer-lifecycle.js";
 import { withComputerScreenAvailability } from "./computer-screens.js";
 import {
   displayBotWorkspacePath,
@@ -2349,6 +2353,9 @@ export function createRunExecutor(deps: ExecutorDeps) {
             return undefined;
           } catch (error) {
             if (context.signal.aborted) throw error;
+            if (error instanceof ComputerCapacityError) {
+              return { error: "Computer capacity is temporarily full. Try again shortly." };
+            }
             if (error instanceof ComputerBusyError) {
               return {
                 error:

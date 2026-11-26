@@ -626,6 +626,14 @@ def act(client: CdpClient, session_id: str, actions: list[dict[str, Any]]) -> di
                 "error": str(exc), "fallback": "computer_act"}
 
 
+def read_stdin_line(fd: int = 0) -> bytes:
+    """One line, byte by byte: a buffered read could swallow the next line (a password) too."""
+    line = bytearray()
+    while (byte := os.read(fd, 1)) and byte != b"\n":
+        line += byte
+    return bytes(line)
+
+
 def exit_when_stdin_closes() -> None:
     """The supervisor owns this pipe; losing it cancels this helper, not Chromium."""
     try:
@@ -636,6 +644,8 @@ def exit_when_stdin_closes() -> None:
 
 
 def run(argv: list[str]) -> int:
+    # The request is stdin's first line, never argv: it can hold typed text such as a password.
+    request = read_stdin_line()
     if os.environ.get("TANGOW_BROWSER_WATCH_STDIN") == "1":
         threading.Thread(target=exit_when_stdin_closes, daemon=True).start()
     if len(argv) < 2:
@@ -643,16 +653,14 @@ def run(argv: list[str]) -> int:
             json.dumps(
                 {
                     "ok": False,
-                    "error": "usage: tangow-page-browser <command> [json-args]",
+                    "error": "usage: tangow-page-browser <command> < json-request-line",
                     "fallback": "computer_act",
                 }
             )
         )
         return 2
     command = argv[1]
-    args: dict[str, Any] = {}
-    if len(argv) >= 3 and argv[2].strip():
-        args = json.loads(argv[2])
+    args: dict[str, Any] = json.loads(request) if request.strip() else {}
     port = cdp_port()
     try:
         wait_for_cdp(port)

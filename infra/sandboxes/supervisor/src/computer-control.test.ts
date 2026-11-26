@@ -4,7 +4,7 @@ import {
   publishedLoopbackControlHostPort,
   resolveComputerControlEndpoint,
 } from "./computer-spec.js";
-import { controlDesktop, MAX_COMPUTER_CONTROL_RESPONSE_BYTES } from "./index.js";
+import { controlDesktop, MAX_COMPUTER_CONTROL_RESPONSE_BYTES } from "./screen-routes.js";
 import {
   attemptComputerControl,
   preferComputerControl,

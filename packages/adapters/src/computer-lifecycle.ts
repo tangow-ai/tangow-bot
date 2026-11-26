@@ -154,6 +154,13 @@ export class ComputerBusyError extends Error {
   }
 }
 
+export class ComputerCapacityError extends Error {
+  constructor() {
+    super("Computer capacity is temporarily full");
+    this.name = "ComputerCapacityError";
+  }
+}
+
 export { toComputerRef } from "./computer-support.js";
 
 async function loadVolumeHome(

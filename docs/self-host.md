@@ -316,6 +316,7 @@ The Electron desktop app is a client of the same API, with the same Docker or E2
   naming what to set. There is no mode without computers.
 
 For provider configuration and health checks, see the [provider setup guide](./self-host-sandbox-providers.md).
+To run Docker computers as Kubernetes pods, see [Kubernetes computers](./self-host-kubernetes.md).
 
 ## Backup
 

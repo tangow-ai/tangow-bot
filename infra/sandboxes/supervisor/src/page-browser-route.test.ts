@@ -1,8 +1,8 @@
-import { PassThrough, Readable } from "node:stream";
+import { Duplex, PassThrough } from "node:stream";
 import { resolveSupervisorToken } from "@tangow/core";
 import { beforeEach, expect, it, vi } from "vitest";
 
-const mock = vi.hoisted(() => ({ exec: vi.fn(), inspect: vi.fn() }));
+const mock = vi.hoisted(() => ({ exec: vi.fn(), inspect: vi.fn(), stdin: [] as Buffer[] }));
 vi.mock("dockerode", () => ({
   default: class {
     getContainer() {
@@ -16,6 +16,7 @@ import { supervisorApp } from "./index.js";
 beforeEach(() => {
   mock.exec.mockReset();
   mock.inspect.mockReset();
+  mock.stdin = [];
   mock.inspect.mockResolvedValue({
     Config: {
       Labels: { "tangow.managed": "true", "tangow.botId": "home", "tangow.spaceId": "space" },
@@ -23,19 +24,26 @@ beforeEach(() => {
   });
   mock.exec.mockImplementation(async (options: { Cmd: string[] }) => ({
     start: async () =>
-      Readable.from([
-        Buffer.from(
-          options.Cmd.includes("/usr/local/bin/tangow-page-browser")
-            ? JSON.stringify({
-                ok: true,
-                url: "https://example.test",
-                title: "Fixture",
-                tree: "",
-                elements: [],
-              })
-            : "",
-        ),
-      ]),
+      new Duplex({
+        read() {
+          this.push(
+            options.Cmd.includes("/usr/local/bin/tangow-page-browser")
+              ? JSON.stringify({
+                  ok: true,
+                  url: "https://example.test",
+                  title: "Fixture",
+                  tree: "",
+                  elements: [],
+                })
+              : "",
+          );
+          this.push(null);
+        },
+        write(chunk: Buffer, _encoding, callback) {
+          mock.stdin.push(chunk);
+          callback();
+        },
+      }),
     inspect: async () => ({ ExitCode: 0 }),
   }));
 });
@@ -139,4 +147,24 @@ it("closes helper stdin when the request is cancelled", async () => {
   controller.abort();
   expect(await (await response).json()).toMatchObject({ ok: false, uncertain: true });
   expect(stream.destroyed).toBe(true);
+});
+
+it("delivers the request on the Docker helper's stdin, not in its command", async () => {
+  const text = 'placeholder-pass "q" \\ end\nnext line';
+  const body = { command: "act", actions: [{ kind: "fill", ref: "e1", text }] };
+  const response = await supervisorApp.request("/computers/computer-fill/browser", {
+    method: "POST",
+    headers: {
+      authorization: `Bearer ${resolveSupervisorToken(process.env)}`,
+      "content-type": "application/json",
+      "x-tangow-bot-id": "home",
+      "x-tangow-space-id": "space",
+    },
+    body: JSON.stringify(body),
+  });
+
+  expect(await response.json()).toMatchObject({ ok: true });
+  const helper = mock.exec.mock.calls.at(-1)![0] as { Cmd: string[] };
+  expect(JSON.stringify(helper)).not.toContain("placeholder-pass");
+  expect(Buffer.concat(mock.stdin).toString()).toBe(`${JSON.stringify(body)}\n`);
 });
