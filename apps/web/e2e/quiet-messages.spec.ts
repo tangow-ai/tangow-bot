@@ -1,4 +1,4 @@
-import { activeBotId, captureScreenshot, completeOnboarding, signup } from "./helpers";
+import { activeBotId, captureScreenshot, completeOnboarding, signup, uniqueEmail } from "./helpers";
 import { expect, type Locator, type Page, test } from "./test";
 import { at, type EntryDraft, runFinished, runStarted, showThread } from "./thread-log";
 
@@ -96,8 +96,7 @@ async function setAppearance(page: Page, theme: "light" | "dark") {
 }
 
 test("the thread reads as names, prose and asides", async ({ page }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `quiet-messages-${stamp}@tangow.test`, "password12", "Quiet Messages");
+  await signup(page, uniqueEmail("quiet-messages"), "password12", "Quiet Messages");
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);

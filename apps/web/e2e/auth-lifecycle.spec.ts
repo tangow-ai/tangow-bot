@@ -1,4 +1,4 @@
-import { captureScreenshot, completeOnboarding, signup } from "./helpers";
+import { captureScreenshot, completeOnboarding, signup, uniqueEmail } from "./helpers";
 import { expect, test } from "./test";
 
 test("restricted signup waits for mailbox verification", async ({ page }, testInfo) => {
@@ -30,8 +30,7 @@ test("restricted signup waits for mailbox verification", async ({ page }, testIn
 test("logout protects bot deep links and sign-in restores the session", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  const email = `auth-lifecycle-${stamp}@tangow.test`;
+  const email = uniqueEmail("auth-lifecycle");
   const password = "password12";
   const userName = "Auth Lifecycle";
 
@@ -142,8 +141,7 @@ test("logout protects bot deep links and sign-in restores the session", async ({
 });
 
 test("changes and recovers an email password", async ({ page }, testInfo) => {
-  const stamp = Date.now();
-  const email = `password-recovery-${stamp}@tangow.test`;
+  const email = uniqueEmail("password-recovery");
   const originalPassword = "password12";
   const changedPassword = "changed-password12";
   const resetPassword = "reset-password12";

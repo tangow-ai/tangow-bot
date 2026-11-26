@@ -5,14 +5,14 @@ import {
   openNewBot,
   rpc,
   signup,
+  uniqueEmail,
 } from "./helpers";
 import { expect, test } from "./test";
 
 test("create opens form, then empty chat; picker lists bots; sidebar collapses", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `new-bot-ux-${stamp}@tangow.test`, "password12", "New Bot UX");
+  await signup(page, uniqueEmail("new-bot-ux"), "password12", "New Bot UX");
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);
@@ -71,8 +71,7 @@ test("create opens form, then empty chat; picker lists bots; sidebar collapses",
 });
 
 test("picker rows explain groups and spaces", async ({ page }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `picker-info-${stamp}@tangow.test`, "password12", "Picker Info");
+  await signup(page, uniqueEmail("picker-info"), "password12", "Picker Info");
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);
@@ -110,8 +109,7 @@ test("picker rows explain groups and spaces", async ({ page }, testInfo) => {
 });
 
 test("later bot waits before showing the focus card; sending cancels it", async ({ page }) => {
-  const stamp = Date.now();
-  await signup(page, `focus-delay-${stamp}@tangow.test`, "password12", "Focus Delay");
+  await signup(page, uniqueEmail("focus-delay"), "password12", "Focus Delay");
   await completeOnboarding(page);
   // First bot from onboarding shows the focus card immediately.
   await expect(page.getByText("What do you want me on first?", { exact: true })).toBeVisible();
@@ -143,8 +141,7 @@ test("later bot waits before showing the focus card; sending cancels it", async 
 });
 
 test("plus picker can create a Private computer bot", async ({ page }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `new-bot-private-${stamp}@tangow.test`, "password12", "New Bot Private");
+  await signup(page, uniqueEmail("new-bot-private"), "password12", "New Bot Private");
   await completeOnboarding(page);
   const bootstrap = page.waitForResponse(
     (response) => response.url().includes("/rpc/bootstrap") && response.ok(),
@@ -163,8 +160,7 @@ test("plus picker can create a Private computer bot", async ({ page }, testInfo)
 });
 
 test("second bot from plus opens create form before persist", async ({ page }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `second-bot-form-${stamp}@tangow.test`, "password12", "Second Bot Form");
+  await signup(page, uniqueEmail("second-bot-form"), "password12", "Second Bot Form");
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);

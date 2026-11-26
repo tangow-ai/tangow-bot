@@ -1,5 +1,5 @@
 import { writeFileSync } from "node:fs";
-import { activeBotId, completeOnboarding, rpc, signup } from "./helpers";
+import { activeBotId, completeOnboarding, rpc, signup, uniqueEmail } from "./helpers";
 import type { Page } from "./test";
 import { expect, test } from "./test";
 import { finishedRuns, threadEntries } from "./thread-log";
@@ -27,7 +27,7 @@ const fridge = { prompt: "ask me three questions", ready: "Built-in, 54–56 cm"
 
 /** Opens a scripted question card after `history` earlier exchanges, scrolled to the end of the thread. */
 async function openCard(page: Page, name: string, history = 0, { prompt, ready } = cities) {
-  await signup(page, `${name}-${Date.now()}@tangow.test`, "password12", "Ask Motion");
+  await signup(page, uniqueEmail(`${name}`), "password12", "Ask Motion");
   await completeOnboarding(page);
   const botId = activeBotId(page);
   for (let turn = 1; turn <= history; turn++) {

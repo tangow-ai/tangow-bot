@@ -1,10 +1,16 @@
-import { captureScreenshot, completeOnboarding, openUserSettings, signup } from "./helpers";
+import {
+  captureScreenshot,
+  completeOnboarding,
+  openUserSettings,
+  signup,
+  uniqueEmail,
+} from "./helpers";
 import { expect, test } from "./test";
 
 test("model dropdown search and provider group headers", async ({ page }, testInfo) => {
   const stamp = Date.now();
   const userName = `Model picker ${stamp}`;
-  await signup(page, `model-picker-${stamp}@tangow.test`, "password12", userName);
+  await signup(page, uniqueEmail("model-picker"), "password12", userName);
   await completeOnboarding(page);
 
   await openUserSettings(page, "providers");

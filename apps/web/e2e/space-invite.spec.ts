@@ -1,4 +1,11 @@
-import { captureScreenshot, completeOnboarding, openUserSettings, rpc, signup } from "./helpers";
+import {
+  captureScreenshot,
+  completeOnboarding,
+  openUserSettings,
+  rpc,
+  signup,
+  uniqueEmail,
+} from "./helpers";
 import { expect, test } from "./test";
 
 test("an invite for an email survives sign up and joins only that account to the space", async ({
@@ -6,11 +13,10 @@ test("an invite for an email survives sign up and joins only that account to the
   browser,
   baseURL,
 }, testInfo) => {
-  const stamp = Date.now();
-  const guestEmail = `invite-guest-${stamp}@tangow.test`;
-  const laterEmail = `invite-later-${stamp}@tangow.test`;
+  const guestEmail = uniqueEmail("invite-guest");
+  const laterEmail = uniqueEmail("invite-later");
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
-  await signup(page, `invite-owner-${stamp}@tangow.test`, "password12", "Ada Owner");
+  await signup(page, uniqueEmail("invite-owner"), "password12", "Ada Owner");
   await completeOnboarding(page);
 
   const settings = await openUserSettings(page, "space");
@@ -50,7 +56,7 @@ test("an invite for an email survives sign up and joins only that account to the
   };
 
   await guest.goto(inviteUrl);
-  await signUpOnSignIn(`invite-other-${stamp}@tangow.test`, "Sam Other");
+  await signUpOnSignIn(uniqueEmail("invite-other"), "Sam Other");
   await expect(guest.getByText(`This invite is for ${guestEmail}.`)).toBeVisible();
   await expect(guest.getByRole("button", { name: "Join", exact: true })).toHaveCount(0);
   await captureScreenshot(guest, testInfo, "invite-another-account");

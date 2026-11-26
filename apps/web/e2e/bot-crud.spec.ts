@@ -7,12 +7,12 @@ import {
   openNewBot,
   saveField,
   signup,
+  uniqueEmail,
 } from "./helpers";
 import { expect, test } from "./test";
 
 test("bot creation, editing, and deletion persist", async ({ page }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `bot-crud-${stamp}@tangow.test`, "password12", "Bot CRUD");
+  await signup(page, uniqueEmail("bot-crud"), "password12", "Bot CRUD");
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);
@@ -238,8 +238,7 @@ test("bot creation, editing, and deletion persist", async ({ page }, testInfo) =
 test("an archived bot's page opens read-only from the archived list, and Restore brings it back", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `bot-archive-${stamp}@tangow.test`, "password12", "Archive Owner");
+  await signup(page, uniqueEmail("bot-archive"), "password12", "Archive Owner");
   await completeOnboarding(page);
   const scoutId = await createNamedBot(page, "Scout");
   const panel = page.getByTestId("side-panel");

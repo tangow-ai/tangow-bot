@@ -1,4 +1,10 @@
-import { captureScreenshot, completeOnboarding, createNamedBot, signup } from "./helpers";
+import {
+  captureScreenshot,
+  completeOnboarding,
+  createNamedBot,
+  signup,
+  uniqueEmail,
+} from "./helpers";
 import { expect, type Page, test } from "./test";
 
 async function captureSidebarSelected(
@@ -31,8 +37,7 @@ async function captureSidebarSelected(
 }
 
 test("account settings appearance control switches to light mode", async ({ page }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `ui-appearance-${stamp}@tangow.test`, "password12", "Appearance QA");
+  await signup(page, uniqueEmail("ui-appearance"), "password12", "Appearance QA");
   await completeOnboarding(page, testInfo);
 
   await page.getByTestId("user-menu-trigger").click();
@@ -84,8 +89,7 @@ test("account settings appearance control switches to light mode", async ({ page
 test("sidebar bot rows hover with the same tone as the Customize row", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `ui-hover-${stamp}@tangow.test`, "password12", "Hover QA");
+  await signup(page, uniqueEmail("ui-hover"), "password12", "Hover QA");
   await completeOnboarding(page, testInfo);
   await createNamedBot(page, "Second Bot");
 

@@ -9,6 +9,7 @@ import {
   realSandboxTimeout,
   rpc,
   signup,
+  uniqueEmail,
 } from "./helpers";
 import { expect, test } from "./test";
 
@@ -17,7 +18,7 @@ import { expect, test } from "./test";
 test("the bot screen reconnects when the bot's run ends, then holds", async ({
   page,
 }, testInfo) => {
-  await signup(page, `screen-stable-${Date.now()}@tangow.test`, "password12", "Screen Stable");
+  await signup(page, uniqueEmail("screen-stable"), "password12", "Screen Stable");
   await completeOnboarding(page);
   const botId = activeBotId(page);
   const otherBotId = await createNamedBot(page, "Second");

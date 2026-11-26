@@ -1,4 +1,4 @@
-import { activeBotId, captureScreenshot, completeOnboarding, signup } from "./helpers";
+import { activeBotId, captureScreenshot, completeOnboarding, signup, uniqueEmail } from "./helpers";
 import { expect, test } from "./test";
 import type { EntryDraft } from "./thread-log";
 import { at, showThread } from "./thread-log";
@@ -6,7 +6,7 @@ import { at, showThread } from "./thread-log";
 test("internal run memory stays out of chat and a cancelled recap retires its question on reload", async ({
   page,
 }, testInfo) => {
-  await signup(page, `run-memory-${Date.now()}@tangow.test`, "password12", "Run Memory");
+  await signup(page, uniqueEmail("run-memory"), "password12", "Run Memory");
   await completeOnboarding(page);
   const botId = activeBotId(page);
   const drafts: EntryDraft[] = [

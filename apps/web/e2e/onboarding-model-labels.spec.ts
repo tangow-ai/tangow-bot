@@ -1,4 +1,4 @@
-import { captureScreenshot, signup } from "./helpers";
+import { captureScreenshot, signup, uniqueEmail } from "./helpers";
 import { expect, test } from "./test";
 
 test("onboarding uses compact model selects without misleading latest labels", async ({
@@ -21,7 +21,7 @@ test("onboarding uses compact model selects without misleading latest labels", a
   });
 
   const stamp = Date.now();
-  await signup(page, `model-labels-${stamp}@tangow.test`, "password12", `Model labels ${stamp}`);
+  await signup(page, uniqueEmail("model-labels"), "password12", `Model labels ${stamp}`);
   await expect(page.getByRole("heading", { name: "Connect a model" })).toBeVisible({
     timeout: 20_000,
   });

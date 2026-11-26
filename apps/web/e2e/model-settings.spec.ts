@@ -7,6 +7,7 @@ import {
   openUserSettings,
   rpc,
   signup,
+  uniqueEmail,
 } from "./helpers";
 import { expect, test } from "./test";
 
@@ -17,7 +18,7 @@ test("custom connections persist reasoning support and bot thinking", async ({
 }, testInfo) => {
   const stamp = Date.now();
   const userName = `Reasoning ${stamp}`;
-  await signup(page, `reasoning-model-${stamp}@tangow.test`, "password12", userName);
+  await signup(page, uniqueEmail("reasoning-model"), "password12", userName);
   await completeOnboarding(page);
   await openUserSettings(page, "providers");
   await page.getByPlaceholder("Search providers").fill("openai-compatible");
@@ -133,7 +134,7 @@ test("connects to and lists an OpenAI-compatible endpoint", async ({ page }, tes
     const baseUrl = `http://127.0.0.1:${address.port}/v1`;
     const stamp = Date.now();
     const userName = `Local model ${stamp}`;
-    await signup(page, `local-model-${stamp}@tangow.test`, "password12", userName);
+    await signup(page, uniqueEmail("local-model"), "password12", userName);
     await completeOnboarding(page);
 
     await openUserSettings(page, "providers");
@@ -189,7 +190,7 @@ test("model settings connect, replace, and cancel provider authentication", asyn
 }, testInfo) => {
   const stamp = Date.now();
   const userName = `Models ${stamp}`;
-  await signup(page, `models-${stamp}@tangow.test`, "password12", userName);
+  await signup(page, uniqueEmail("models"), "password12", userName);
   await completeOnboarding(page);
 
   await openUserSettings(page, "providers");
@@ -265,8 +266,7 @@ test("model settings connect, replace, and cancel provider authentication", asyn
 test("Auto category models persist and a fixed default disables Auto", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `auto-model-${stamp}@tangow.test`, "password12", "Model routing");
+  await signup(page, uniqueEmail("auto-model"), "password12", "Model routing");
   await completeOnboarding(page);
   await rpc(page, "models/connect", {
     provider: "scripted",

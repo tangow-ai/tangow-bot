@@ -1,11 +1,17 @@
-import { activeBotId, captureScreenshot, completeOnboarding, rpc, signup } from "./helpers";
+import {
+  activeBotId,
+  captureScreenshot,
+  completeOnboarding,
+  rpc,
+  signup,
+  uniqueEmail,
+} from "./helpers";
 import { expect, test } from "./test";
 
 test("search palette opens from the header and ⌘K, and finds bots, chats and settings", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `cmdk-bots-${stamp}@tangow.test`, "password12", "CmdK Bots");
+  await signup(page, uniqueEmail("cmdk-bots"), "password12", "CmdK Bots");
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);

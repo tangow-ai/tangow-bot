@@ -1,10 +1,17 @@
-import { activeBotId, captureScreenshot, completeOnboarding, rpc, signup } from "./helpers";
+import {
+  activeBotId,
+  captureScreenshot,
+  completeOnboarding,
+  rpc,
+  signup,
+  uniqueEmail,
+} from "./helpers";
 import type { Page, TestInfo } from "./test";
 import { expect, test } from "./test";
 
 /** Opens the scripted three-question card. */
 async function openStack(page: Page, name: string) {
-  await signup(page, `${name}-${Date.now()}@tangow.test`, "password12", "Ask Stack");
+  await signup(page, uniqueEmail(`${name}`), "password12", "Ask Stack");
   await completeOnboarding(page);
   const botId = activeBotId(page);
   await page.getByPlaceholder(/Message/).fill("ask me three questions");

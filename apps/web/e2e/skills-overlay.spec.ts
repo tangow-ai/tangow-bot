@@ -1,11 +1,10 @@
-import { captureScreenshot, completeOnboarding, rpc, signup } from "./helpers";
+import { captureScreenshot, completeOnboarding, rpc, signup, uniqueEmail } from "./helpers";
 import { expect, test } from "./test";
 
 test("skills overlay: user and built-in skills, search, desktop and phone", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `skills-overlay-${stamp}@tangow.test`, "password12", "Skills Overlay");
+  await signup(page, uniqueEmail("skills-overlay"), "password12", "Skills Overlay");
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);

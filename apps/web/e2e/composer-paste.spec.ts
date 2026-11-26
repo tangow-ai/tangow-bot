@@ -1,9 +1,8 @@
-import { captureScreenshot, completeOnboarding, signup } from "./helpers";
+import { captureScreenshot, completeOnboarding, signup, uniqueEmail } from "./helpers";
 import { expect, type Page, test } from "./test";
 
 async function openComposer(page: Page) {
-  const stamp = Date.now();
-  await signup(page, `composer-paste-${stamp}@tangow.test`, "password12", "Paste Test");
+  await signup(page, uniqueEmail("composer-paste"), "password12", "Paste Test");
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);

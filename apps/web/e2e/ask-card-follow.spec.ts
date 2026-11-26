@@ -1,5 +1,5 @@
 import { writeFileSync } from "node:fs";
-import { activeBotId, completeOnboarding, rpc, signup } from "./helpers";
+import { activeBotId, completeOnboarding, rpc, signup, uniqueEmail } from "./helpers";
 import type { Page } from "./test";
 import { expect, test } from "./test";
 import { finishedRuns, threadEntries } from "./thread-log";
@@ -20,7 +20,7 @@ type Frame = {
 
 /** Opens the scripted cities card after a few exchanges, so the thread scrolls. */
 async function openCard(page: Page, name: string) {
-  await signup(page, `${name}-${Date.now()}@tangow.test`, "password12", "Ask Follow");
+  await signup(page, uniqueEmail(`${name}`), "password12", "Ask Follow");
   await completeOnboarding(page);
   const botId = activeBotId(page);
   for (let turn = 1; turn <= 3; turn++) {

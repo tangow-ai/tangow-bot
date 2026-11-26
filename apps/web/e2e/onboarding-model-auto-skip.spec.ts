@@ -1,4 +1,4 @@
-import { captureScreenshot, signup } from "./helpers";
+import { captureScreenshot, signup, uniqueEmail } from "./helpers";
 import { expect, test } from "./test";
 
 test("onboarding skips model connect when a default model is already available", async ({
@@ -28,12 +28,7 @@ test("onboarding skips model connect when a default model is already available",
 
   const createRequest = page.waitForRequest("**/rpc/bots/create");
   const stamp = Date.now();
-  await signup(
-    page,
-    `model-auto-skip-${stamp}@tangow.test`,
-    "password12",
-    `Model auto skip ${stamp}`,
-  );
+  await signup(page, uniqueEmail("model-auto-skip"), "password12", `Model auto skip ${stamp}`);
 
   await expect(page.getByRole("heading", { name: "Connect a model" })).toBeHidden();
   await expect(page.getByRole("heading", { name: "Server integrations" })).toBeHidden();

@@ -4,6 +4,7 @@ import {
   createNamedBot,
   openNewGroup,
   signup,
+  uniqueEmail,
 } from "./helpers";
 import { expect, type Page, test } from "./test";
 
@@ -12,8 +13,7 @@ async function createBot(page: Page, name: string) {
 }
 
 test("mention picker completes with Enter and Tab", async ({ page }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `mention-keys-${stamp}@tangow.test`, "password12", "Mention Keys");
+  await signup(page, uniqueEmail("mention-keys"), "password12", "Mention Keys");
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);
@@ -98,8 +98,7 @@ test("mention picker completes with Enter and Tab", async ({ page }, testInfo) =
 test("mentions stay inline where typed, in the composer and the sent bubble", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `mention-inline-${stamp}@tangow.test`, "password12", "Mention Inline");
+  await signup(page, uniqueEmail("mention-inline"), "password12", "Mention Inline");
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);

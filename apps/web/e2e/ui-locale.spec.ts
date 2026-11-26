@@ -1,11 +1,16 @@
-import { captureScreenshot, completeOnboarding, openUserSettings, signup } from "./helpers";
+import {
+  captureScreenshot,
+  completeOnboarding,
+  openUserSettings,
+  signup,
+  uniqueEmail,
+} from "./helpers";
 import { expect, test } from "./test";
 
 test("account settings language picker includes Simplified Chinese and applies it", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `ui-locale-zh-cn-${stamp}@tangow.test`, "password12", "Locale QA");
+  await signup(page, uniqueEmail("ui-locale-zh-cn"), "password12", "Locale QA");
   await completeOnboarding(page, testInfo);
 
   const settings = await openUserSettings(page);
@@ -27,8 +32,7 @@ test("account settings language picker includes Simplified Chinese and applies i
 test("account settings language picker includes Korean and applies it", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `ui-locale-ko-${stamp}@tangow.test`, "password12", "Locale QA");
+  await signup(page, uniqueEmail("ui-locale-ko"), "password12", "Locale QA");
   await completeOnboarding(page, testInfo);
 
   const settings = await openUserSettings(page);
@@ -50,8 +54,7 @@ test("account settings language picker includes Korean and applies it", async ({
 test("account settings language picker includes Spanish and applies it", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `ui-locale-es-${stamp}@tangow.test`, "password12", "Locale QA");
+  await signup(page, uniqueEmail("ui-locale-es"), "password12", "Locale QA");
   await completeOnboarding(page, testInfo);
 
   const settings = await openUserSettings(page);
@@ -73,8 +76,7 @@ test("account settings language picker includes Spanish and applies it", async (
 test("account settings language picker includes Russian and persists it", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `ui-locale-ru-${stamp}@tangow.test`, "password12", "Locale QA");
+  await signup(page, uniqueEmail("ui-locale-ru"), "password12", "Locale QA");
   await completeOnboarding(page, testInfo);
 
   await page.getByTestId("user-menu-trigger").click();
@@ -101,8 +103,7 @@ test("account settings language picker includes Russian and persists it", async 
 test("account settings language picker includes French and persists it", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `ui-locale-fr-${stamp}@tangow.test`, "password12", "Locale QA");
+  await signup(page, uniqueEmail("ui-locale-fr"), "password12", "Locale QA");
   await completeOnboarding(page, testInfo);
 
   const settings = await openUserSettings(page);

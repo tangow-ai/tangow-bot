@@ -6,6 +6,7 @@ import {
   inviteToSpace,
   rpc,
   signup,
+  uniqueEmail,
 } from "./helpers";
 import { expect, test } from "./test";
 
@@ -14,12 +15,11 @@ test("a bot shared with one person gives them their own thread until it is unsha
   browser,
   baseURL,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `share-owner-${stamp}@tangow.test`, "password12", "Ada Owner");
+  await signup(page, uniqueEmail("share-owner"), "password12", "Ada Owner");
   await completeOnboarding(page);
   const { spaceId } = await rpc<{ spaceId: string }>(page, "me", undefined);
   await rpc(page, "spaces/rename", { spaceId, name: "Studio" });
-  const guestEmail = `share-guest-${stamp}@tangow.test`;
+  const guestEmail = uniqueEmail("share-guest");
   const inviteUrl = await inviteToSpace(page, spaceId, guestEmail);
   const botId = await createNamedBot(page, "Release notes");
   await rpc(page, "agentSkills/create", {

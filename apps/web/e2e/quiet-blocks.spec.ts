@@ -5,6 +5,7 @@ import {
   openUserSettings,
   rpc,
   signup,
+  uniqueEmail,
 } from "./helpers";
 import { expect, type Page, test } from "./test";
 
@@ -33,8 +34,7 @@ async function waitForRunStatus(page: Page, botId: string, status: string | null
 test("framed blocks capture a pending approval and an answered question as normal bot rows, light and dark", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `quiet-blocks-${stamp}@tangow.test`, "password12", "Quiet Blocks");
+  await signup(page, uniqueEmail("quiet-blocks"), "password12", "Quiet Blocks");
   await completeOnboarding(page, testInfo);
   const botId = activeBotId(page);
   const composer = page.getByPlaceholder(/Message/);
