@@ -349,9 +349,6 @@ describe("sandbox supervisor input containment", () => {
         argv: ["env", "DISPLAY=:2", "tangow-browser", "https://example.com"],
       });
     }
-    expect(containerActionStep({ kind: "launch", application: "xterm" }, ":3")).toEqual({
-      argv: ["env", "DISPLAY=:3", "xterm"],
-    });
     expect(containerActionStep({ kind: "open", path: "https://example.com" }, ":3")).toEqual({
       argv: ["env", "DISPLAY=:3", "xdg-open", "https://example.com"],
     });
@@ -365,9 +362,12 @@ describe("sandbox supervisor input containment", () => {
         argv: ["env", "DISPLAY=:2", "tangow-browser", "https://example.com"],
       });
     }
-    expect(containerActionStep({ kind: "launch", application: "XTerm" }, ":3")).toEqual({
-      argv: ["env", "DISPLAY=:3", "XTerm"],
-    });
+  });
+
+  it("launches terminal with tangow-terminal", () => {
+    expect(
+      containerActionStep({ kind: "launch", application: "terminal" }, ":3", "/tmp/test-profile"),
+    ).toEqual({ argv: ["env", "DISPLAY=:3", "tangow-terminal"] });
   });
 
   it("keeps browser routing argv identical for control and Docker exec fallback", () => {

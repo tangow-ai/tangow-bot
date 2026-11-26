@@ -44,6 +44,28 @@ export const computerActionSchema = z.discriminatedUnion("kind", [
 
 export { BROWSER_APPLICATIONS as DOCKER_BROWSER_ALIASES } from "@tangow/core/node/desktop-runtime";
 
+const DOCKER_LAUNCH_ALIASES = new Map([
+  ["terminal", "tangow-terminal"],
+  ["tangow-terminal", "tangow-terminal"],
+  ["files", "pcmanfm"],
+  ["pcmanfm", "pcmanfm"],
+  ["libreoffice", "libreoffice"],
+  ["office", "libreoffice"],
+  ["writer", "libreoffice"],
+  ["calc", "libreoffice"],
+  ["impress", "libreoffice"],
+]);
+
+export class UnknownApplicationError extends Error {
+  constructor(application: string) {
+    const quotedName = JSON.stringify(application);
+    // Leave room for JSON escaping and the available names in the adapter's 200-character body.
+    const name = quotedName.length > 52 ? `${quotedName.slice(0, 51)}…"` : quotedName;
+    super(`unknown application ${name}. Available: browser, files, libreoffice, terminal`);
+    this.name = "UnknownApplicationError";
+  }
+}
+
 export function assertRequestIdentity(
   botId: string | undefined,
   spaceId: string | undefined,
@@ -372,12 +394,15 @@ export function containerActionStep(
       target,
     ];
   } else {
-    const browser = DOCKER_BROWSER_ALIASES.has(action.application.toLowerCase());
+    const application = action.application.toLowerCase();
+    const browser = DOCKER_BROWSER_ALIASES.has(application);
+    const executable = browser ? "tangow-browser" : DOCKER_LAUNCH_ALIASES.get(application);
+    if (!executable) throw new UnknownApplicationError(action.application);
     argv = [
       "env",
       `DISPLAY=${display}`,
       ...(browser && browserProfile ? [`TANGOW_BROWSER_PROFILE=${browserProfile}`] : []),
-      browser ? "tangow-browser" : action.application,
+      executable,
       ...(action.uri ? [action.uri] : []),
     ];
   }

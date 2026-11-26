@@ -23,6 +23,7 @@ import {
   shouldReplayComputerActions,
   teardownReleasedScreen,
   toSandboxInput,
+  UnknownApplicationError,
 } from "./supervisor-logic.js";
 
 /** The routes that drive a computer's screens: browser, desktop control, viewer and input. */
@@ -197,7 +198,7 @@ export function registerScreenRoutes(app: Hono, session: ComputerSession) {
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      return c.json({ error: message }, 500);
+      return c.json({ error: message }, error instanceof UnknownApplicationError ? 400 : 500);
     }
   });
 
