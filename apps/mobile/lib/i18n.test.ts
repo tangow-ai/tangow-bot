@@ -68,10 +68,11 @@ describe("mobile i18n", () => {
     expect(t("Delete {name}?", { name: "Scout" })).toBe("Удалить Scout?");
   });
 
-  it("preserves interpolations in the Chinese and Russian catalogs", async () => {
+  it("preserves interpolations in every non-English catalog", async () => {
     const { ZH_MESSAGES } = await import("./locales/zh");
     const { RU_MESSAGES } = await import("./locales/ru");
-    for (const messages of [ZH_MESSAGES, RU_MESSAGES]) {
+    const { FR_MESSAGES } = await import("./locales/fr");
+    for (const messages of [ZH_MESSAGES, RU_MESSAGES, FR_MESSAGES]) {
       const empty = Object.entries(messages).filter(([, value]) => !value.trim());
       const interpolationMismatches = Object.entries(messages).filter(([id, value]) => {
         const tokens = (message: string) =>
@@ -83,9 +84,10 @@ describe("mobile i18n", () => {
     }
   });
 
-  it("translates every mobile chrome t() id in both non-English catalogs", async () => {
+  it("translates every mobile chrome t() id in every non-English catalog", async () => {
     const { ZH_MESSAGES } = await import("./locales/zh");
     const { RU_MESSAGES } = await import("./locales/ru");
+    const { FR_MESSAGES } = await import("./locales/fr");
     const { EMPTY_PLUGIN_CATALOG_MESSAGE, SLASH_ACTIONS } = await import("@tangow/core");
     const { OPENAI_COMPATIBLE_BASE_URL_HINT } = await import("@tangow/contracts");
     const mobileRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -104,7 +106,7 @@ describe("mobile i18n", () => {
         ids.add(JSON.parse(`"${match[1]}"`) as string);
       }
     }
-    for (const messages of [ZH_MESSAGES, RU_MESSAGES]) {
+    for (const messages of [ZH_MESSAGES, RU_MESSAGES, FR_MESSAGES]) {
       const missing = [...ids].filter((id) => !messages[id]?.trim()).sort();
       expect(missing).toEqual([]);
     }
