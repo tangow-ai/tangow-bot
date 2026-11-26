@@ -1,5 +1,6 @@
 import type { ProcessEvent } from "@tangow/adapter-kit";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { ComputerCapacityError } from "./computer-lifecycle.js";
 import { isComputerScreenUnavailable } from "./computer-screens.js";
 import {
   DockerSandboxProvider,
@@ -134,18 +135,16 @@ describe("Docker sandbox", () => {
     expect(isComputerScreenUnavailable(error)).toBe(true);
   });
 
-  it("translates a 429 computer limit reached error from the supervisor", async () => {
+  it("reports computer capacity for a provision 429 without a supervisor message", async () => {
     vi.stubGlobal(
       "fetch",
-      vi.fn(async () =>
-        Response.json({ error: "Computer limit reached for space (max: 5)" }, { status: 429 }),
-      ),
+      vi.fn(async () => new Response(null, { status: 429 })),
     );
     const provider = new DockerSandboxProvider("http://supervisor.test", "test-token");
 
     await expect(
       provider.provision({ botId: "bot", homePath: "/tmp/bot" }, context),
-    ).rejects.toThrow("Computer limit reached for space (max: 5)");
+    ).rejects.toBeInstanceOf(ComputerCapacityError);
   });
 
   it("stops a streamed file response at the caller-derived encoded limit", async () => {

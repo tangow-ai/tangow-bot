@@ -15,7 +15,11 @@ import type {
   WorkerAttempt,
   WorkerGuest,
 } from "./computer-runtime.js";
-import { ComputerIdentityError, ComputerNotFoundError } from "./computer-runtime.js";
+import {
+  ComputerIdentityError,
+  ComputerLimitError,
+  ComputerNotFoundError,
+} from "./computer-runtime.js";
 import { SCREEN_READY_TIMEOUT_MS } from "./computer-session.js";
 import {
   COMPUTER_CONTROL_PORT,
@@ -545,8 +549,16 @@ export function createKubernetesComputerRuntime(options: {
     try {
       await pods.createNamespacedPod({ namespace, body });
     } catch (error) {
-      // The namespace quota refuses at admission: its message names what is exceeded.
-      throw new Error(`computer pod was refused: ${apiMessage(error)}`);
+      const detail = apiMessage(error);
+      if (
+        error instanceof ApiException &&
+        error.code === 403 &&
+        detail.includes("exceeded quota")
+      ) {
+        getLogger().warn("Kubernetes computer pod exceeded quota", { errorDetail: detail });
+        throw new ComputerLimitError();
+      }
+      throw new Error(`computer pod was refused: ${detail}`);
     }
     await waitUntilReady(name, "computer");
     return { id: name, releaseRef: COMPUTER_IMAGE, resumed: false };

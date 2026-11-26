@@ -95,7 +95,11 @@ export interface ComputerRuntime {
 export class ComputerIdentityError extends Error {}
 export class ComputerNotFoundError extends Error {}
 export class ComputerLimitError extends Error {
-  constructor(readonly limit: number) {
-    super(`Computer limit reached for space (max: ${limit})`);
+  constructor(readonly limit?: number) {
+    super(
+      limit === undefined
+        ? "Computer capacity is temporarily full"
+        : `Computer limit reached for space (max: ${limit})`,
+    );
   }
 }
