@@ -834,4 +834,24 @@ export const FR_MESSAGES: Record<string, string> = {
   Personal: "Personnel",
   "Could not delete space": "Impossible de supprimer l'espace",
   "Could not play that clip.": "Impossible de lire cet extrait.",
+  Vault: "Coffre",
+  "New API key": "Nouvelle clé API",
+  Site: "Site",
+  "Sent as": "Envoyée comme",
+  Header: "En-tête",
+  "Header name": "Nom de l'en-tête",
+  Username: "Nom d'utilisateur",
+  Key: "Clé",
+  Everyone: "Tout le monde",
+  "Shared with you": "Partagées avec vous",
+  "Shared with": "Partagée avec",
+  Keys: "Clés",
+  "Every current and future member of {space} can use this key on its site, from their bots and yours that you can see, including webhooks and routines.":
+    "Tous les membres actuels et futurs de {space} peuvent utiliser cette clé sur le site associé depuis leurs bots et les vôtres auxquels vous avez accès, y compris via les webhooks et les routines.",
+  "These people can use this key on its site, from their bots and yours that you can see, including webhooks and routines.":
+    "Ces personnes peuvent utiliser cette clé sur le site associé depuis leurs bots et les vôtres auxquels vous avez accès, y compris via les webhooks et les routines.",
+  "Every current and future member of {space} can use the keys switched on, each on its own site, from their bots and yours that you can see, including webhooks and routines.":
+    "Tous les membres actuels et futurs de {space} peuvent utiliser les clés activées, chacune sur son site, depuis leurs bots et les vôtres auxquels vous avez accès, y compris via les webhooks et les routines.",
+  "These people can use the keys switched on, each on its own site, from their bots and yours that you can see, including webhooks and routines.":
+    "Ces personnes peuvent utiliser les clés activées, chacune sur son site, depuis leurs bots et les vôtres auxquels vous avez accès, y compris via les webhooks et les routines.",
 };
