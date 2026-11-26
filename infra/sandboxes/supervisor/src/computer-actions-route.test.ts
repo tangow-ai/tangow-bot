@@ -44,9 +44,7 @@ function launch(application: string) {
 afterEach(() => vi.unstubAllGlobals());
 
 it("returns 400 and the available applications for an unknown launch name", async () => {
-  const control = vi.fn(async () =>
-    Response.json({ error: "unsupported computer action" }, { status: 400 }),
-  );
+  const control = vi.fn();
   vi.stubGlobal("fetch", control);
 
   const response = await launch("xterm");

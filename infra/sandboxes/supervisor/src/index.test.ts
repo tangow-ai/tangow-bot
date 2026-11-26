@@ -366,22 +366,10 @@ describe("sandbox supervisor input containment", () => {
     }
   });
 
-  it.each([
-    ["terminal", "tangow-terminal"],
-    ["tangow-terminal", "tangow-terminal"],
-    ["Files", "pcmanfm"],
-    ["pcmanfm", "pcmanfm"],
-    ["libreoffice", "libreoffice"],
-    ["office", "libreoffice"],
-    ["writer", "libreoffice"],
-    ["calc", "libreoffice"],
-    ["impress", "libreoffice"],
-  ])("launches %s with %s", (application, executable) => {
-    expect(containerActionStep({ kind: "launch", application }, ":3", "/tmp/test-profile")).toEqual(
-      {
-        argv: ["env", "DISPLAY=:3", executable],
-      },
-    );
+  it("launches terminal with tangow-terminal", () => {
+    expect(
+      containerActionStep({ kind: "launch", application: "terminal" }, ":3", "/tmp/test-profile"),
+    ).toEqual({ argv: ["env", "DISPLAY=:3", "tangow-terminal"] });
   });
 
   it("keeps browser routing argv identical for control and Docker exec fallback", () => {

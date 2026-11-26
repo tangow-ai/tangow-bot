@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 #### Fixed
 
-- Bots can now open the terminal, files, or LibreOffice when asked on computers backed by Docker or Kubernetes.
+- Bots can now open the terminal, files, or LibreOffice when asked on Docker-backed computers.
 
 ### 2026-11-23
 
