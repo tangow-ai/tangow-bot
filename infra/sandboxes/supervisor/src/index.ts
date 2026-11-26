@@ -91,6 +91,7 @@ import {
   stopScreensCommand,
   teardownReleasedScreen,
   toSandboxInput,
+  UnknownApplicationError,
   withKeyedLock,
   workspaceTarget,
 } from "./supervisor-logic.js";
@@ -571,7 +572,7 @@ app.post("/computers/:id/actions", async (c) => {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return c.json({ error: message }, 500);
+    return c.json({ error: message }, error instanceof UnknownApplicationError ? 400 : 500);
   }
 });
 

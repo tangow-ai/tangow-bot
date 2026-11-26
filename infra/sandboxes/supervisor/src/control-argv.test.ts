@@ -48,6 +48,10 @@ describe.each([undefined, profile])(
       { kind: "launch" as const, application: "chromium", uri: "https://example.com" },
       { kind: "launch" as const, application: "chromium" },
       { kind: "launch" as const, application: "tangow-terminal" },
+      { kind: "launch" as const, application: "terminal" },
+      { kind: "launch" as const, application: "files" },
+      { kind: "launch" as const, application: "office" },
+      { kind: "launch" as const, application: "WrItEr" },
     ])("accepts generated $kind argv and identifies a long-lived process", (action) => {
       const step = containerActionStep(action, display, browserProfile);
       if (!("argv" in step)) throw new Error("expected command");
