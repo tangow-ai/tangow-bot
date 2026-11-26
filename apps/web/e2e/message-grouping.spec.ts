@@ -1,4 +1,11 @@
-import { activeBotId, captureScreenshot, completeOnboarding, rpc, signup } from "./helpers";
+import {
+  activeBotId,
+  captureScreenshot,
+  completeOnboarding,
+  rpc,
+  signup,
+  uniqueEmail,
+} from "./helpers";
 import { expect, type Page, test } from "./test";
 import { at, type EntryDraft, runFinished, runStarted, showThread } from "./thread-log";
 
@@ -76,8 +83,7 @@ async function setAppearance(page: Page, theme: "light" | "dark") {
 test("a bot's stacked consecutive messages in a group thread share one header", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `message-grouping-${stamp}@tangow.test`, "password12", "Message Grouping");
+  await signup(page, uniqueEmail("message-grouping"), "password12", "Message Grouping");
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);
@@ -140,8 +146,7 @@ test("a bot's stacked consecutive messages in a group thread share one header", 
 test("two replies from two runs of the same bot group like two messages, nothing between", async ({
   page,
 }) => {
-  const stamp = Date.now();
-  await signup(page, `run-grouping-${stamp}@tangow.test`, "password12", "Run Grouping");
+  await signup(page, uniqueEmail("run-grouping"), "password12", "Run Grouping");
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);

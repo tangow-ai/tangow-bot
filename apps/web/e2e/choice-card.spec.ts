@@ -1,12 +1,18 @@
-import { activeBotId, captureScreenshot, completeOnboarding, rpc, signup } from "./helpers";
+import {
+  activeBotId,
+  captureScreenshot,
+  completeOnboarding,
+  rpc,
+  signup,
+  uniqueEmail,
+} from "./helpers";
 import { expect, test } from "./test";
 import { threadEntries } from "./thread-log";
 
 test("renders tappable choice buttons and submits the offered action id", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `choice-card-${stamp}@tangow.test`, "password12", "Choice Card");
+  await signup(page, uniqueEmail("choice-card"), "password12", "Choice Card");
   await completeOnboarding(page);
 
   const botId = activeBotId(page);

@@ -1,10 +1,16 @@
-import { activeBotId, captureScreenshot, completeOnboarding, rpc, signup } from "./helpers";
+import {
+  activeBotId,
+  captureScreenshot,
+  completeOnboarding,
+  rpc,
+  signup,
+  uniqueEmail,
+} from "./helpers";
 import { expect, test } from "./test";
 import { threadEntries } from "./thread-log";
 
 test("shows peer chips in transcript and opens view-only peer chat", async ({ page }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `peer-msg-${stamp}@tangow.test`, "password12", "Peer Msg");
+  await signup(page, uniqueEmail("peer-msg"), "password12", "Peer Msg");
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);

@@ -1,4 +1,11 @@
-import { activeBotId, captureScreenshot, completeOnboarding, rpc, signup } from "./helpers";
+import {
+  activeBotId,
+  captureScreenshot,
+  completeOnboarding,
+  rpc,
+  signup,
+  uniqueEmail,
+} from "./helpers";
 import { expect, test } from "./test";
 import { answerOf, threadEntries } from "./thread-log";
 
@@ -6,8 +13,7 @@ import { answerOf, threadEntries } from "./thread-log";
 // (feature ask-answer-via-composer, PR 1). Typing a reply must resolve the ask and resume the
 // run, never the old "Answer the pending ask first." block.
 test("resolves a pending ask from the main composer", async ({ page }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `ask-composer-${stamp}@tangow.test`, "password12", "Ask Composer");
+  await signup(page, uniqueEmail("ask-composer"), "password12", "Ask Composer");
   await completeOnboarding(page);
 
   const botId = activeBotId(page);

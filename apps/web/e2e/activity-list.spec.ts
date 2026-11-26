@@ -1,4 +1,4 @@
-import { captureScreenshot, completeOnboarding, signup } from "./helpers";
+import { captureScreenshot, completeOnboarding, signup, uniqueEmail } from "./helpers";
 import { expect, type Page, test } from "./test";
 
 /** Activity rows sit above `[data-sidebar-group]` bots; match their aria-label. */
@@ -38,8 +38,7 @@ async function captureActivitySidebar(
 }
 
 test("sidebar Now and Recent surface active and terminal runs", async ({ page }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `activity-${stamp}@tangow.test`, "password12", "Activity");
+  await signup(page, uniqueEmail("activity"), "password12", "Activity");
   await completeOnboarding(page);
 
   const aside = page.locator("aside").first();

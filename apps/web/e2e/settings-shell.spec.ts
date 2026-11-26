@@ -1,4 +1,11 @@
-import { captureScreenshot, completeOnboarding, openUserSettings, rpc, signup } from "./helpers";
+import {
+  captureScreenshot,
+  completeOnboarding,
+  openUserSettings,
+  rpc,
+  signup,
+  uniqueEmail,
+} from "./helpers";
 import { expect, test } from "./test";
 
 test("settings shell is two-pane and deep-links Providers Models Memory Decision Model Voice Usage", async ({
@@ -6,7 +13,7 @@ test("settings shell is two-pane and deep-links Providers Models Memory Decision
 }, testInfo) => {
   const stamp = Date.now();
   const userName = `Settings shell ${stamp}`;
-  await signup(page, `settings-shell-${stamp}@tangow.test`, "password12", userName);
+  await signup(page, uniqueEmail("settings-shell"), "password12", userName);
   await completeOnboarding(page);
 
   await page.getByTestId("user-menu-trigger").click();
@@ -115,7 +122,7 @@ test("settings space switcher moves to another space and keeps the section", asy
   page,
 }, testInfo) => {
   const stamp = Date.now();
-  await signup(page, `settings-switch-${stamp}@tangow.test`, "password12", `Switch ${stamp}`);
+  await signup(page, uniqueEmail("settings-switch"), "password12", `Switch ${stamp}`);
   await completeOnboarding(page);
   await rpc(page, "spaces/create", { name: "Family" });
   await page.reload();

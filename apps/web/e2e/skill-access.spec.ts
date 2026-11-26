@@ -1,11 +1,10 @@
-import { activeBotId, completeOnboarding, rpc, signup } from "./helpers";
+import { activeBotId, completeOnboarding, rpc, signup, uniqueEmail } from "./helpers";
 import { expect, test } from "./test";
 
 type CatalogEntry = { id: string; name: string; availability: string; visibleBotIds: string[] };
 
 test("per-bot skill access via agentSkills.setAccess", async ({ page }) => {
-  const stamp = Date.now();
-  await signup(page, `skill-access-${stamp}@tangow.test`, "password12", "Skill Access");
+  await signup(page, uniqueEmail("skill-access"), "password12", "Skill Access");
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);

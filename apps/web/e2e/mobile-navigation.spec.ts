@@ -1,12 +1,12 @@
 import type { Locator, Page } from "@playwright/test";
-import { captureScreenshot, completeOnboarding, openBotPage, signup } from "./helpers";
+import { captureScreenshot, completeOnboarding, openBotPage, signup, uniqueEmail } from "./helpers";
 import { expect, test } from "./test";
 
 /** At phone width the bot list is its own page, as in the iPhone app: open a chat, go back. */
 test("the phone bot list is a page that a chat opens from and returns to", async ({
   page,
 }, testInfo) => {
-  await signup(page, `mobile-nav-${Date.now()}@tangow.test`, "password12", "Phone Nav");
+  await signup(page, uniqueEmail("mobile-nav"), "password12", "Phone Nav");
   await completeOnboarding(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForURL(/\/app\/[^/]+$/);
@@ -79,7 +79,7 @@ async function longPress(page: Page, target: Locator) {
 test("on the phone bot list a long press opens a bot's menu, with Move to in the menu itself", async ({
   page,
 }, testInfo) => {
-  await startOnBotList(page, `mobile-press-${Date.now()}@tangow.test`);
+  await startOnBotList(page, uniqueEmail("mobile-press"));
   const list = page.getByTestId("bots-sidebar");
   const bot = list.getByRole("button", { name: /^Chief/ });
   const menu = page.getByRole("menu", { name: "Actions for Chief" });
@@ -122,7 +122,7 @@ async function openUserMenuEntry(page: Page, name: "Settings" | "Usage") {
 test("phone Settings is a list of sections: a row pushes one, Back and close leave", async ({
   page,
 }, testInfo) => {
-  await startOnBotList(page, `mobile-settings-${Date.now()}@tangow.test`);
+  await startOnBotList(page, uniqueEmail("mobile-settings"));
 
   await openUserMenuEntry(page, "Settings");
   const settings = page.getByTestId("user-settings");
@@ -179,7 +179,7 @@ function scrollers(root: Locator) {
 test("phone Providers pushes a provider's setup over the list and pops back to it", async ({
   page,
 }, testInfo) => {
-  await startOnBotList(page, `mobile-providers-${Date.now()}@tangow.test`);
+  await startOnBotList(page, uniqueEmail("mobile-providers"));
   await openUserMenuEntry(page, "Settings");
   const settings = page.getByTestId("user-settings");
   await settings.getByTestId("settings-list-providers").click();
@@ -227,7 +227,7 @@ test("phone Providers pushes a provider's setup over the list and pops back to i
 test("phone Customize is a list of its sections, pushed and popped like Settings", async ({
   page,
 }, testInfo) => {
-  await startOnBotList(page, `mobile-customize-${Date.now()}@tangow.test`);
+  await startOnBotList(page, uniqueEmail("mobile-customize"));
 
   await page.getByTestId("open-customize").click();
   const overlay = page.getByRole("dialog");
@@ -247,7 +247,7 @@ test("phone Customize is a list of its sections, pushed and popped like Settings
 test("the phone bot panel returns to the chat from its own back button", async ({
   page,
 }, testInfo) => {
-  await signup(page, `mobile-panel-${Date.now()}@tangow.test`, "password12", "Phone Nav");
+  await signup(page, uniqueEmail("mobile-panel"), "password12", "Phone Nav");
   await completeOnboarding(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.waitForURL(/\/app\/[^/]+$/);
@@ -272,7 +272,7 @@ test("the phone bot panel returns to the chat from its own back button", async (
 test("at desktop width the bot panel keeps its close button and hides the Chat back", async ({
   page,
 }) => {
-  await signup(page, `desktop-panel-${Date.now()}@tangow.test`, "password12", "Desktop Nav");
+  await signup(page, uniqueEmail("desktop-panel"), "password12", "Desktop Nav");
   await completeOnboarding(page);
   await page.setViewportSize({ width: 1280, height: 900 });
 

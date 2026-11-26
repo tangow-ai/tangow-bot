@@ -1,5 +1,11 @@
 import type { UsageCell } from "@tangow/contracts";
-import { captureScreenshot, completeOnboarding, openUserSettings, signup } from "./helpers";
+import {
+  captureScreenshot,
+  completeOnboarding,
+  openUserSettings,
+  signup,
+  uniqueEmail,
+} from "./helpers";
 import { expect, test } from "./test";
 
 const atlas = { id: "bot_atlas", name: "Atlas", color: "#5B5BD6", shapeSeed: 2, deleted: false };
@@ -63,7 +69,7 @@ test("usage settings break spend down by bot, model and category, input and outp
   page,
 }, testInfo) => {
   const stamp = Date.now();
-  await signup(page, `usage-settings-${stamp}@tangow.test`, "password12", `Usage ${stamp}`);
+  await signup(page, uniqueEmail("usage-settings"), "password12", `Usage ${stamp}`);
   await completeOnboarding(page);
   const periods: string[] = [];
   await page.route("**/rpc/usage/breakdown", async (route) => {

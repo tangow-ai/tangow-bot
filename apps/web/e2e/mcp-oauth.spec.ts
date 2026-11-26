@@ -1,11 +1,10 @@
 import type { McpServer } from "@tangow/contracts";
 import { MCP_OAUTH_CHANNEL } from "../src/lib/mcp-connect";
-import { captureScreenshot, completeOnboarding, signup } from "./helpers";
+import { captureScreenshot, completeOnboarding, signup, uniqueEmail } from "./helpers";
 import { expect, type Route, test } from "./test";
 
 test("connects an MCP server through the OAuth popup callback", async ({ page }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `mcp-oauth-${stamp}@tangow.test`, "password12", "MCP OAuth");
+  await signup(page, uniqueEmail("mcp-oauth"), "password12", "MCP OAuth");
   await completeOnboarding(page);
 
   let oauthStatus: McpServer["oauthStatus"] = "none";
@@ -130,7 +129,7 @@ test("connects an MCP server through the OAuth popup callback", async ({ page },
 test("reveals a token only after connection failure, retries and reuses the saved app", async ({
   page,
 }, testInfo) => {
-  await signup(page, `mcp-token-${Date.now()}@tangow.test`, "password12", "Custom Apps");
+  await signup(page, uniqueEmail("mcp-token"), "password12", "Custom Apps");
   await completeOnboarding(page);
   let tokenSaved = false;
   let creates = 0;

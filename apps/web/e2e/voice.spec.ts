@@ -1,4 +1,11 @@
-import { captureScreenshot, completeOnboarding, openUserSettings, rpc, signup } from "./helpers";
+import {
+  captureScreenshot,
+  completeOnboarding,
+  openUserSettings,
+  rpc,
+  signup,
+  uniqueEmail,
+} from "./helpers";
 import { expect, test } from "./test";
 
 test("Providers connect a voice key, space Voice speaks a reply, and opens a call", async ({
@@ -6,7 +13,7 @@ test("Providers connect a voice key, space Voice speaks a reply, and opens a cal
 }, testInfo) => {
   const stamp = Date.now();
   const userName = `Voice ${stamp}`;
-  await signup(page, `voice-${stamp}@tangow.test`, "password12", userName);
+  await signup(page, uniqueEmail("voice"), "password12", userName);
   await completeOnboarding(page);
 
   await expect(page.getByRole("button", { name: "Call", exact: true })).toHaveCount(0);

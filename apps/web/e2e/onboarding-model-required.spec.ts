@@ -1,4 +1,4 @@
-import { captureScreenshot, signup } from "./helpers";
+import { captureScreenshot, signup, uniqueEmail } from "./helpers";
 import { expect, test } from "./test";
 
 test("onboarding requires a model when the deployment has none", async ({ page }, testInfo) => {
@@ -19,12 +19,7 @@ test("onboarding requires a model when the deployment has none", async ({ page }
   });
 
   const stamp = Date.now();
-  await signup(
-    page,
-    `model-required-${stamp}@tangow.test`,
-    "password12",
-    `Model required ${stamp}`,
-  );
+  await signup(page, uniqueEmail("model-required"), "password12", `Model required ${stamp}`);
   await expect(page.getByRole("heading", { name: "Connect a model" })).toBeVisible({
     timeout: 20_000,
   });
@@ -50,8 +45,7 @@ for (const unavailable of ["empty", "failed"] as const) {
     await page.route("**/rpc/models/list", (route) =>
       unavailable === "failed" ? route.abort() : route.fulfill({ json: { json: [] } }),
     );
-    const stamp = Date.now();
-    await signup(page, `catalog-${unavailable}-${stamp}@tangow.test`, "password12", "Model setup");
+    await signup(page, uniqueEmail(`catalog-${unavailable}`), "password12", "Model setup");
     await expect(page.getByRole("heading", { name: "Connect a model" })).toBeVisible();
     await expect(page.getByRole("button", { name: "Continue", exact: true })).toBeDisabled();
     await expect(page.getByRole("heading", { name: "Create your first bot" })).toHaveCount(0);

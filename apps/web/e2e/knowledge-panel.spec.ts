@@ -9,13 +9,14 @@ import {
   realSandboxTimeout,
   rpc,
   signup,
+  uniqueEmail,
 } from "./helpers";
 import { expect, test } from "./test";
 
 test("memory and skills are readable and editable in the app", async ({ page }, testInfo) => {
   const stamp = Date.now();
   const userName = `Knowledge ${stamp}`;
-  await signup(page, `knowledge-${stamp}@tangow.test`, "password12", userName);
+  await signup(page, uniqueEmail("knowledge"), "password12", userName);
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);

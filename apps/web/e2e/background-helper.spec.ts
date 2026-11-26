@@ -1,4 +1,4 @@
-import { captureScreenshot, completeOnboarding, signup } from "./helpers";
+import { captureScreenshot, completeOnboarding, signup, uniqueEmail } from "./helpers";
 import { expect, test } from "./test";
 
 const phone = { width: 390, height: 844 };
@@ -7,7 +7,7 @@ test("a background helper lets the bot answer at once, then report back unprompt
   page,
 }, testInfo) => {
   const desktop = page.viewportSize()!;
-  await signup(page, `background-helper-${Date.now()}@tangow.test`, "password12", "Background");
+  await signup(page, uniqueEmail("background-helper"), "password12", "Background");
   await completeOnboarding(page);
 
   const ask = "research Lisbon hotels in the background";

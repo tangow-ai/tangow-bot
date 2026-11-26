@@ -1,4 +1,4 @@
-import { captureScreenshot, completeOnboarding, signup } from "./helpers";
+import { captureScreenshot, completeOnboarding, signup, uniqueEmail } from "./helpers";
 import { expect, test } from "./test";
 
 test("setup exposes all integration choices and saves only the selected provider", async ({
@@ -21,7 +21,7 @@ test("setup exposes all integration choices and saves only the selected provider
     saved.push(route.request().postDataJSON());
     return route.fulfill({ json: { json: { ok: true } } });
   });
-  await signup(page, `integration-setup-${Date.now()}@tangow.test`, "password12", "Setup Test");
+  await signup(page, uniqueEmail("integration-setup"), "password12", "Setup Test");
   await expect(page.getByRole("heading", { name: "Server integrations" })).toBeVisible();
   for (const name of ["Direct MCP", "Composio", "Executor"]) {
     await expect(page.getByRole("button", { name, exact: true })).toBeVisible();
@@ -59,7 +59,7 @@ test("direct MCP connects a URL and assigns it to the first bot", async ({ page 
     serverId = route.request().postDataJSON().json.serverId;
     return route.fulfill({ json: { json: { status: "already_connected" } } });
   });
-  await signup(page, `direct-mcp-setup-${Date.now()}@tangow.test`, "password12", "Direct MCP");
+  await signup(page, uniqueEmail("direct-mcp-setup"), "password12", "Direct MCP");
   await page.getByText("Add server URL", { exact: true }).click();
   await page.getByRole("textbox", { name: "Server URL" }).fill("https://mcp.example.test/mcp");
   await page.getByRole("button", { name: "Connect", exact: true }).click();
@@ -102,7 +102,7 @@ test("Executor reconnect saves a replacement token before authorization", async 
       },
     }),
   );
-  await signup(page, `executor-reconnect-${Date.now()}@tangow.test`, "password12", "Executor Test");
+  await signup(page, uniqueEmail("executor-reconnect"), "password12", "Executor Test");
   await expect(page.getByRole("heading", { name: "Server integrations" })).toBeVisible();
   const server = await page.evaluate(async () => {
     const response = await fetch("/rpc/mcp/servers/create", {
@@ -167,7 +167,7 @@ test("remote members skip server setup and keep direct MCP connections", async (
       },
     }),
   );
-  await signup(page, `remote-member-${Date.now()}@tangow.test`, "password12", "Remote Member");
+  await signup(page, uniqueEmail("remote-member"), "password12", "Remote Member");
   await expect(page.getByRole("heading", { name: "Server integrations" })).toBeHidden();
   await expect(page.getByRole("heading", { name: "Create your first bot" })).toHaveCount(0);
   await captureScreenshot(page, testInfo, "remote-member-onboarding");
@@ -205,7 +205,7 @@ test("configured server owners manage providers from settings", async ({ page },
       },
     }),
   );
-  await signup(page, `configured-owner-${Date.now()}@tangow.test`, "password12", "Server Owner");
+  await signup(page, uniqueEmail("configured-owner"), "password12", "Server Owner");
   await expect(page.getByRole("heading", { name: "Server integrations" })).toBeHidden();
   await completeOnboarding(page);
   await page.getByTestId("user-menu-trigger").click();

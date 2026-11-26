@@ -1,9 +1,9 @@
-import { captureScreenshot, completeOnboarding, signup } from "./helpers";
+import { captureScreenshot, completeOnboarding, signup, uniqueEmail } from "./helpers";
 import type { JSHandle, Page } from "./test";
 import { expect, test } from "./test";
 
 async function openConversation(page: Page) {
-  await signup(page, `file-drop-${Date.now()}@tangow.test`, "password12", "Drop Test");
+  await signup(page, uniqueEmail("file-drop"), "password12", "Drop Test");
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);

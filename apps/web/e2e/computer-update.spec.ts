@@ -7,13 +7,14 @@ import {
   openUserSettings,
   rpc,
   signup,
+  uniqueEmail,
 } from "./helpers";
 import { expect, test } from "./test";
 
 test("global Computer settings updates idle computers without taking control and reports busy ones", async ({
   page,
 }, testInfo) => {
-  await signup(page, `computer-batch-${Date.now()}@tangow.test`, "password12", "Computer Batch");
+  await signup(page, uniqueEmail("computer-batch"), "password12", "Computer Batch");
   await completeOnboarding(page);
   await createNamedBot(page, "Planner");
   const busyBotId = await createNamedBot(page, "Scout", { computerMode: "dedicated" });
@@ -82,7 +83,7 @@ test("computer maintenance shows durable background progress and failure recover
   page,
 }, testInfo) => {
   await page.addInitScript(() => localStorage.setItem("tangow.uiAppearance", "dark"));
-  await signup(page, `computer-update-${Date.now()}@tangow.test`, "password12", "Computer Update");
+  await signup(page, uniqueEmail("computer-update"), "password12", "Computer Update");
   await completeOnboarding(page);
   const botId = activeBotId(page);
   let updates: ComputerUpdate[] = [];

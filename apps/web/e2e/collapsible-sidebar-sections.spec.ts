@@ -1,5 +1,5 @@
 import type { Page } from "@playwright/test";
-import { captureScreenshot, completeOnboarding, signup } from "./helpers";
+import { captureScreenshot, completeOnboarding, signup, uniqueEmail } from "./helpers";
 import { expect, test } from "./test";
 
 /** Nothing hovered: the captures below are meant to show the resting state. */
@@ -10,8 +10,7 @@ async function restPointer(page: Page) {
 }
 
 test("titled sidebar section expands and collapses", async ({ page }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `sidebar-collapse-${stamp}@tangow.test`, "password12", "Test User");
+  await signup(page, uniqueEmail("sidebar-collapse"), "password12", "Test User");
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);

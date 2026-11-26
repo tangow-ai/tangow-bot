@@ -1,11 +1,17 @@
-import { captureScreenshot, completeOnboarding, openNewSpace, rpc, signup } from "./helpers";
+import {
+  captureScreenshot,
+  completeOnboarding,
+  openNewSpace,
+  rpc,
+  signup,
+  uniqueEmail,
+} from "./helpers";
 import { expect, test } from "./test";
 
 test("spaces stay invisible by default and chat creation requires approval", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `spaces-${stamp}@tangow.test`, "password12", "Space Owner");
+  await signup(page, uniqueEmail("spaces"), "password12", "Space Owner");
   await completeOnboarding(page);
 
   const sidebar = page.locator("aside").first();
@@ -74,8 +80,7 @@ test("spaces stay invisible by default and chat creation requires approval", asy
 test("a new space auto-completes onboarding and can be deleted from its menu", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `spaces-delete-${stamp}@tangow.test`, "password12", "Space Owner");
+  await signup(page, uniqueEmail("spaces-delete"), "password12", "Space Owner");
   await completeOnboarding(page);
 
   const sidebar = page.locator("aside").first();
@@ -126,8 +131,7 @@ test("a new space auto-completes onboarding and can be deleted from its menu", a
 });
 
 test("deleting the last bot in a space stays in the app after first use", async ({ page }) => {
-  const stamp = Date.now();
-  await signup(page, `spaces-empty-${stamp}@tangow.test`, "password12", "Space Owner");
+  await signup(page, uniqueEmail("spaces-empty"), "password12", "Space Owner");
   await completeOnboarding(page);
   const [chief] = await rpc<Array<{ id: string }>>(page, "bots/list", {});
   expect(chief).toBeTruthy();

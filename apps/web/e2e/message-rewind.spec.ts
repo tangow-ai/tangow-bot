@@ -1,4 +1,4 @@
-import { captureScreenshot, completeOnboarding, signup } from "./helpers";
+import { captureScreenshot, completeOnboarding, signup, uniqueEmail } from "./helpers";
 import { expect, type Locator, test } from "./test";
 
 // Edit and resend sits under your own bubble on hover. Incoming replies can
@@ -12,7 +12,7 @@ async function editAndResend(row: Locator) {
 
 test("edit and resend rewinds the thread to the edited message", async ({ page }, testInfo) => {
   const stamp = Date.now();
-  await signup(page, `rewind-${stamp}@tangow.test`, "password12", "Rewind User");
+  await signup(page, uniqueEmail("rewind"), "password12", "Rewind User");
   await completeOnboarding(page);
 
   const firstText = `rewind-first-${stamp}`;

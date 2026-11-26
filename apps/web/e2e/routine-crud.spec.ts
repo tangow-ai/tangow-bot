@@ -10,14 +10,14 @@ import {
   rpc,
   saveRoutineField,
   signup,
+  uniqueEmail,
 } from "./helpers";
 import { expect, type Locator, test } from "./test";
 
 test("a new routine starts active and silent, and its switches answer the keyboard", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `routine-toggle-${stamp}@tangow.test`, "password12", "Routine Toggle");
+  await signup(page, uniqueEmail("routine-toggle"), "password12", "Routine Toggle");
   await completeOnboarding(page);
   await openRoutineCreate(page);
 
@@ -75,8 +75,7 @@ async function thumbInsets(toggle: Locator) {
 test("routine editing updates in place, preserves timezone, and deletion persists", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `routine-crud-${stamp}@tangow.test`, "password12", "Routine CRUD");
+  await signup(page, uniqueEmail("routine-crud"), "password12", "Routine CRUD");
   await completeOnboarding(page);
   const botId = activeBotId(page);
 
@@ -154,8 +153,7 @@ test("routine editing updates in place, preserves timezone, and deletion persist
 });
 
 test("a deep link opens the routine in the bot page", async ({ page }) => {
-  const stamp = Date.now();
-  await signup(page, `routine-link-${stamp}@tangow.test`, "password12", "Routine Link");
+  await signup(page, uniqueEmail("routine-link"), "password12", "Routine Link");
   await completeOnboarding(page);
   const botId = activeBotId(page);
   const routine = await rpc<Routine>(page, "routines/create", {
@@ -177,8 +175,7 @@ test("a deep link opens the routine in the bot page", async ({ page }) => {
 test("removing the last trigger is refused, an inbound one is confirmed first", async ({
   page,
 }) => {
-  const stamp = Date.now();
-  await signup(page, `routine-trigger-${stamp}@tangow.test`, "password12", "Routine Trigger");
+  await signup(page, uniqueEmail("routine-trigger"), "password12", "Routine Trigger");
   await completeOnboarding(page);
   const botId = activeBotId(page);
   await rpc<Routine>(page, "routines/create", {
@@ -216,8 +213,7 @@ test("removing the last trigger is refused, an inbound one is confirmed first", 
 });
 
 test("invalid advanced cron is rejected without creating a routine", async ({ page }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `routine-invalid-${stamp}@tangow.test`, "password12", "Invalid Routine");
+  await signup(page, uniqueEmail("routine-invalid"), "password12", "Invalid Routine");
   await completeOnboarding(page);
   const botId = activeBotId(page);
 
@@ -235,8 +231,7 @@ test("invalid advanced cron is rejected without creating a routine", async ({ pa
 });
 
 test("a created routine opens in its own page", async ({ page }) => {
-  const stamp = Date.now();
-  await signup(page, `routine-refresh-${stamp}@tangow.test`, "password12", "Routine Refresh");
+  await signup(page, uniqueEmail("routine-refresh"), "password12", "Routine Refresh");
   await completeOnboarding(page);
   const botId = activeBotId(page);
 
@@ -257,8 +252,7 @@ test("a created routine opens in its own page", async ({ page }) => {
 test("switching bots while a routine save is pending does not reopen stale state", async ({
   page,
 }) => {
-  const stamp = Date.now();
-  await signup(page, `routine-switch-${stamp}@tangow.test`, "password12", "Routine Switch");
+  await signup(page, uniqueEmail("routine-switch"), "password12", "Routine Switch");
   await completeOnboarding(page);
   const firstBotId = activeBotId(page);
   const secondBot = await rpc<Bot>(page, "bots/create", {

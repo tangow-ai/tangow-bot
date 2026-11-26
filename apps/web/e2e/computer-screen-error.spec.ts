@@ -1,8 +1,15 @@
-import { activeBotId, captureScreenshot, completeOnboarding, rpc, signup } from "./helpers";
+import {
+  activeBotId,
+  captureScreenshot,
+  completeOnboarding,
+  rpc,
+  signup,
+  uniqueEmail,
+} from "./helpers";
 import { expect, test } from "./test";
 
 test("screen connection failures stay visible and can be retried", async ({ page }, testInfo) => {
-  await signup(page, `screen-error-${Date.now()}@tangow.test`, "password12", "Screen Error");
+  await signup(page, uniqueEmail("screen-error"), "password12", "Screen Error");
   await completeOnboarding(page);
   const botId = activeBotId(page);
   await rpc(page, "computer/boot", { botId });

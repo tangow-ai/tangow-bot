@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { expect, type Locator, type Page, type TestInfo } from "@playwright/test";
 import type { SettingsSection } from "../src/pages/settings-sections";
 
@@ -60,6 +61,10 @@ export async function completeOnboarding(page: Page, testInfo?: TestInfo) {
     await captureScreenshot(page, testInfo, "03-create-first-bot");
     await captureScreenshot(page, testInfo, "06-onboarding-complete");
   }
+}
+
+export function uniqueEmail(prefix: string): string {
+  return `${prefix}-${randomUUID()}@tangow.test`;
 }
 
 export async function signup(

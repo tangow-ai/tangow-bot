@@ -1,11 +1,10 @@
-import { captureScreenshot, completeOnboarding, signup } from "./helpers";
+import { captureScreenshot, completeOnboarding, signup, uniqueEmail } from "./helpers";
 import { expect, test } from "./test";
 
 test.describe.configure({ mode: "serial" });
 
 test("agent-attached files appear as downloadable cards", async ({ page }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `artifact-card-${stamp}@tangow.test`, "password12", "Artifact Card");
+  await signup(page, uniqueEmail("artifact-card"), "password12", "Artifact Card");
   await completeOnboarding(page);
 
   const composer = page.getByPlaceholder(/Message/);
@@ -27,8 +26,7 @@ test("agent-attached files appear as downloadable cards", async ({ page }, testI
 test("agent-attached Markdown opens a rendered preview and can be downloaded", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `markdown-preview-${stamp}@tangow.test`, "password12", "Markdown Preview");
+  await signup(page, uniqueEmail("markdown-preview"), "password12", "Markdown Preview");
   await completeOnboarding(page);
 
   const composer = page.getByPlaceholder(/Message/);

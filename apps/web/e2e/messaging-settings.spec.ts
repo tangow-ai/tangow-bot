@@ -1,4 +1,4 @@
-import { captureScreenshot, completeOnboarding, signup } from "./helpers";
+import { captureScreenshot, completeOnboarding, signup, uniqueEmail } from "./helpers";
 import { expect, test } from "./test";
 
 test.afterEach(async ({ page }) => {
@@ -81,7 +81,7 @@ test("Korean messaging settings show linked chat apps, channels, and connections
 
   const stamp = Date.now();
   const userName = `Messenger ${stamp}`;
-  await signup(page, `messaging-${stamp}@tangow.test`, "password12", userName);
+  await signup(page, uniqueEmail("messaging"), "password12", userName);
   await completeOnboarding(page);
 
   await page.getByRole("button", { name: new RegExp(userName) }).click();
@@ -202,7 +202,7 @@ test("team conversation settings open from messaging overlay", async ({ page }, 
 
   const stamp = Date.now();
   const userName = `TeamChat ${stamp}`;
-  await signup(page, `team-chat-${stamp}@tangow.test`, "password12", userName);
+  await signup(page, uniqueEmail("team-chat"), "password12", userName);
   await completeOnboarding(page);
 
   await page.getByRole("button", { name: new RegExp(userName) }).click();

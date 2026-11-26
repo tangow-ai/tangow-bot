@@ -1,10 +1,10 @@
-import { captureScreenshot, completeOnboarding, signup } from "./helpers";
+import { captureScreenshot, completeOnboarding, signup, uniqueEmail } from "./helpers";
 import { expect, test } from "./test";
 import { showThread } from "./thread-log";
 
 test("labels a Sendblue group message with its actual transport", async ({ page }, testInfo) => {
   const stamp = Date.now();
-  await signup(page, `messaging-transport-${stamp}@tangow.test`, "password12", "Transport E2E");
+  await signup(page, uniqueEmail("messaging-transport"), "password12", "Transport E2E");
   await completeOnboarding(page);
   await page.goto("/app");
   await page.waitForURL(/\/app\/[^/]+$/);

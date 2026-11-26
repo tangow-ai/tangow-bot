@@ -1,4 +1,4 @@
-import { captureScreenshot, completeOnboarding, rpc, signup } from "./helpers";
+import { captureScreenshot, completeOnboarding, rpc, signup, uniqueEmail } from "./helpers";
 import { expect, type Page, test } from "./test";
 
 function slackCard(page: Page) {
@@ -8,8 +8,7 @@ function slackCard(page: Page) {
 test("focus choice suggests apps and preserves a completed connection", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `onboarding-${stamp}@tangow.test`, "password12", "Robin");
+  await signup(page, uniqueEmail("onboarding"), "password12", "Robin");
   await completeOnboarding(page);
 
   await expect(
@@ -90,7 +89,7 @@ test("focus choice suggests apps and preserves a completed connection", async ({
 });
 
 test("choice refresh failures leave options available for retry", async ({ page }) => {
-  await signup(page, `choice-refresh-${Date.now()}@tangow.test`, "password12", "Choice Retry");
+  await signup(page, uniqueEmail("choice-refresh"), "password12", "Choice Retry");
   await completeOnboarding(page);
   const choice = page.getByRole("button", { name: /Day-to-day work/ });
   await expect(choice).toBeEnabled();

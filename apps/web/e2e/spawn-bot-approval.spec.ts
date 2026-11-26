@@ -1,10 +1,9 @@
-import { activeBotId, captureScreenshot, completeOnboarding, signup } from "./helpers";
+import { activeBotId, captureScreenshot, completeOnboarding, signup, uniqueEmail } from "./helpers";
 import { expect, test } from "./test";
 import { blocksOf, threadEntries } from "./thread-log";
 
 test("a bot asks before creating a bot, and Cancel creates nothing", async ({ page }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `spawn-approval-${stamp}@tangow.test`, "password12", "Spawn Approval");
+  await signup(page, uniqueEmail("spawn-approval"), "password12", "Spawn Approval");
   await completeOnboarding(page);
   const botId = activeBotId(page);
 
@@ -44,8 +43,7 @@ test("a bot asks before creating a bot, and Cancel creates nothing", async ({ pa
 test("Edit changes the name before Create bot, and the bot is created with it", async ({
   page,
 }, testInfo) => {
-  const stamp = Date.now();
-  await signup(page, `spawn-edit-${stamp}@tangow.test`, "password12", "Spawn Edit");
+  await signup(page, uniqueEmail("spawn-edit"), "password12", "Spawn Edit");
   await completeOnboarding(page);
   const botId = activeBotId(page);
 
