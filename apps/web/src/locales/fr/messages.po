@@ -2622,6 +2622,10 @@ msgstr "Local"
 msgid "Log out"
 msgstr "Se déconnecter"
 
+#: src/pages/VaultSettingsPanel.tsx:249
+msgid "Login"
+msgstr "Identifiant de connexion"
+
 #: src/pages/bot-page/model-options.ts:15
 #: src/pages/model-settings/model-detail.tsx:181
 #: src/pages/Onboarding.tsx:504
@@ -2912,6 +2916,10 @@ msgstr "Nouveau bot"
 #: src/pages/GroupPanel.tsx:236
 msgid "New group"
 msgstr "Nouveau groupe"
+
+#: src/pages/VaultSettingsPanel.tsx:208
+msgid "New login"
+msgstr "Nouvel identifiant de connexion"
 
 #: src/pages/ScratchpadSection.tsx:186
 msgid "New open-work item"
@@ -3566,6 +3574,10 @@ msgstr "Remplacer la clé API"
 #: src/pages/ProvidersSettings.tsx:267
 msgid "Replace key"
 msgstr "Remplacer la clé"
+
+#: src/pages/VaultSettingsPanel.tsx:291
+msgid "Replace password"
+msgstr "Remplacer le mot de passe"
 
 #: src/components/DraftCard.tsx:239
 msgid "Replaced"
