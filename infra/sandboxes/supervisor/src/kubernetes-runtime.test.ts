@@ -52,6 +52,15 @@ interface ExecCall {
   stdinEnded: boolean;
 }
 
+function podApiError(code: number, reason: string, message: string) {
+  return new ApiException(
+    code,
+    reason,
+    JSON.stringify({ kind: "Status", apiVersion: "v1", status: "Failure", message, reason, code }),
+    {},
+  );
+}
+
 /** The few pod calls the backend makes, kept in memory, plus exec and the control probe. */
 function fakeCluster() {
   const pods = new Map<string, V1Pod>();
@@ -64,31 +73,30 @@ function fakeCluster() {
     execs: [] as ExecCall[],
     exitCode: 0,
   };
-  const notFound = (name: string) =>
-    new ApiException(404, "Not Found", { message: `pods "${name}" not found` }, {});
+  const notFound = (name: string) => podApiError(404, "NotFound", `pods "${name}" not found`);
   const client: KubernetesClient = {
     pods: {
       createNamespacedPod: async ({ body }) => {
         const name = body.metadata!.name!;
         if (state.quotaExceeded) {
-          throw new ApiException(
+          throw podApiError(
             403,
             "Forbidden",
-            { message: `pods "${name}" is forbidden: exceeded quota: sandboxes` },
-            {},
+            `pods "${name}" is forbidden: exceeded quota: sandboxes`,
           );
         }
         // The API refuses a name that is not a DNS label.
         if (!/^[a-z0-9]([-a-z0-9]{0,61}[a-z0-9])?$/.test(name)) {
-          throw new ApiException(422, "Unprocessable Entity", { message: "invalid name" }, {});
+          throw podApiError(422, "Invalid", "invalid name");
         }
         // And a label value longer than 63 characters or with other characters.
         for (const value of Object.values(body.metadata!.labels ?? {})) {
           if (value.length > 63 || !LABEL_VALUE.test(value)) {
-            throw new ApiException(422, "Unprocessable Entity", { message: "invalid label" }, {});
+            throw podApiError(422, "Invalid", "invalid label");
           }
         }
-        if (pods.has(name)) throw new ApiException(409, "Conflict", {}, {});
+        if (pods.has(name))
+          throw podApiError(409, "AlreadyExists", `pods "${name}" already exists`);
         pods.set(name, { ...structuredClone(body), status: { phase: "Pending" } });
         return structuredClone(pods.get(name)!);
       },
@@ -541,7 +549,9 @@ describe("Kubernetes computers", () => {
     const response = await provision();
 
     expect(response.status).toBe(500);
-    expect(((await response.json()) as { error: string }).error).toContain("exceeded quota");
+    expect(await response.json()).toEqual({
+      error: `computer pod ${pod} was refused: pods "${pod}" is forbidden: exceeded quota: sandboxes`,
+    });
   });
 
   it("gives up at the deadline with the pod's last reason and deletes the pod", async () => {

@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { serve } from "@hono/node-server";
 import { boundedSandboxCommandTimeoutMs, resolveSupervisorToken } from "@tangow/core";
 import { loadRootEnv } from "@tangow/core/node/load-root-env";
-import { SERVICE_NAMES } from "@tangow/logging";
+import { getLogger, redactSensitiveText, SERVICE_NAMES } from "@tangow/logging";
 import { createRootLogger } from "@tangow/logging/axiom";
 import { requestLogging } from "@tangow/logging/hono";
 import type { MiddlewareHandler } from "hono";
@@ -68,6 +68,12 @@ const limitSupervisorRequestBody: MiddlewareHandler = async (c, next) => {
 };
 
 const PathSegment = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/);
+const MAX_ERROR_LOG_LENGTH = 1024;
+const desktopErrorRoutes = new Set([
+  "/computers/:id/actions",
+  "/computers/:id/input",
+  "/computers/:id/observe",
+]);
 
 /** The HTTP routes over one backend. Lifecycle decisions and locks live here, above it. */
 export function createSupervisor(runtime: ComputerRuntime) {
@@ -96,6 +102,21 @@ export function createSupervisor(runtime: ComputerRuntime) {
   const app = new Hono();
 
   app.use("*", requestLogging());
+  app.use("*", async (c, next) => {
+    await next();
+    if (c.res.status < 500) return;
+    const route = c.req.routePath;
+    // Desktop failures can echo arbitrary text from inside the sandbox.
+    const detail = desktopErrorRoutes.has(route)
+      ? undefined
+      : redactSensitiveText(await c.res.clone().text()).slice(0, MAX_ERROR_LOG_LENGTH);
+    getLogger().error("http.response.failed", {
+      "http.method": c.req.method,
+      "http.route": route,
+      "http.status": c.res.status,
+      "http.response.detail": detail,
+    });
+  });
 
   app.get("/health", (c) => c.json({ ok: true, image: COMPUTER_IMAGE }));
 

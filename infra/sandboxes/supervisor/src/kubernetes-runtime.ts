@@ -292,8 +292,23 @@ function hasExited(pod: V1Pod) {
 
 function apiMessage(error: unknown) {
   if (!(error instanceof ApiException)) return error instanceof Error ? error.message : `${error}`;
-  const body = error.body as { message?: string } | string | undefined;
-  return (typeof body === "object" ? body?.message : body) || `HTTP ${error.code}`;
+  const body: unknown = error.body;
+  if (typeof body !== "string" || !body) return `HTTP ${error.code}`;
+  try {
+    const status: unknown = JSON.parse(body);
+    if (
+      status &&
+      typeof status === "object" &&
+      "message" in status &&
+      typeof status.message === "string" &&
+      status.message
+    ) {
+      return status.message;
+    }
+  } catch {
+    // The API can also return plain text.
+  }
+  return body;
 }
 
 /** Why a pod is not running yet: its container's waiting reason, or why it is not scheduled. */
