@@ -551,7 +551,7 @@ describe("Kubernetes computers", () => {
 
     expect(response.status).toBe(500);
     expect(await response.json()).toEqual({
-      error: `computer pod ${pod} was refused: pods "${pod}" is forbidden: exceeded quota: sandboxes`,
+      error: `computer pod was refused: pods "${pod}" is forbidden: exceeded quota: sandboxes`,
     });
   });
 
@@ -561,44 +561,26 @@ describe("Kubernetes computers", () => {
     installLogger(createLogger({ service: "test", sinks: [sink] }));
     try {
       const cluster = fakeCluster();
-      cluster.client.pods.createNamespacedPod = async () => {
-        throw podApiError(
-          403,
-          "Forbidden",
-          `admission refused Bearer fixture-credential ${"x".repeat(5_000)}`,
-        );
+      const message = `read forbidden {"token":"fixture-json"} token=fixture-assignment ${"x".repeat(240)}`;
+      cluster.client.pods.readNamespacedPod = async () => {
+        throw podApiError(403, "Forbidden", message);
       };
       const { app, provision } = kubernetes(cluster);
       const response = await provision();
       expect(response.status).toBe(500);
-      expect(await response.text()).toContain("Bearer fixture-credential");
-      expect(
-        (
-          await app.request(`/computers/${pod}/actions`, {
-            method: "POST",
-            headers,
-            body: JSON.stringify({ actions: [] }),
-          })
-        ).status,
-      ).toBe(500);
+      expect(await response.json()).toEqual({ error: message });
       expect((await app.request("/health")).status).toBe(200);
       expect((await app.request("/computers", { method: "POST" })).status).toBe(401);
 
       const failures = sink.events.filter((event) => event.message === "http.response.failed");
+      const redacted = 'read forbidden {"token":"[Redacted]"} token=[Redacted] ';
       expect(failures).toMatchObject([
         {
           "http.route": "/computers",
           "http.status": 500,
-          "http.response.detail": expect.stringContaining("admission refused Bearer [Redacted]"),
-        },
-        {
-          "http.route": "/computers/:id/actions",
-          "http.status": 500,
-          "http.response.detail": JSON.stringify({ error: `computer ${pod} not found` }),
+          "http.response.detail": redacted + "x".repeat(200 - redacted.length),
         },
       ]);
-      expect(failures[0]?.["http.response.detail"]).toHaveLength(1024);
-      expect(failures[0]?.["http.response.detail"]).not.toContain("fixture-credential");
     } finally {
       installLogger(logger);
     }

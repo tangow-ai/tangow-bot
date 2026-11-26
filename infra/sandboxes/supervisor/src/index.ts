@@ -68,31 +68,24 @@ const limitSupervisorRequestBody: MiddlewareHandler = async (c, next) => {
 };
 
 const PathSegment = z.string().regex(/^[A-Za-z0-9_-]{1,64}$/);
-const MAX_ERROR_LOG_BYTES = 4096;
-const MAX_ERROR_LOG_LENGTH = 1024;
+const MAX_ERROR_LOG_LENGTH = 200;
 
 async function responseErrorDetail(response: Response): Promise<string> {
-  const reader = response.clone().body?.getReader();
-  if (!reader) return "";
-  const prefix = new Uint8Array(MAX_ERROR_LOG_BYTES);
-  let length = 0;
+  const body = await response.clone().text();
+  let detail = body;
   try {
-    while (length < prefix.length) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      const chunk = value.subarray(0, prefix.length - length);
-      prefix.set(chunk, length);
-      length += chunk.length;
-    }
-  } finally {
-    // The original response still needs to be sent before cancellation can settle.
-    void reader.cancel().catch(() => undefined);
-    reader.releaseLock();
+    const payload: unknown = JSON.parse(body);
+    detail =
+      payload &&
+      typeof payload === "object" &&
+      "error" in payload &&
+      typeof payload.error === "string"
+        ? payload.error
+        : "";
+  } catch {
+    // Hono can return plain-text errors.
   }
-  return redactSensitiveText(new TextDecoder().decode(prefix.subarray(0, length))).slice(
-    0,
-    MAX_ERROR_LOG_LENGTH,
-  );
+  return redactSensitiveText(detail).slice(0, MAX_ERROR_LOG_LENGTH);
 }
 
 /** The HTTP routes over one backend. Lifecycle decisions and locks live here, above it. */

@@ -400,7 +400,7 @@ export function createKubernetesComputerRuntime(options: {
       return await pods.readNamespacedPod({ name, namespace });
     } catch (error) {
       if (isNotFound(error)) return undefined;
-      throw error;
+      throw error instanceof ApiException ? new Error(apiMessage(error)) : error;
     }
   }
 
@@ -409,7 +409,9 @@ export function createKubernetesComputerRuntime(options: {
     try {
       await pods.deleteNamespacedPod({ name, namespace, gracePeriodSeconds });
     } catch (error) {
-      if (!isNotFound(error)) throw error;
+      if (!isNotFound(error)) {
+        throw error instanceof ApiException ? new Error(apiMessage(error)) : error;
+      }
       missing();
     }
     const deadline = Date.now() + DELETE_TIMEOUT_MS;
@@ -544,7 +546,7 @@ export function createKubernetesComputerRuntime(options: {
       await pods.createNamespacedPod({ namespace, body });
     } catch (error) {
       // The namespace quota refuses at admission: its message names what is exceeded.
-      throw new Error(`computer pod ${name} was refused: ${apiMessage(error)}`);
+      throw new Error(`computer pod was refused: ${apiMessage(error)}`);
     }
     await waitUntilReady(name, "computer");
     return { id: name, releaseRef: COMPUTER_IMAGE, resumed: false };
@@ -640,7 +642,7 @@ export function createKubernetesComputerRuntime(options: {
     const create = () =>
       pods.createNamespacedPod({ namespace, body }).catch((error: unknown) => {
         if (isConflict(error)) return undefined;
-        throw new Error(`worker pod ${name} was refused: ${apiMessage(error)}`);
+        throw new Error(`worker pod was refused: ${apiMessage(error)}`);
       });
     // A conflict is the attempt's pod: a live one is the answer, an exited one is replaced.
     if (!(await create())) {
