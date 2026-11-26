@@ -31,6 +31,7 @@ WORKSPACE_PATH_APPS = {"libreoffice", "pcmanfm"}
 NO_ARGUMENT_APPS = {"tangow-terminal"}
 CONTROL_TIMEOUT_SEC = 10
 LAUNCH_SPAWN_POLL_SEC = 0.2
+TERMINAL_WINDOW_TIMEOUT_SEC = 3
 NATIVE_CAPTURES = {}
 NATIVE_LOCK = threading.Lock()
 DISPLAY_LOCKS = {}
@@ -217,6 +218,16 @@ def run_control_argv(argv, display):
             code = child.wait(timeout=LAUNCH_SPAWN_POLL_SEC)
         except subprocess.TimeoutExpired:
             threading.Thread(target=child.wait, daemon=True).start()
+            if argv[control_command_index(argv)] == "tangow-terminal":
+                try:
+                    subprocess.run(
+                        ["xdotool", "search", "--sync", "--onlyvisible", "--all", "--pid", str(child.pid)],
+                        env=env,
+                        capture_output=True,
+                        timeout=TERMINAL_WINDOW_TIMEOUT_SEC,
+                    )
+                except subprocess.TimeoutExpired:
+                    pass
             return
         if code:
             raise RuntimeError("computer action failed")
