@@ -4,6 +4,14 @@ export * from "./artifacts.js";
 export * from "./auto-review.js";
 export * from "./background-job-handlers.js";
 export * from "./bot-messages.js";
+export {
+  listBotSecrets,
+  listSecretsSharedWith,
+  normalizeSecretDestination,
+  removeBotSecret,
+  shareBotSecret,
+  storeBotSecret,
+} from "./bot-secrets.js";
 export { recoverBrowserApprovalScreens } from "./browser-approval.js";
 export * from "./browser-emulator.js";
 export * from "./browser-provider-factory.js";

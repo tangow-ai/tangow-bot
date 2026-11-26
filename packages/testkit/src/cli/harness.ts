@@ -103,6 +103,7 @@ async function main() {
         "packages/memory/src/commit.postgres.test.ts",
         "packages/adapters/src/wakeup.postgres.test.ts",
         "packages/adapters/src/realtime.postgres.test.ts",
+        "packages/adapters/src/secret-reseal.postgres.test.ts",
         "packages/adapters/src/job-reconciler.postgres.test.ts",
         "packages/adapters/src/executor-run-log.postgres.test.ts",
         "packages/adapters/src/skill-lock.postgres.test.ts",

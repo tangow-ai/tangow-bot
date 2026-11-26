@@ -126,6 +126,27 @@ tags:
     env:
       LINK: "tangow:///account"
 
+- tapOn: "Vault(, .*)?"
+- extendedWaitUntil:
+    visible: "example_api(, .*)?"
+    timeout: 10000
+# The teammate's key, shared with the screenshot user, is listed read-only.
+- assertVisible: "Shared with you"
+- assertVisible: "release_api(, .*)?"
+- takeScreenshot: "10f-vault"
+- tapOn: "example_api(, .*)?"
+- assertVisible: "Key"
+- extendedWaitUntil:
+    visible: "Shared with"
+    timeout: 10000
+- assertVisible: "Grace Hopper(, .*)?"
+- takeScreenshot: "10g-vault-replace"
+- tapOn: "Cancel"
+- runFlow:
+    file: subflows/open-link.yaml
+    env:
+      LINK: "tangow:///account"
+
 - tapOn: ".*${TANGOW_SCREENSHOT_EMAIL}.*"
 - extendedWaitUntil:
     visible: "Change password(, .*)?"
@@ -427,6 +448,10 @@ tags:
 - assertVisible: "Apps this bot can use"
 - assertVisible: "Everyone who uses this bot can see its files and browser sign-ins."
 - takeScreenshot: "33-share-sheet"
+- scrollUntilVisible:
+    element: "example_api(, .*)?"
+- assertVisible: "Keys"
+- takeScreenshot: "33b-share-sheet-keys"
 - tapOn: "Done"
 
 - runFlow:

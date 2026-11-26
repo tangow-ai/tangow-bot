@@ -2049,6 +2049,14 @@ msgstr "Intervalle :"
 msgid "every {intervalAmountSelect} {intervalUnitSelect}"
 msgstr "de {intervalAmountSelect} {intervalUnitSelect}"
 
+#: src/pages/VaultSettingsPanel.tsx:378
+msgid "Every current and future member of {0} can use this key on its site, from their bots and yours that you can see, including webhooks and routines."
+msgstr "Tous les membres actuels et futurs de {0} peuvent utiliser cette clé sur le site associé depuis leurs bots et les vôtres auxquels vous avez accès, y compris via les webhooks et les routines."
+
+#: src/pages/ShareBotDialog.tsx:258
+msgid "Every current and future member of {spaceName} can use ticked keys on their sites, from their bots and yours that you can see, including webhooks and routines."
+msgstr "Tous les membres actuels et futurs de {spaceName} peuvent utiliser les clés activées, chacune sur son site, depuis leurs bots et les vôtres auxquels vous avez accès, y compris via les webhooks et les routines."
+
 #: src/pages/bot-page/RoutineTriggers.tsx:78
 #: src/pages/RoutineSchedule.tsx:37
 #: src/pages/RoutineSchedule.tsx:166
@@ -2079,6 +2087,15 @@ msgstr "Toutes les semaines"
 #: src/pages/usage-settings.tsx:47
 msgid "Everyday"
 msgstr "Courant"
+
+#: src/pages/VaultSettingsPanel.tsx:73
+msgid "Everyone"
+msgstr "Tout le monde"
+
+#: src/pages/VaultSettingsPanel.tsx:338
+#: src/pages/VaultSettingsPanel.tsx:340
+msgid "Everyone in {0}"
+msgstr "Tout le monde dans {0}"
 
 #: src/pages/ShareBotDialog.tsx:159
 #: src/pages/ShareBotDialog.tsx:161
@@ -2267,6 +2284,10 @@ msgstr "Raccrochez, puis saisissez le code affiché."
 #: src/pages/bot-page/RoutineTriggers.tsx:385
 msgid "header"
 msgstr "en-tête"
+
+#: src/pages/VaultSettingsPanel.tsx:245
+msgid "Header"
+msgstr "En-tête"
 
 #: src/pages/custom-apps/AppEditor.tsx:127
 msgid "Header name"
@@ -2462,6 +2483,14 @@ msgstr "Conserver les mémoires"
 #: src/pages/bot-page/RoutineTriggers.tsx:380
 msgid "key"
 msgstr "clé"
+
+#: src/pages/VaultSettingsPanel.tsx:264
+msgid "Key"
+msgstr "Clé"
+
+#: src/pages/ShareBotDialog.tsx:244
+msgid "Keys"
+msgstr "Clés"
 
 #: src/pages/bot-page/BotPage.tsx:101
 msgid "Knowledge"
@@ -2871,6 +2900,10 @@ msgstr "À traiter"
 #: src/components/AskCard.tsx:244
 msgid "Needs your call"
 msgstr "Votre décision est requise"
+
+#: src/pages/VaultSettingsPanel.tsx:206
+msgid "New API key"
+msgstr "Nouvelle clé API"
 
 #: src/pages/shell/bot-panel.tsx:93
 msgid "New bot"
@@ -3836,6 +3869,11 @@ msgstr "Envoi…"
 msgid "Sent"
 msgstr "Envoyé"
 
+#: src/pages/VaultSettingsPanel.tsx:235
+#: src/pages/VaultSettingsPanel.tsx:237
+msgid "Sent as"
+msgstr "Envoyée comme"
+
 #: src/components/integrations/IntegrationSetup.tsx:94
 #: src/pages/AccountSettingsOverlay.tsx:115
 msgid "Server integrations"
@@ -3905,6 +3943,14 @@ msgstr "Discussion partagée avec 2 à 6 bots. Ils répondent tous dans le même
 msgid "Shared documents"
 msgstr "Documents partagés"
 
+#: src/pages/VaultSettingsPanel.tsx:336
+msgid "Shared with"
+msgstr "Partagée avec"
+
+#: src/pages/VaultSettingsPanel.tsx:107
+msgid "Shared with you"
+msgstr "Partagées avec vous"
+
 #: src/pages/AccountSettingsOverlay.tsx:88
 msgid "Show agent steps, and every run in a bot's activity."
 msgstr "Afficher les étapes de l'agent et chaque exécution dans l'activité d'un bot."
@@ -3955,6 +4001,10 @@ msgstr "Se connecter à Tangow"
 #: src/pages/Welcome.tsx:32
 msgid "Sign up"
 msgstr "Créer un compte"
+
+#: src/pages/VaultSettingsPanel.tsx:221
+msgid "Site"
+msgstr "Site"
 
 #. placeholder {0}: skill.name
 #: src/pages/shell/composer-pickers.tsx:210
@@ -4193,6 +4243,14 @@ msgstr "L'API n'est pas revenue. Actualisez cette page."
 #: src/pages/MemorySettingsOverlay.tsx:245
 msgid "The selected memory provider is not available in this build."
 msgstr "Le fournisseur de mémoire sélectionné n'est pas disponible dans cette version."
+
+#: src/pages/VaultSettingsPanel.tsx:382
+msgid "These people can use this key on its site, from their bots and yours that you can see, including webhooks and routines."
+msgstr "Ces personnes peuvent utiliser cette clé sur le site associé depuis leurs bots et les vôtres auxquels vous avez accès, y compris via les webhooks et les routines."
+
+#: src/pages/ShareBotDialog.tsx:259
+msgid "These people can use ticked keys on their sites, from their bots and yours that you can see, including webhooks and routines."
+msgstr "Ces personnes peuvent utiliser les clés activées, chacune sur son site, depuis leurs bots et les vôtres auxquels vous avez accès, y compris via les webhooks et les routines."
 
 #: src/pages/bot-page/SettingDetails.tsx:139
 msgid "Thinking"
@@ -4433,6 +4491,14 @@ msgstr "Utiliser les consignes par défaut"
 #: src/pages/model-settings/model-detail.tsx:362
 msgid "Use this model"
 msgstr "Utiliser ce modèle"
+
+#: src/pages/VaultSettingsPanel.tsx:259
+msgid "Username"
+msgstr "Nom d'utilisateur"
+
+#: src/pages/settings-sections.ts:50
+msgid "Vault"
+msgstr "Coffre"
 
 #: src/pages/bot-page/SettingDetails.tsx:185
 #: src/pages/bot-page/SettingDetails.tsx:189

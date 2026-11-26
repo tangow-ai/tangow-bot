@@ -251,6 +251,12 @@ async function seedFixture(app: App, prisma: PrismaClient) {
     notifyOnFinish: true,
   });
   await rpc(app, cookie, "bots/archive", { botId: archived.id });
+  await rpc(app, cookie, "vault/put", {
+    name: "example_api",
+    origin: "https://api.example.test",
+    auth: { type: "bearer" },
+    value: "fake-fixture-api-key",
+  });
 
   const group = await rpc<{ id: string }>(app, cookie, "groups/create", {
     name: "Launch team",
@@ -420,7 +426,7 @@ async function seedRoutineResult(
  * A teammate joins the Space and shares "Release notes" with everyone in it: the screenshot user
  * then has their own thread with it, where a run saved for the team and a declared MCP server
  * asks to be added. The screenshot user shares Writer with the teammate in turn, with a skill and
- * an app, and Writer keeps a team memory.
+ * an app, and Writer keeps a team memory. Each shares a key with the other.
  */
 async function seedSharedBots(app: App, cookie: string, prisma: PrismaClient, writerId: string) {
   const { spaceId, userId } = await rpc<{ spaceId: string; userId: string }>(app, cookie, "me");
@@ -500,6 +506,32 @@ async function seedSharedBots(app: App, cookie: string, prisma: PrismaClient, wr
     skillId: skill.id,
     bots: [{ botId: writerId, enabled: true }],
   });
+  // Writer saved the screenshot user's key, shared with the teammate; the teammate shares one back.
+  await prisma.botSecret.updateMany({ where: { userId, spaceId }, data: { botId: writerId } });
+  await rpc(app, cookie, "vault/share", {
+    name: "example_api",
+    userIds: [teammateId],
+    space: false,
+  });
+  await rpc(
+    app,
+    teammate,
+    "vault/put",
+    {
+      name: "release_api",
+      origin: "https://releases.example.test",
+      auth: { type: "bearer" },
+      value: "fake-fixture-teammate-key",
+    },
+    spaceId,
+  );
+  await rpc(
+    app,
+    teammate,
+    "vault/share",
+    { name: "release_api", userIds: [userId], space: false },
+    spaceId,
+  );
   await prisma.memoryDocument.create({
     data: {
       spaceId,

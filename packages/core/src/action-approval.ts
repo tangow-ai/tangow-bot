@@ -30,7 +30,6 @@ const APPROVAL_REQUIRED_BUILTIN_TOOLS = new Set([
   "delete_bot",
   "archive_bot",
   "secret_request",
-  "forget_secret",
   "forget_memory",
 ]);
 const EXPLICIT_APPROVAL_BUILTIN_TOOLS = new Set(["create_space", "spawn_bot"]);

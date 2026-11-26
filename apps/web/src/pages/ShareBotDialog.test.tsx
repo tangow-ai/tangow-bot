@@ -13,6 +13,7 @@ vi.mock("../lib/rpc", () => ({
     },
     spaces: { members: async () => ({ members: [], invitations: [] }) },
     agentSkills: { list: async () => [] },
+    vault: { list: async () => ({ mine: [], shared: [] }) },
     connections: { list: async () => [], catalog: async () => [] },
     mcp: {
       servers: { list: async () => Promise.reject(new Error("offline")) },
