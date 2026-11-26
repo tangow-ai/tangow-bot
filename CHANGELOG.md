@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### 2026-11-26
+
+#### Fixed
+
+- A new bot's computer can now be started from its screen before its first message on Docker instead of failing with a server error, and on E2B the files it creates there now stay in its workspace.
+
 ### 2026-11-23
 
 #### Added
@@ -126,10 +132,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 #### Changed
 
 - In a phone browser, a long press on a bot, a group or a section now opens its menu, as a right click does on desktop, with the sections to move a bot to listed in the menu itself, and the bot picker's info buttons are now visible without hovering.
-
-#### Fixed
-
-- A new bot's computer can now be started from its screen before its first message on Docker instead of failing with a server error, and on E2B the files it creates there now stay in its workspace.
 
 ### 2026-11-12
 
