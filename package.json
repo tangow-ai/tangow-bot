@@ -44,7 +44,8 @@
     "build:ios:preview": "pnpm --filter @tangow/mobile build:ios:preview",
     "release:ios": "pnpm --filter @tangow/mobile release:ios",
     "compose:up": "docker compose --env-file .env -f infra/compose/docker-compose.yml up --build",
-    "compose:down": "docker compose --env-file .env -f infra/compose/docker-compose.yml down -v"
+    "compose:down": "docker compose --env-file .env -f infra/compose/docker-compose.yml down -v",
+    "test:model-calibration": "tsx packages/testkit/src/cli/model-calibration.ts"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.13",

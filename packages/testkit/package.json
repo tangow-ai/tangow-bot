@@ -22,7 +22,8 @@
     "@tangow/logging": "workspace:*",
     "@testcontainers/postgresql": "12.1.0",
     "e2b": "2.49.1",
-    "pngjs": "7.0.0"
+    "pngjs": "7.0.0",
+    "zod": "4.6.2"
   },
   "devDependencies": {
     "@playwright/test": "1.63.0",

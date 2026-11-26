@@ -1,0 +1,47 @@
+{
+  "candidates": [
+    {
+      "id": "terra-low",
+      "connection": "codex",
+      "provider": "openai-codex",
+      "modelId": "gpt-5.6-terra",
+      "thinkingLevel": "low"
+    },
+    {
+      "id": "luna-low",
+      "connection": "codex",
+      "provider": "openai-codex",
+      "modelId": "gpt-6-luna",
+      "thinkingLevel": "low"
+    },
+    {
+      "id": "sol-low",
+      "connection": "codex",
+      "provider": "openai-codex",
+      "modelId": "gpt-6.1-sol",
+      "thinkingLevel": "low"
+    },
+    {
+      "id": "terra-medium",
+      "connection": "codex",
+      "provider": "openai-codex",
+      "modelId": "gpt-5.6-terra",
+      "thinkingLevel": "medium"
+    },
+    {
+      "id": "luna-medium",
+      "connection": "codex",
+      "provider": "openai-codex",
+      "modelId": "gpt-6-luna",
+      "thinkingLevel": "medium"
+    },
+    {
+      "id": "sol-medium",
+      "connection": "codex",
+      "provider": "openai-codex",
+      "modelId": "gpt-6.1-sol",
+      "thinkingLevel": "medium"
+    }
+  ],
+  "limits": { "maxTrials": 36, "maxTokens": 2000000, "maxToolCalls": 15, "timeoutMs": 180000 }
+}
