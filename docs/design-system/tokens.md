@@ -65,6 +65,7 @@ way: `sheet`, then its `group`s.
 | `mediaBackdropForeground` | `#F5F5F7` | `#F5F5F7` | text and icons on `mediaBackdrop` |
 | `mediaBackdropMuted` | `#AEAEB2` | `#AEAEB2` | secondary text on `mediaBackdrop` |
 | `mediaBackdropControl` | `#2C2C2E` | `#2C2C2E` | a round control, or a picture's placeholder, on `mediaBackdrop` |
+| `plate` | `#DCD8D9` | `#DCD8D9` | the clay plate behind an onboarding scene until its picture arrives; the scene dims to `sceneBrightness` 0.9 in dark |
 
 `botColors` is user data and never changes with the skin. `botAccentOn`
 judges a bot colour against `card`, the composer's opaque plane, where the
@@ -107,6 +108,9 @@ over the size, so `size × leading` is always an integer.
 | `question` | 17 | 22 | -0.02em | 600 | the card title: a framed block's question |
 | `mono` | 13 | 18 | 0 | 400 | durations and figures |
 | `composer` | 17 | 22 | -0.01em | 400 | the mobile composer field (the native iOS body) |
+| `largeTitle` | 34 | 37 | -0.025em | 650 | an onboarding step's title |
+| `largeTitleCompact` | 30 | 33 | -0.025em | 650 | the same at phone width |
+| `link` | 15 | 20 | 0 | 400 | a link standing alone under an onboarding step's main button |
 
 The tokens spend a short set of roles. A new text style picks one of them.
 
@@ -157,6 +161,7 @@ multiple of 0.25 rem: `gap-3` is 12, `gap-5` is 20, `gap-7` is 28. Never
 | `linkMention` | 4 | — | a link mention's icon frame (`--corner-link-mention`) |
 | `composer` | 24 | `rounded-composer` | the composer |
 | `pane` | 18 | `rounded-pane` | the floating sidebar and side panel |
+| `scene` | 28 | — | the onboarding scene card (`block` at phone width) |
 | `mobileGroup` | 22 | — | a settings group on iPhone |
 | `pill` | 9999 | `rounded-full` | capsules, round buttons, avatars |
 
@@ -205,6 +210,7 @@ not count as an elevation.
 | `flight` | 520 ms | how long that spring runs: the answer flying into its bubble while the card folds, a stack's height, the list scrolling a card's foot into view |
 | `stepOut` | 100 ms | a stack's old question fading out over the next one |
 | `stepIn` | 160 ms, from the same frame | the next question fading in; a newly folded line waits `stepOut` first, so its answer never shows twice |
+| `label` | 150 ms | a floating label rising out of its field (cut under reduced motion) |
 
 ## Sizes
 
@@ -226,6 +232,10 @@ format's maximum height). Link mention: `linkMentionIcon 16` (the site icon in t
 text, web and iOS) and `linkMentionGap 5` (between that icon and the label). Entity
 mention: `mentionGlyph 16` (a bot, group, everyone or skill glyph in the text, web and iOS)
 and `mentionGap 4` (between that glyph and the name).
+Onboarding: `field 56` and `fieldShort 52` (a floating-label field, and on a phone
+under 760 px tall), `primaryButton 52` (the full-width main button), `logo 30` with
+`logoTop 18` and `logoBottom 12` (its clear space at phone width: at least the
+wordmark's x-height, 0.46 × its height, the screen's rounded corners included).
 
 The sizes a primitive needs as a class are mapped into Tailwind's spacing
 namespace in `packages/ui-web/src/styles.css` — `--spacing-hover-icon`,

@@ -43,9 +43,9 @@ test("an invite for an email survives sign up and joins only that account to the
   const signUpOnSignIn = async (email: string, fullName: string) => {
     await guest.waitForURL(/\/sign-in$/);
     await guest.getByRole("link", { name: "Sign up" }).click();
-    await guest.getByPlaceholder("Your name").fill(fullName);
-    await guest.getByPlaceholder("Your email address").fill(email);
-    await guest.getByPlaceholder("Password").fill("password12");
+    await guest.getByLabel("Name").fill(fullName);
+    await guest.getByLabel("Email").fill(email);
+    await guest.getByLabel("Password", { exact: true }).fill("password12");
     await guest.getByRole("button", { name: "Create account" }).click();
   };
 

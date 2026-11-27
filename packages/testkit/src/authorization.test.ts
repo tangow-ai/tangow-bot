@@ -2782,7 +2782,10 @@ describeWithDatabase("API authorization and resource isolation", () => {
         }),
       });
       expect(closedSignup.status).toBe(400);
-      expect(await closedSignup.text()).toContain("Registration is closed");
+      expect(await closedSignup.json()).toEqual({
+        code: "REGISTRATION_CLOSED",
+        message: "Registration is closed",
+      });
 
       const approvedEmail = `approved-${stamp}@example.test`;
       await rpc(app, owner, "deployment/update", {
@@ -2799,7 +2802,10 @@ describeWithDatabase("API authorization and resource isolation", () => {
         }),
       });
       expect(disallowedSignup.status).toBe(400);
-      expect(await disallowedSignup.text()).toContain("Email is not allowed to register");
+      expect(await disallowedSignup.json()).toEqual({
+        code: "EMAIL_NOT_ALLOWED",
+        message: "Email is not allowed to register",
+      });
       const unverifiedSignup = await app.request("/api/auth/sign-up/email", {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -2810,7 +2816,10 @@ describeWithDatabase("API authorization and resource isolation", () => {
         }),
       });
       expect(unverifiedSignup.status).toBe(400);
-      expect(await unverifiedSignup.text()).toContain("Registration requires email delivery");
+      expect(await unverifiedSignup.json()).toEqual({
+        code: "EMAIL_DELIVERY_REQUIRED",
+        message: "Registration requires email delivery",
+      });
     } finally {
       await rpc(app, owner, "deployment/update", {
         signupsEnabled: true,

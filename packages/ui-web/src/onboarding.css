@@ -1,0 +1,377 @@
+/* The steps before an account exists (`OnboardingFrame`, `FloatingField`), from the
+   validated prototype. In `components`, like the other `rk-*` classes, so a caller's
+   utility still wins. */
+@layer components {
+  .rk-floating-field {
+    --field-h: var(--size-field);
+    position: relative;
+  }
+
+  .rk-floating-field > label {
+    position: absolute;
+    inset-inline-start: 15px;
+    top: calc(var(--field-h) / 2 - 19px);
+    font-size: var(--type-time-size);
+    line-height: 1;
+    color: var(--muted-foreground);
+    pointer-events: none;
+    transition-property: top, font-size;
+    transition-duration: var(--duration-label);
+    transition-timing-function: var(--motion-ease);
+  }
+
+  .rk-floating-field:has(> input:not(:autofill)) > label:not([data-filled], [data-focused]) {
+    top: calc(var(--field-h) / 2 - 8px);
+    font-size: var(--type-body-size);
+  }
+
+  .rk-onboarding {
+    --gap: 16px;
+    --title-h: calc(var(--type-large-title-size) * var(--type-large-title-leading) + 8px);
+    --actions-gap: var(--gap);
+    --line-h: calc(var(--type-row-name-size) * var(--type-row-name-leading));
+    /* The status line under the main button, reserved so it never moves the button. */
+    --status-room: calc(var(--line-h) + var(--actions-gap));
+    --actions-h: calc(156px + var(--status-room));
+    display: grid;
+    grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
+    grid-template-areas: "pane stage";
+    position: relative;
+    min-height: 100svh;
+    background: var(--background);
+    color: var(--foreground);
+  }
+
+  /* The desktop app's frameless or inset title bar: a band the window drags by, its
+     controls (which opt out of dragging) at the old title bar's place. */
+  .rk-onboarding-chrome {
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: flex-start;
+    height: 44px;
+    padding: 18px 20px 0;
+    user-select: none;
+    -webkit-app-region: drag;
+  }
+
+  .rk-onboarding-top {
+    grid-area: pane;
+    align-self: start;
+    z-index: 1;
+    padding-block-start: 40px;
+    padding-inline-start: 64px;
+  }
+
+  .rk-onboarding-logo {
+    display: block;
+    height: var(--size-logo);
+    width: auto;
+    margin-inline-start: -2px;
+  }
+
+  .rk-onboarding-pane {
+    grid-area: pane;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    padding: 40px 64px;
+    container-type: inline-size;
+  }
+
+  .rk-onboarding-screen {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap);
+    width: 100%;
+    max-width: 360px;
+    min-height: calc(
+      var(--title-h) +
+      3 *
+      var(--field-h, var(--size-field)) +
+      4 *
+      var(--gap) +
+      var(--actions-h)
+    );
+    margin-block: auto;
+  }
+
+  .rk-onboarding-screen > h1 {
+    margin: 0 0 8px;
+    font-size: var(--type-large-title-size);
+    line-height: var(--type-large-title-leading);
+    letter-spacing: var(--type-large-title-tracking);
+    font-weight: var(--type-large-title-weight);
+    text-wrap: balance;
+  }
+
+  /* The welcome statement is a poster: it scales with the column, from the proto. */
+  .rk-onboarding[data-poster] .rk-onboarding-screen {
+    max-width: 560px;
+  }
+
+  .rk-onboarding[data-poster] .rk-onboarding-screen > h1 {
+    margin-bottom: 24px;
+    font-size: clamp(44px, 100cqi / 5.1, 112px);
+    line-height: var(--type-poster-leading);
+    letter-spacing: var(--type-poster-tracking);
+    font-weight: var(--type-poster-weight);
+    text-wrap: initial;
+  }
+
+  .rk-onboarding-screen > p {
+    margin: 0;
+    font-size: var(--type-body-size);
+    line-height: var(--type-body-leading);
+    color: var(--muted-foreground);
+  }
+
+  .rk-onboarding-actions {
+    display: flex;
+    flex-direction: column;
+    gap: var(--actions-gap);
+    min-height: var(--actions-h);
+    margin-top: auto;
+  }
+
+  .rk-onboarding-actions a {
+    color: var(--foreground);
+    text-decoration: underline;
+    text-decoration-color: var(--foreground-subtle);
+    text-underline-offset: 3px;
+  }
+
+  .rk-onboarding-actions > a {
+    display: inline-flex;
+    align-items: center;
+    align-self: center;
+    min-height: var(--size-mobile-stack);
+    padding-inline: 8px;
+    font-size: var(--type-link-size);
+    line-height: var(--type-link-leading);
+  }
+
+  .rk-onboarding-actions > :first-child {
+    order: -2;
+    margin-top: 8px;
+  }
+
+  .rk-onboarding-actions > :first-child + a {
+    margin-top: -8px;
+  }
+
+  .rk-onboarding-actions > p {
+    margin: 0;
+    text-align: center;
+    font-size: var(--type-row-name-size);
+    line-height: var(--type-row-name-leading);
+    color: var(--muted-foreground);
+  }
+
+  /* Rendered last, shown right under the main button. */
+  .rk-onboarding-actions > .rk-onboarding-status {
+    order: -1;
+    letter-spacing: var(--type-row-name-tracking);
+    /* In ink it read as one more line of the links under it. */
+    color: var(--destructive);
+  }
+
+  /* A busy step button keeps its label and its size; the app's shimmer sweeps across it. */
+  .rk-onboarding-actions > [aria-busy="true"] {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .rk-onboarding-actions > [aria-busy="true"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image: linear-gradient(
+      to right,
+      transparent 35%,
+      color-mix(in oklab, currentColor 28%, transparent) 50%,
+      transparent 65%
+    );
+    background-size: 200% 100%;
+    animation: bui-shimmer-text 1.4s linear infinite;
+  }
+
+  .rk-onboarding-stage {
+    grid-area: stage;
+    position: relative;
+    overflow: hidden;
+    margin: 24px 24px 24px 0;
+    border-radius: var(--corner-scene);
+    background: var(--plate);
+    filter: brightness(var(--scene-brightness));
+  }
+
+  .rk-onboarding-stage > img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  @media (max-width: 860px) {
+    .rk-onboarding {
+      --pad: 24px;
+      --actions-h: calc(148px + var(--status-room));
+      --actions-gap: 12px;
+      --lift: 8px;
+      --title-h: calc(
+        var(--type-large-title-compact-size) *
+        var(--type-large-title-compact-leading) +
+        8px
+      );
+      /* The phone step box holds the step's own fields, so the card keeps the room a
+         missing field would leave empty. */
+      --fields: 1;
+      --box: calc(
+        var(--title-h) +
+        var(--fields) *
+        (var(--field-h, var(--size-field)) + var(--gap)) +
+        var(--gap) +
+        var(--actions-h)
+      );
+      --last-h: var(--size-mobile-stack);
+      --around-stage: calc(
+        var(--size-logo-top) +
+        var(--size-logo) +
+        var(--size-logo-bottom) +
+        var(--pad) +
+        var(--box) +
+        16px
+      );
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Under the band, so the logo clears the macOS lights and the window controls. */
+    .rk-onboarding:has(> .rk-onboarding-chrome) {
+      --size-logo-top: 44px;
+    }
+
+    /* Two actions (the main button and one link or line) need less room than three. */
+    .rk-onboarding:not(:has(.rk-onboarding-actions > :nth-child(3):not(.rk-onboarding-status))) {
+      --actions-h: calc(
+        var(--lift) +
+        var(--size-primary-button) +
+        var(--status-room) +
+        var(--actions-gap) +
+        var(--last-h)
+      );
+    }
+
+    .rk-onboarding:has(.rk-onboarding-actions > :first-child + p) {
+      --last-h: var(--line-h);
+    }
+
+    .rk-onboarding:has(.rk-floating-field ~ .rk-floating-field) {
+      --fields: 2;
+    }
+
+    .rk-onboarding:has(.rk-floating-field ~ .rk-floating-field ~ .rk-floating-field) {
+      --fields: 3;
+    }
+
+    .rk-onboarding-top {
+      order: -2;
+      padding: var(--size-logo-top) max(24px, env(safe-area-inset-left)) var(--size-logo-bottom);
+    }
+
+    .rk-onboarding-stage {
+      --stage-h: min(
+        (100vw - 32px) *
+        0.9,
+        100svh -
+        var(--around-stage) -
+        env(safe-area-inset-bottom)
+      );
+      order: -1;
+      flex: none;
+      align-self: center;
+      width: min(100% - 2 * max(16px, env(safe-area-inset-left)), var(--stage-h) / 0.7);
+      height: var(--stage-h);
+      margin: 0 max(16px, env(safe-area-inset-left));
+      border-radius: var(--corner-block);
+    }
+
+    /* A short screen first trims the empty backdrop above the scene; below 10:7 it
+       would cut the scene, so the card narrows instead. */
+    .rk-onboarding-stage > img {
+      object-position: 50% 80%;
+    }
+
+    .rk-onboarding-pane {
+      flex: 1 0 auto;
+      padding: var(--pad) max(24px, env(safe-area-inset-right))
+        calc(16px + env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+    }
+
+    .rk-onboarding-screen {
+      flex: 1;
+      max-width: none;
+      min-height: 0;
+      margin-block: 0;
+    }
+
+    .rk-onboarding-screen > h1 {
+      font-size: var(--type-large-title-compact-size);
+      line-height: var(--type-large-title-compact-leading);
+    }
+
+    .rk-onboarding[data-poster] .rk-onboarding-screen > h1 {
+      margin-bottom: 8px;
+      font-size: var(--type-poster-size);
+    }
+
+    .rk-onboarding-actions > :first-child {
+      margin-top: var(--lift);
+    }
+
+    /* Keyboard up: the button closes up under the last field, its status line under it. */
+    .rk-onboarding[data-keyboard] .rk-onboarding-actions {
+      min-height: 0;
+      margin-top: 0;
+    }
+
+    .rk-onboarding[data-keyboard]
+      .rk-onboarding-actions
+      > :not(:first-child, .rk-onboarding-status) {
+      visibility: hidden;
+    }
+  }
+
+  @media (max-width: 860px) and (max-height: 760px) {
+    .rk-onboarding {
+      --field-h: var(--size-field-short);
+      --pad: 16px;
+      --gap: 12px;
+      --actions-h: calc(132px + var(--status-room));
+      --actions-gap: 8px;
+      --lift: 0px;
+      --size-logo: var(--size-logo-short);
+      --size-logo-top: var(--size-logo-top-short);
+      --size-logo-bottom: var(--size-logo-bottom-short);
+    }
+
+    .rk-onboarding .rk-floating-field {
+      --field-h: var(--size-field-short);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .rk-floating-field > label {
+      transition: none;
+    }
+
+    .rk-onboarding-actions > [aria-busy="true"]::after {
+      animation: none;
+      background-position: 50%;
+    }
+  }
+}

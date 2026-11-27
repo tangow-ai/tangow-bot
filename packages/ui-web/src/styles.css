@@ -6,6 +6,7 @@
 @import "./shadcn.css";
 @import "@tangow/ui-tokens/css";
 @import "./materials.css";
+@import "./onboarding.css";
 
 @source "./**/*.{ts,tsx}";
 
@@ -110,6 +111,7 @@
   --spacing-composer-attachment-tile: var(--size-composer-attachment-tile);
   --spacing-composer-remove: var(--size-composer-remove);
   --spacing-share-bar: var(--size-share-bar);
+  --spacing-primary-button: var(--size-primary-button);
 
   --ease-quiet: var(--motion-ease);
   /* `backwards`, not `both`: a held end transform would leave every arrived row
@@ -180,6 +182,22 @@
   --text-composer--line-height: var(--type-composer-leading);
   --text-composer--letter-spacing: var(--type-composer-tracking);
   --text-composer--font-weight: var(--type-composer-weight);
+  --text-large-title: var(--type-large-title-size);
+  --text-large-title--line-height: var(--type-large-title-leading);
+  --text-large-title--letter-spacing: var(--type-large-title-tracking);
+  --text-large-title--font-weight: var(--type-large-title-weight);
+  --text-large-title-compact: var(--type-large-title-compact-size);
+  --text-large-title-compact--line-height: var(--type-large-title-compact-leading);
+  --text-large-title-compact--letter-spacing: var(--type-large-title-compact-tracking);
+  --text-large-title-compact--font-weight: var(--type-large-title-compact-weight);
+  --text-poster: var(--type-poster-size);
+  --text-poster--line-height: var(--type-poster-leading);
+  --text-poster--letter-spacing: var(--type-poster-tracking);
+  --text-poster--font-weight: var(--type-poster-weight);
+  --text-link: var(--type-link-size);
+  --text-link--line-height: var(--type-link-leading);
+  --text-link--letter-spacing: var(--type-link-tracking);
+  --text-link--font-weight: var(--type-link-weight);
 }
 
 /* Not `inline`: the families have to reach `:root` as real variables, because

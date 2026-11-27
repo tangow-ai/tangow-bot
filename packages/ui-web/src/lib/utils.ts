@@ -30,6 +30,7 @@ export const MAPPED_SIZE_KEYS = [
   "composerAttachmentThumb",
   "composerAttachmentTile",
   "composerRemove",
+  "primaryButton",
 ] as const satisfies readonly SizeKey[];
 
 /**

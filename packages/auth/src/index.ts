@@ -1,4 +1,5 @@
 import type { TransactionalEmail, TransactionalEmailProvider } from "@tangow/adapter-kit";
+import type { AuthErrorCode } from "@tangow/core";
 import {
   decodeAttachmentBase64,
   emailAllowed,
@@ -73,6 +74,10 @@ export function assertProfileImage(image: unknown): void {
   } catch {
     throw new APIError("BAD_REQUEST", { message: "Profile photo is not valid base64" });
   }
+}
+
+function signupRefusal(code: AuthErrorCode, message: string) {
+  return new APIError("BAD_REQUEST", { code, message });
 }
 
 export function createAuth(prisma: PrismaClient, env: AuthEnv) {
@@ -172,13 +177,13 @@ export function createAuth(prisma: PrismaClient, env: AuthEnv) {
             : undefined;
         if (ctx.path === "/sign-up/email") {
           if (!policy?.enabled) {
-            throw new APIError("BAD_REQUEST", { message: "Registration is closed" });
+            throw signupRefusal("REGISTRATION_CLOSED", "Registration is closed");
           }
           if (!emailAllowed(String(ctx.body?.email ?? ""), policy.allowlist)) {
-            throw new APIError("BAD_REQUEST", { message: "Email is not allowed to register" });
+            throw signupRefusal("EMAIL_NOT_ALLOWED", "Email is not allowed to register");
           }
           if (policy.allowlist.length > 0 && !env.email) {
-            throw new APIError("BAD_REQUEST", { message: "Registration requires email delivery" });
+            throw signupRefusal("EMAIL_DELIVERY_REQUIRED", "Registration requires email delivery");
           }
         }
         // Return a request-local override; mutating the shared auth options

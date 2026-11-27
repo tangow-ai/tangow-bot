@@ -8,7 +8,8 @@ export default defineConfig({
   catalogs: [
     {
       path: "<rootDir>/src/locales/{locale}/messages",
-      include: ["src"],
+      // The auth error texts are shared with the iPhone, so they live in core.
+      include: ["src", "../../packages/core/src/signup-policy.ts"],
       exclude: ["**/locales/**", "**/*.test.*", "**/*.d.ts"],
     },
   ],

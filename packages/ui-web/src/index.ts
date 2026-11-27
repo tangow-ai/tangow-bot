@@ -1,5 +1,5 @@
 export { ActionSheet, type ActionSheetProps } from "./action-sheet.js";
-export { BotAvatar, Wordmark } from "./bot-avatar.js";
+export { BotAvatar } from "./bot-avatar.js";
 export { preloadClayBodies } from "./clay-body.js";
 export { ClippedPreview, type ClippedPreviewProps } from "./clipped-preview.js";
 export * from "./components/ui/alert-dialog.js";
@@ -34,6 +34,7 @@ export {
 } from "./composer-attachment.js";
 export { ComposerLinkPreview, type ComposerLinkPreviewProps } from "./composer-link-preview.js";
 export { ComposerShell, type ComposerShellProps, type ComposerState } from "./composer-shell.js";
+export { FloatingField, type FloatingFieldProps } from "./floating-field.js";
 export { formatElapsed, formatShortDuration } from "./format-elapsed.js";
 export {
   FramedBlock,
@@ -61,6 +62,7 @@ export {
   type MessageRowProps,
 } from "./message-row.js";
 export { ModelThinkingOptions } from "./model-thinking-options.js";
+export { OnboardingFrame, type OnboardingFrameProps } from "./onboarding-frame.js";
 export { OptionField, type OptionFieldProps } from "./option-field.js";
 export { OptionTile, type OptionTileProps } from "./option-tile.js";
 export {

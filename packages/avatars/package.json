@@ -6,7 +6,9 @@
   "type": "module",
   "exports": {
     "./bodies/*": "./bodies/*",
+    "./brand/*": "./brand/*.ts",
     "./characters/*": "./characters/*",
-    "./face/*": "./face/*"
+    "./face/*": "./face/*",
+    "./onboarding/*": "./onboarding/*"
   }
 }

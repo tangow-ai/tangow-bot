@@ -76,6 +76,8 @@ export type ColorTokens = {
   mediaBackdropMuted: string;
   /** A round control, or a picture's placeholder, on `mediaBackdrop`. */
   mediaBackdropControl: string;
+  /** The clay plate behind an onboarding scene, shown until its picture arrives: light in both themes. */
+  plate: string;
 };
 
 // Alpha overlays from the design are flattened so every slot stays opaque
@@ -131,6 +133,7 @@ export const darkTokens = {
   mediaBackdropForeground: "#F5F5F7",
   mediaBackdropMuted: "#AEAEB2",
   mediaBackdropControl: "#2C2C2E",
+  plate: "#DCD8D9",
 } as const satisfies ColorTokens;
 
 export const lightTokens = {
@@ -183,6 +186,7 @@ export const lightTokens = {
   mediaBackdropForeground: "#F5F5F7",
   mediaBackdropMuted: "#AEAEB2",
   mediaBackdropControl: "#2C2C2E",
+  plate: "#DCD8D9",
 } as const satisfies ColorTokens;
 
 /** Dark palette. Prefer `tokensForAppearance` when theme-aware. */
@@ -232,6 +236,13 @@ export const typography = {
   mono: { size: 13, leading: 18 / 13, tracking: "0", weight: 400 },
   /** The mobile composer field: the native iOS body, 17/22. */
   composer: { size: 17, leading: 22 / 17, tracking: "-0.01em", weight: 400 },
+  /** An onboarding step's title, and the same at phone width. */
+  largeTitle: { size: 34, leading: 37 / 34, tracking: "-0.025em", weight: 650 },
+  largeTitleCompact: { size: 30, leading: 33 / 30, tracking: "-0.025em", weight: 650 },
+  /** The welcome statement at phone width; wider screens scale it with the column. */
+  poster: { size: 60, leading: 0.94, tracking: "-0.045em", weight: 760 },
+  /** A link standing alone under an onboarding step's main button. */
+  link: { size: 15, leading: 20 / 15, tracking: "0", weight: 400 },
 } as const satisfies Record<string, TypographyToken>;
 
 export type TypographyKey = keyof typeof typography;
@@ -269,6 +280,8 @@ export const radii = {
   composer: 24,
   /** The floating sidebar and side panel: 26 − the 8 they float from the window's edge. */
   pane: 18,
+  /** The onboarding scene card beside the form; at phone width it takes `block`. */
+  scene: 28,
   /** A settings group on iPhone: the bot page's groups. */
   mobileGroup: 22,
   pill: 9999,
@@ -344,6 +357,8 @@ export type MotionTokens = {
   /** A stack's answered question fading out, then the next one fading in while the card springs to its height. */
   stepOut: number;
   stepIn: number;
+  /** A floating label rising out of its field. */
+  label: number;
 };
 
 export const motion: MotionTokens = {
@@ -360,6 +375,7 @@ export const motion: MotionTokens = {
   spring: { response: 320, bounce: 0.1 },
   stepOut: 100,
   stepIn: 160,
+  label: 150,
 };
 
 /** How far `motion.spring` has gone, from 0 to 1 with its small overshoot, `ms` after it starts. */
@@ -434,7 +450,23 @@ export const sizes = {
   mentionGap: 4,
   /** Height of a share bar: the usage screen's split of spend. */
   shareBar: 8,
+  /** A field with a floating label, and the same on a short phone screen. */
+  field: 56,
+  fieldShort: 52,
+  /** The full-width main button of an onboarding step. */
+  primaryButton: 52,
+  /** The Tangow wordmark on an onboarding step, and its clear space above and below at phone width. */
+  logo: 30,
+  logoTop: 18,
+  logoBottom: 12,
+  /** The same on a short phone, where the scene needs the height. */
+  logoShort: 24,
+  logoTopShort: 12,
+  logoBottomShort: 10,
 } as const satisfies Record<string, number>;
+
+/** An onboarding scene dims a little in dark mode so its light plate does not glare. */
+export const sceneBrightness: Record<ResolvedAppearance, number> = { light: 1, dark: 0.9 };
 
 /** Width over height of a large link preview's picture: the one ratio, web and iOS. */
 export const linkLargeImageRatio = 1.91;

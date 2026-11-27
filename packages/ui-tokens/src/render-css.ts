@@ -13,6 +13,7 @@ import {
   motion,
   RADIUS,
   radii,
+  sceneBrightness,
   shadowsForAppearance,
   sizes,
   space,
@@ -179,7 +180,7 @@ function renderBlock(
   const lines = (Object.keys(palette) as (keyof ColorTokens)[]).map(
     (token) => `  ${cssVariableName(token)}: ${palette[token].toLowerCase()};`,
   );
-  lines.push(`  --radius: ${RADIUS};`);
+  lines.push(`  --radius: ${RADIUS};`, `  --scene-brightness: ${sceneBrightness[colorScheme]};`);
   lines.push(...renderShadowLines(colorScheme), ...renderMaterialLines(colorScheme));
   return `${selector} {\n  color-scheme: ${colorScheme};\n${lines.join("\n")}\n}`;
 }

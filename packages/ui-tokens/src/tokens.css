@@ -52,7 +52,9 @@
   --media-backdrop-foreground: #f5f5f7;
   --media-backdrop-muted: #aeaeb2;
   --media-backdrop-control: #2c2c2e;
+  --plate: #dcd8d9;
   --radius: 0.75rem;
+  --scene-brightness: 0.9;
   --elevation-row: none;
   --elevation-bubble: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 0 0 1px rgba(255, 255, 255, 0.05);
   --elevation-card:
@@ -143,7 +145,9 @@
   --media-backdrop-foreground: #f5f5f7;
   --media-backdrop-muted: #aeaeb2;
   --media-backdrop-control: #2c2c2e;
+  --plate: #dcd8d9;
   --radius: 0.75rem;
+  --scene-brightness: 1;
   --elevation-row: none;
   --elevation-bubble: 0 0 0 1px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.05);
   --elevation-card:
@@ -244,6 +248,22 @@
   --type-composer-leading: 1.2941176470588236;
   --type-composer-tracking: -0.01em;
   --type-composer-weight: 400;
+  --type-large-title-size: 34px;
+  --type-large-title-leading: 1.088235294117647;
+  --type-large-title-tracking: -0.025em;
+  --type-large-title-weight: 650;
+  --type-large-title-compact-size: 30px;
+  --type-large-title-compact-leading: 1.1;
+  --type-large-title-compact-tracking: -0.025em;
+  --type-large-title-compact-weight: 650;
+  --type-poster-size: 60px;
+  --type-poster-leading: 0.94;
+  --type-poster-tracking: -0.045em;
+  --type-poster-weight: 760;
+  --type-link-size: 15px;
+  --type-link-leading: 1.3333333333333333;
+  --type-link-tracking: 0;
+  --type-link-weight: 400;
   --space-sidebar: 280px;
   --space-thread: 800px;
   --space-header: 56px;
@@ -261,6 +281,7 @@
   --corner-link-mention: 4px;
   --corner-composer: 24px;
   --corner-pane: 18px;
+  --corner-scene: 28px;
   --corner-mobile-group: 22px;
   --corner-pill: 9999px;
   --size-receipt: 14px;
@@ -295,6 +316,15 @@
   --size-mention-glyph: 16px;
   --size-mention-gap: 4px;
   --size-share-bar: 8px;
+  --size-field: 56px;
+  --size-field-short: 52px;
+  --size-primary-button: 52px;
+  --size-logo: 30px;
+  --size-logo-top: 18px;
+  --size-logo-bottom: 12px;
+  --size-logo-short: 24px;
+  --size-logo-top-short: 12px;
+  --size-logo-bottom-short: 10px;
   --duration-arrive: 240ms;
   --duration-press: 160ms;
   --duration-hover: 160ms;
@@ -306,6 +336,7 @@
   --duration-flight: 520ms;
   --duration-step-out: 100ms;
   --duration-step-in: 160ms;
+  --duration-label: 150ms;
   --motion-ease: cubic-bezier(0.32, 0.72, 0, 1);
   --material-chrome-blur: 30px;
   --material-chrome-saturate: 160%;

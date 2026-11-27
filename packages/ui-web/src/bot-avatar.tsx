@@ -2,7 +2,6 @@ import { isWorkingStatus } from "@tangow/core";
 import { memo } from "react";
 import { ClayAvatar } from "./clay-avatar.js";
 import { faceFor } from "./clay-face-data.js";
-import { cn } from "./lib/utils.js";
 import { useClayFaceState } from "./use-clay-face-state.js";
 
 export interface BotAvatarProps {
@@ -33,15 +32,3 @@ export const BotAvatar = memo(function BotAvatar({
     />
   );
 });
-
-export function Wordmark({ className }: { className?: string }) {
-  return (
-    <div className={cn("flex items-center gap-3", className)}>
-      <div className="flex h-11 w-11 items-center justify-center gap-1.5 rounded-full bg-card">
-        <span className="h-4 w-[7px] rounded-full bg-primary" />
-        <span className="h-4 w-[7px] rounded-full bg-primary" />
-      </div>
-      <span className="font-sans text-[28px] tracking-tight text-foreground">Tangow</span>
-    </div>
-  );
-}

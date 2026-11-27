@@ -19,6 +19,7 @@
     "@novnc/novnc": "1.7.0",
     "@orpc/client": "1.15.0",
     "@orpc/contract": "1.15.0",
+    "@tangow/avatars": "workspace:*",
     "@tangow/chat-ui": "workspace:*",
     "@tangow/contracts": "workspace:*",
     "@tangow/core": "workspace:*",
