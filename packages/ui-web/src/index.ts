@@ -34,7 +34,12 @@ export {
 } from "./composer-attachment.js";
 export { ComposerLinkPreview, type ComposerLinkPreviewProps } from "./composer-link-preview.js";
 export { ComposerShell, type ComposerShellProps, type ComposerState } from "./composer-shell.js";
-export { FloatingField, type FloatingFieldProps } from "./floating-field.js";
+export {
+  FloatingField,
+  type FloatingFieldProps,
+  FloatingSelect,
+  type FloatingSelectProps,
+} from "./floating-field.js";
 export { formatElapsed, formatShortDuration } from "./format-elapsed.js";
 export {
   FramedBlock,

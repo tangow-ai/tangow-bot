@@ -22,6 +22,8 @@ export type OnboardingFrameProps = {
   chrome?: ReactNode;
   /** The title is a poster statement (the welcome step). */
   poster?: boolean;
+  /** The fields change with the step's state: they keep three fields' room and scroll past it. */
+  scroll?: boolean;
 };
 
 /**
@@ -39,6 +41,7 @@ export function OnboardingFrame({
   onSubmit,
   chrome,
   poster = false,
+  scroll = false,
 }: OnboardingFrameProps) {
   const frame = useRef<HTMLDivElement>(null);
   useKeyboardInset(frame, status);
@@ -48,6 +51,7 @@ export function OnboardingFrame({
       className="rk-onboarding"
       data-slot="onboarding-frame"
       data-poster={poster || undefined}
+      data-scroll={scroll || undefined}
     >
       {chrome ? <div className="rk-onboarding-chrome">{chrome}</div> : null}
       <div className="rk-onboarding-top">
@@ -63,7 +67,7 @@ export function OnboardingFrame({
       <div className="rk-onboarding-pane">
         <form className="rk-onboarding-screen" onSubmit={onSubmit}>
           <h1>{title}</h1>
-          {children}
+          {children ? <div className="rk-onboarding-fields">{children}</div> : null}
           <div className="rk-onboarding-actions">
             {actions}
             {status ? (
