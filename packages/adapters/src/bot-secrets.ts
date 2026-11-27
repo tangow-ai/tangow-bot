@@ -1,9 +1,10 @@
 import { randomBytes } from "node:crypto";
+import type { SecretStore } from "@tangow/adapter-kit";
 import { BotSecretDestination, SecretHttpRequest } from "@tangow/contracts";
 import type { Prisma, PrismaClient } from "@tangow/db";
 import { combineSignals, redactConnectorPayload } from "./connector-safety.js";
-import { createSafeRemoteFetch, type RemoteTransportDependencies } from "./remote-mcp.js";
-import type { EncryptedSecretStore } from "./secrets.js";
+import type { RemoteTransportDependencies } from "./remote-mcp.js";
+import { createSafeRemoteFetch } from "./remote-mcp.js";
 import { readBodyCapped, withAbort } from "./web-ssrf.js";
 
 export type BotSecretScope = { userId: string; spaceId: string; botId: string };
@@ -56,7 +57,7 @@ export async function findBotSecret(prisma: PrismaClient, scope: BotSecretScope,
 
 export async function storeBotSecret(input: {
   tx: Prisma.TransactionClient;
-  secretStore: EncryptedSecretStore;
+  secretStore: SecretStore;
   scope: BotSecretScope;
   destination: BotSecretDestination;
   plaintext: string;
@@ -77,22 +78,12 @@ export async function storeBotSecret(input: {
     throw new Error("Credential limit reached");
   }
   const id = existing?.id ?? randomBytes(12).toString("hex");
-  const encrypted = await secretStore.put(
-    plaintext,
-    {
-      operationId: id,
-      traceId: id,
-      userId: scope.userId,
-      spaceId: scope.spaceId,
-      signal: new AbortController().signal,
-    },
-    id,
-  );
+  const ciphertext = await secretStore.seal(plaintext, id);
   if (existing) {
-    await tx.botSecret.update({ where: { id }, data: { ciphertext: encrypted.ciphertext } });
+    await tx.botSecret.update({ where: { id }, data: { ciphertext } });
   } else {
     await tx.botSecret.create({
-      data: { id, ...scopeFields(scope), ...destination, ciphertext: encrypted.ciphertext },
+      data: { id, ...scopeFields(scope), ...destination, ciphertext },
     });
   }
 }
@@ -117,7 +108,7 @@ export async function forgetBotSecret(prisma: PrismaClient, scope: BotSecretScop
 /** Credentials are resolved only inside this destination-bound HTTP boundary. */
 export async function requestWithBotSecret(input: {
   prisma: PrismaClient;
-  secretStore: EncryptedSecretStore;
+  secretStore: SecretStore;
   scope: BotSecretScope;
   request: unknown;
   signal: AbortSignal;
@@ -134,7 +125,16 @@ export async function requestWithBotSecret(input: {
   if (url.origin !== destination.origin || url.username || url.password || url.hash) {
     return { error: "This credential cannot be sent to that destination." };
   }
-  const plaintext = input.secretStore.load(row.ciphertext, row.id);
+  const opened = await input.secretStore.open(row.ciphertext, row.id);
+  if (!opened.ok) {
+    return {
+      error:
+        opened.reason === "unavailable"
+          ? "Credential storage is temporarily unavailable. Try again later."
+          : "Credential could not be opened. Use request_secret to save it again.",
+    };
+  }
+  const { plaintext } = opened;
   const headers = new Headers({ accept: "application/json", "content-type": request.contentType });
   const { name: headerName, value: headerValue } = credentialHeader(destination, plaintext);
   const redactions = [

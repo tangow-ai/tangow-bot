@@ -1,5 +1,5 @@
 import { ORPCError } from "@orpc/server";
-import type { SecretStore } from "@tangow/adapter-kit";
+import type { EncryptedSecretStore } from "@tangow/adapters";
 import {
   decisionProviderRequiresDeploymentOwner,
   prepareDecisionProviderConnection,
@@ -12,7 +12,7 @@ import { withSerializableRetry } from "./serializable-retry.js";
 
 export interface DecisionProviderConfigDeps {
   prisma: PrismaClient;
-  secrets: Pick<SecretStore, "put">;
+  secrets: Pick<EncryptedSecretStore, "put">;
 }
 
 export async function persistDecisionProviderConfig(

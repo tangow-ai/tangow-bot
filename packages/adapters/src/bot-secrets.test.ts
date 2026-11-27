@@ -1,3 +1,4 @@
+import type { SecretStore } from "@tangow/adapter-kit";
 import type { BotSecretDestination } from "@tangow/contracts";
 import type { PrismaClient } from "@tangow/db";
 import { describe, expect, it, vi } from "vitest";
@@ -15,17 +16,9 @@ const secret = "fake-key-with+/special=characters";
 const publicResolver = async () => [{ address: "8.8.8.8", family: 4 as const }];
 
 async function fixture(auth = destination.auth) {
-  const encrypted = await secretStore.put(
-    secret,
-    {
-      ...scope,
-      operationId: "test",
-      traceId: "test",
-      signal: new AbortController().signal,
-    },
-    "secret-1",
-  );
-  const row = { ...scope, ...destination, auth, ...encrypted };
+  const id = "secret-1";
+  const ciphertext = await secretStore.seal(secret, id);
+  const row = { ...scope, ...destination, auth, id, ciphertext };
   const findFirst = vi.fn(async ({ where }) =>
     Object.entries(where).every(([key, value]) => row[key as keyof typeof row] === value)
       ? row
@@ -43,7 +36,7 @@ async function fixture(auth = destination.auth) {
     remote: { fetch, resolveHostname: publicResolver },
     registerRedactions,
   };
-  return { input, fetch, findFirst, registerRedactions };
+  return { input, fetch, row, registerRedactions };
 }
 
 describe("authenticated secret requests", () => {
@@ -85,15 +78,15 @@ describe("authenticated secret requests", () => {
     "denies a different %s before decrypting or sending",
     async (key) => {
       const { input, fetch } = await fixture();
-      const load = vi.spyOn(secretStore, "load");
+      const open = vi.spyOn(secretStore, "open");
       try {
         expect(
           await requestWithBotSecret({ ...input, scope: { ...scope, [key]: "other" } }),
         ).toMatchObject({ error: expect.any(String) });
-        expect(load).not.toHaveBeenCalled();
+        expect(open).not.toHaveBeenCalled();
         expect(fetch).not.toHaveBeenCalled();
       } finally {
-        load.mockRestore();
+        open.mockRestore();
       }
     },
   );
@@ -111,6 +104,24 @@ describe("authenticated secret requests", () => {
       await requestWithBotSecret({ ...input, request: { ...input.request, url } }),
     ).toMatchObject({ error: expect.any(String) });
     expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("reports an unreadable credential and unavailable storage distinctly without sending", async () => {
+    const { input, fetch, row, registerRedactions } = await fixture();
+    row.ciphertext = "unknown-format";
+    expect(await requestWithBotSecret(input)).toEqual({
+      error: "Credential could not be opened. Use request_secret to save it again.",
+    });
+
+    const unavailable: SecretStore = {
+      seal: secretStore.seal.bind(secretStore),
+      open: async () => ({ ok: false, reason: "unavailable" }),
+    };
+    expect(await requestWithBotSecret({ ...input, secretStore: unavailable })).toEqual({
+      error: "Credential storage is temporarily unavailable. Try again later.",
+    });
+    expect(fetch).not.toHaveBeenCalled();
+    expect(registerRedactions).not.toHaveBeenCalled();
   });
 
   it("rejects private DNS answers without issuing a request", async () => {
