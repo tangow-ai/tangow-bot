@@ -268,7 +268,7 @@ msgid "{workingBotName} is working"
 msgstr "{workingBotName} is working"
 
 #. placeholder {0}: mention.name
-#: src/pages/shell/composer-pickers.tsx:152
+#: src/pages/shell/composer-pickers.tsx:163
 msgid "@{0}"
 msgstr "@{0}"
 
@@ -280,7 +280,7 @@ msgstr "30d"
 msgid "7d"
 msgstr "7d"
 
-#: src/pages/Auth.tsx:210
+#: src/pages/Auth.tsx:214
 msgid "A new key is on its way."
 msgstr "A new key is on its way."
 
@@ -389,6 +389,10 @@ msgstr "Add a schedule, webhook, GitHub, or message trigger"
 msgid "Add another"
 msgstr "Add another"
 
+#: src/pages/Onboarding.tsx:407
+msgid "Add API key"
+msgstr "Add API key"
+
 #: src/pages/ScratchpadSection.tsx:185
 msgid "Add item"
 msgstr "Add item"
@@ -422,7 +426,6 @@ msgstr "Adding…"
 #: src/pages/DecisionModelSettingsPanel.tsx:132
 #: src/pages/model-settings/model-detail.tsx:171
 #: src/pages/model-settings/routing-settings.tsx:118
-#: src/pages/Onboarding.tsx:496
 #: src/pages/RoutineSchedule.tsx:47
 #: src/pages/SpaceGeneralSettings.tsx:54
 msgid "Advanced"
@@ -484,7 +487,7 @@ msgstr "Allow writing"
 msgid "Allowed once"
 msgstr "Allowed once"
 
-#: src/pages/Auth.tsx:303
+#: src/pages/Auth.tsx:308
 msgid "Already have an account?"
 msgstr "Already have an account?"
 
@@ -504,7 +507,7 @@ msgstr "Always allowed"
 msgid "Answer"
 msgstr "Answer"
 
-#: src/pages/shell/composer.tsx:290
+#: src/pages/shell/composer.tsx:364
 msgid "Answer {answerName}…"
 msgstr "Answer {answerName}…"
 
@@ -536,9 +539,7 @@ msgstr "API is back, but the update did not finish. Check the host logs."
 #: src/pages/model-settings/model-detail.tsx:284
 #: src/pages/model-settings/model-detail.tsx:287
 #: src/pages/model-settings/model-detail.tsx:306
-#: src/pages/Onboarding.tsx:630
-#: src/pages/Onboarding.tsx:633
-#: src/pages/Onboarding.tsx:647
+#: src/pages/Onboarding.tsx:333
 #: src/pages/ProvidersSettings.tsx:247
 msgid "API key"
 msgstr "API key"
@@ -659,7 +660,6 @@ msgid "Attachment"
 msgstr "Attachment"
 
 #: src/pages/model-settings/subscription-sign-in.tsx:49
-#: src/pages/Onboarding.tsx:579
 msgid "Authorization code or callback URL"
 msgstr "Authorization code or callback URL"
 
@@ -716,9 +716,9 @@ msgstr "Back"
 msgid "Back to all usage"
 msgstr "Back to all usage"
 
-#: src/pages/Auth.tsx:225
-#: src/pages/Auth.tsx:398
-#: src/pages/Auth.tsx:407
+#: src/pages/Auth.tsx:230
+#: src/pages/Auth.tsx:402
+#: src/pages/Auth.tsx:411
 msgid "Back to sign in"
 msgstr "Back to sign in"
 
@@ -772,7 +772,7 @@ msgstr "Bot screen"
 msgid "Bot screen preview"
 msgstr "Bot screen preview"
 
-#: src/pages/shell/composer-pickers.tsx:299
+#: src/pages/shell/composer-pickers.tsx:247
 #: src/pages/shell/shell-overlays.tsx:174
 #: src/pages/shell/thread-header.tsx:167
 #: src/pages/shell/thread-header.tsx:168
@@ -925,7 +925,7 @@ msgstr "Check in."
 #~ msgid "Check your email"
 #~ msgstr "Check your email"
 
-#: src/pages/Auth.tsx:256
+#: src/pages/Auth.tsx:260
 msgid "Check your email.<0/>The clay will keep."
 msgstr "Check your email.<0/>The clay will keep."
 
@@ -1050,6 +1050,10 @@ msgstr "Cloud"
 msgid "Code"
 msgstr "Code"
 
+#: src/pages/Onboarding.tsx:448
+msgid "Code or URL"
+msgstr "Code or URL"
+
 #. placeholder {0}: group.title
 #: src/pages/shell/sidebar-roster.tsx:139
 msgid "Collapse {0}"
@@ -1121,7 +1125,7 @@ msgid "Confirm delete"
 msgstr "Confirm delete"
 
 #: src/pages/AccountProfileSettings.tsx:206
-#: src/pages/Auth.tsx:443
+#: src/pages/Auth.tsx:448
 msgid "Confirm password"
 msgstr "Confirm password"
 
@@ -1136,8 +1140,8 @@ msgid "Connect"
 msgstr "Connect"
 
 #: src/pages/Onboarding.tsx:384
-msgid "Connect a model"
-msgstr "Connect a model"
+#~ msgid "Connect a model"
+#~ msgstr "Connect a model"
 
 #: src/pages/VoiceSettingsOverlay.tsx:205
 msgid "Connect a voice provider"
@@ -1191,6 +1195,7 @@ msgstr "Connected. Its tools are available from your next message."
 #: src/pages/DecisionModelSettingsPanel.tsx:176
 #: src/pages/memory-providers/SerenitySettingsForm.tsx:107
 #: src/pages/memory-providers/SupermemorySettingsForm.tsx:82
+#: src/pages/Onboarding.tsx:364
 #: src/pages/ProvidersSettings.tsx:265
 #: src/pages/shell/message-cards.tsx:295
 #: src/pages/shell/screen-frame.tsx:34
@@ -1207,13 +1212,12 @@ msgid "Content lives on the shared volume."
 msgstr "Content lives on the shared volume."
 
 #: src/pages/model-settings/model-detail.tsx:202
-#: src/pages/Onboarding.tsx:517
 msgid "Context limit"
 msgstr "Context limit"
 
 #: src/components/integrations/IntegrationSetup.tsx:244
 #: src/pages/Invite.tsx:108
-#: src/pages/Onboarding.tsx:664
+#: src/pages/Onboarding.tsx:398
 msgid "Continue"
 msgstr "Continue"
 
@@ -1323,7 +1327,7 @@ msgstr "Could not connect this voice provider"
 msgid "Could not connect to the computer screen"
 msgstr "Could not connect to the computer screen"
 
-#: src/pages/Auth.tsx:134
+#: src/pages/Auth.tsx:138
 #: src/pages/shell/use-computer-control.ts:203
 msgid "Could not continue"
 msgstr "Could not continue"
@@ -1344,7 +1348,7 @@ msgstr "Could not create section"
 msgid "Could not create space"
 msgstr "Could not create space"
 
-#: src/pages/Onboarding.tsx:364
+#: src/pages/Onboarding.tsx:315
 msgid "Could not create your bot"
 msgstr "Could not create your bot"
 
@@ -1485,7 +1489,7 @@ msgid "Could not reach the server"
 msgstr "Could not reach the server"
 
 #: src/pages/model-settings/use-model-settings.ts:225
-#: src/pages/Onboarding.tsx:274
+#: src/pages/Onboarding.tsx:240
 msgid "Could not reach this model server"
 msgstr "Could not reach this model server"
 
@@ -1513,7 +1517,7 @@ msgstr "Could not rename connection"
 msgid "Could not rename section"
 msgstr "Could not rename section"
 
-#: src/pages/Auth.tsx:375
+#: src/pages/Auth.tsx:379
 msgid "Could not reset password"
 msgstr "Could not reset password"
 
@@ -1541,7 +1545,7 @@ msgstr "Could not save Auto Review"
 msgid "Could not save group"
 msgstr "Could not save group"
 
-#: src/pages/Onboarding.tsx:331
+#: src/pages/Onboarding.tsx:272
 msgid "Could not save model"
 msgstr "Could not save model"
 
@@ -1565,7 +1569,7 @@ msgstr "Could not save that voice"
 msgid "Could not save this choice"
 msgstr "Could not save this choice"
 
-#: src/pages/Auth.tsx:100
+#: src/pages/Auth.tsx:104
 msgid "Could not send reset email"
 msgstr "Could not send reset email"
 
@@ -1605,7 +1609,7 @@ msgstr "Could not update computer"
 msgid "Could not update computers"
 msgstr "Could not update computers"
 
-#: src/pages/shell/use-thread-send.ts:115
+#: src/pages/shell/use-thread-send.ts:112
 msgid "Could not update reaction"
 msgstr "Could not update reaction"
 
@@ -1642,8 +1646,8 @@ msgstr "Couldn't load members"
 msgid "Couldn't load messaging settings"
 msgstr "Couldn't load messaging settings"
 
-#: src/pages/Auth.tsx:126
-#: src/pages/Auth.tsx:378
+#: src/pages/Auth.tsx:130
+#: src/pages/Auth.tsx:382
 msgid "Couldn't reach the server."
 msgstr "Couldn't reach the server."
 
@@ -1685,7 +1689,7 @@ msgstr "Create"
 msgid "Create a section and move {0} into it."
 msgstr "Create a section and move {0} into it."
 
-#: src/pages/Auth.tsx:300
+#: src/pages/Auth.tsx:305
 msgid "Create account"
 msgstr "Create account"
 
@@ -1702,7 +1706,7 @@ msgid "Create group"
 msgstr "Create group"
 
 #: src/pages/shell/bot-picker.tsx:74
-#: src/pages/shell/shell-main.tsx:204
+#: src/pages/shell/shell-main.tsx:217
 msgid "Create new Bot"
 msgstr "Create new Bot"
 
@@ -1803,7 +1807,6 @@ msgstr "Decline"
 #: src/pages/model-settings/model-detail.tsx:188
 #: src/pages/model-settings/routing-settings.tsx:106
 #: src/pages/model-settings/routing-settings.tsx:133
-#: src/pages/Onboarding.tsx:511
 msgid "Default"
 msgstr "Default"
 
@@ -1908,7 +1911,7 @@ msgstr "Desktop update"
 msgid "Dictate"
 msgstr "Dictate"
 
-#: src/pages/shell/composer.tsx:433
+#: src/pages/shell/composer.tsx:490
 msgid "Dictating"
 msgstr "Dictating"
 
@@ -1962,7 +1965,7 @@ msgstr "Dismissed. Reconnect anytime from MCP settings."
 msgid "Do not type passwords into the demo. Use Take control for credentials."
 msgstr "Do not type passwords into the demo. Use Take control for credentials."
 
-#: src/pages/Auth.tsx:168
+#: src/pages/Auth.tsx:173
 msgid "Don’t have an account?"
 msgstr "Don’t have an account?"
 
@@ -2004,7 +2007,7 @@ msgstr "Downloading…"
 msgid "Draft skill"
 msgstr "Draft skill"
 
-#: src/pages/shell/shell-main.tsx:161
+#: src/pages/shell/shell-main.tsx:174
 msgid "Drop files to attach"
 msgstr "Drop files to attach"
 
@@ -2056,9 +2059,9 @@ msgstr "Editing message from {rewindTime} · {0} messages after it will be remov
 msgid "Effort"
 msgstr "Effort"
 
-#: src/pages/Auth.tsx:179
-#: src/pages/Auth.tsx:238
-#: src/pages/Auth.tsx:322
+#: src/pages/Auth.tsx:184
+#: src/pages/Auth.tsx:243
+#: src/pages/Auth.tsx:327
 msgid "Email"
 msgstr "Email"
 
@@ -2075,23 +2078,20 @@ msgid "Engage when... Ignore..."
 msgstr "Engage when... Ignore..."
 
 #: src/pages/model-settings/use-model-settings.ts:276
-#: src/pages/Onboarding.tsx:304
 msgid "Enter a whole number from 1 to {MAX_MODEL_CONTEXT_WINDOW} for the context limit."
 msgstr "Enter a whole number from 1 to {MAX_MODEL_CONTEXT_WINDOW} for the context limit."
 
 #: src/pages/model-settings/use-model-settings.ts:269
-#: src/pages/Onboarding.tsx:297
 msgid "Enter a whole number from 1 to {MAX_MODEL_MAX_TOKENS} for maximum output tokens."
 msgstr "Enter a whole number from 1 to {MAX_MODEL_MAX_TOKENS} for maximum output tokens."
 
 #: src/pages/model-settings/use-model-settings.ts:260
-#: src/pages/Onboarding.tsx:288
 msgid "Enter a whole number from 1 to 1000 for the image limit."
 msgstr "Enter a whole number from 1 to 1000 for the image limit."
 
 #. placeholder {0}: oauth.verificationUri.replace(/^https:\/\//, "")
 #: src/pages/model-settings/subscription-sign-in.tsx:72
-#: src/pages/Onboarding.tsx:598
+#: src/pages/Onboarding.tsx:459
 msgid "Enter this code at <0>{0}</0>"
 msgstr "Enter this code at <0>{0}</0>"
 
@@ -2164,7 +2164,6 @@ msgstr "External conversation"
 
 #: src/pages/bot-page/model-options.ts:14
 #: src/pages/model-settings/model-detail.tsx:184
-#: src/pages/Onboarding.tsx:507
 msgid "Extra high"
 msgstr "Extra high"
 
@@ -2179,14 +2178,13 @@ msgstr "Failed"
 msgid "Failed {when}"
 msgstr "Failed {when}"
 
-#: src/pages/shell/use-thread-send.ts:287
-#: src/pages/shell/use-thread-send.ts:289
-#: src/pages/shell/use-thread-send.ts:291
+#: src/pages/shell/use-thread-send.ts:268
+#: src/pages/shell/use-thread-send.ts:270
 msgid "Failed to send message"
 msgstr "Failed to send message"
 
-#: src/pages/shell/use-thread-send.ts:327
-#: src/pages/shell/use-thread-send.ts:346
+#: src/pages/shell/use-thread-send.ts:305
+#: src/pages/shell/use-thread-send.ts:324
 msgid "Failed to stop"
 msgstr "Failed to stop"
 
@@ -2222,18 +2220,22 @@ msgid "Filter skills"
 msgstr "Filter skills"
 
 #: src/pages/model-settings/model-detail.tsx:107
-#: src/pages/Onboarding.tsx:428
+#: src/pages/Onboarding.tsx:496
 msgid "Find models"
 msgstr "Find models"
 
 #: src/pages/model-settings/model-detail.tsx:107
-#: src/pages/Onboarding.tsx:428
+#: src/pages/Onboarding.tsx:493
 msgid "Finding…"
 msgstr "Finding…"
 
 #. placeholder {0}: new URL(oauth.verificationUri).hostname
+#: src/pages/Onboarding.tsx:433
+msgid "Finish signing in at <0>{0}</0>, then paste the code or the page’s address here."
+msgstr "Finish signing in at <0>{0}</0>, then paste the code or the page’s address here."
+
+#. placeholder {0}: new URL(oauth.verificationUri).hostname
 #: src/pages/model-settings/subscription-sign-in.tsx:32
-#: src/pages/Onboarding.tsx:562
 msgid "Finish signing in at <0>{0}</0>. The final page may not load; paste its URL or code here."
 msgstr "Finish signing in at <0>{0}</0>. The final page may not load; paste its URL or code here."
 
@@ -2250,7 +2252,7 @@ msgstr "Finishing MCP connection…"
 msgid "Fixed"
 msgstr "Fixed"
 
-#: src/pages/Auth.tsx:164
+#: src/pages/Auth.tsx:169
 msgid "Forgot password?"
 msgstr "Forgot password?"
 
@@ -2292,11 +2294,11 @@ msgstr "Git event"
 msgid "Global"
 msgstr "Global"
 
-#: src/pages/Auth.tsx:155
+#: src/pages/Auth.tsx:159
 msgid "Got the key?"
 msgstr "Got the key?"
 
-#: src/pages/Auth.tsx:295
+#: src/pages/Auth.tsx:299
 msgid "Grab some clay."
 msgstr "Grab some clay."
 
@@ -2352,13 +2354,12 @@ msgstr "Hide bots"
 msgid "Hide key"
 msgstr "Hide key"
 
-#: src/pages/Auth.tsx:143
+#: src/pages/Auth.tsx:147
 msgid "Hide password"
 msgstr "Hide password"
 
 #: src/pages/bot-page/model-options.ts:17
 #: src/pages/model-settings/model-detail.tsx:183
-#: src/pages/Onboarding.tsx:506
 msgid "High"
 msgstr "High"
 
@@ -2399,7 +2400,7 @@ msgstr "I’m done"
 #~ msgid "If {email} has an account, the link is in its inbox."
 #~ msgstr "If {email} has an account, the link is in its inbox."
 
-#: src/pages/Auth.tsx:232
+#: src/pages/Auth.tsx:237
 msgid "If {sentTo} has an account, the link is in its inbox."
 msgstr "If {sentTo} has an account, the link is in its inbox."
 
@@ -2419,7 +2420,7 @@ msgstr "Image {n} of {total}, from {sender}"
 msgid "Image, from {sender}"
 msgstr "Image, from {sender}"
 
-#: src/pages/shell/shell-main.tsx:164
+#: src/pages/shell/shell-main.tsx:177
 msgid "Images, PDFs, text, CSV or JSON, up to {ATTACHMENT_MAX_MB} MB each"
 msgstr "Images, PDFs, text, CSV or JSON, up to {ATTACHMENT_MAX_MB} MB each"
 
@@ -2650,7 +2651,7 @@ msgstr "Loading voice providers…"
 
 #: src/App.tsx:71
 #: src/pages/IntegrationSetup.tsx:74
-#: src/pages/Onboarding.tsx:378
+#: src/pages/Onboarding.tsx:564
 #: src/pages/PeerMessagesOverlay.tsx:165
 #: src/pages/shell/session-view.tsx:129
 #: src/pages/shell/transcript.tsx:290
@@ -2665,13 +2666,12 @@ msgstr "Local"
 msgid "Log out"
 msgstr "Log out"
 
-#: src/pages/Auth.tsx:210
+#: src/pages/Auth.tsx:214
 msgid "Lost the key?"
 msgstr "Lost the key?"
 
 #: src/pages/bot-page/model-options.ts:15
 #: src/pages/model-settings/model-detail.tsx:181
-#: src/pages/Onboarding.tsx:504
 msgid "Low"
 msgstr "Low"
 
@@ -2700,17 +2700,14 @@ msgstr "Mark as Unread"
 
 #: src/pages/bot-page/model-options.ts:19
 #: src/pages/model-settings/model-detail.tsx:185
-#: src/pages/Onboarding.tsx:508
 msgid "Max"
 msgstr "Max"
 
 #: src/pages/model-settings/model-detail.tsx:216
-#: src/pages/Onboarding.tsx:523
 msgid "Maximum images per request"
 msgstr "Maximum images per request"
 
 #: src/pages/model-settings/model-detail.tsx:195
-#: src/pages/Onboarding.tsx:514
 msgid "Maximum output tokens"
 msgstr "Maximum output tokens"
 
@@ -2720,7 +2717,6 @@ msgstr "MCP endpoint"
 
 #: src/pages/bot-page/model-options.ts:16
 #: src/pages/model-settings/model-detail.tsx:182
-#: src/pages/Onboarding.tsx:505
 msgid "Medium"
 msgstr "Medium"
 
@@ -2747,7 +2743,7 @@ msgstr "Memory"
 msgid "Memory scope"
 msgstr "Memory scope"
 
-#: src/pages/shell/composer-pickers.tsx:138
+#: src/pages/shell/composer-pickers.tsx:149
 msgid "Mentions"
 msgstr "Mentions"
 
@@ -2756,7 +2752,7 @@ msgid "Mentions only"
 msgstr "Mentions only"
 
 #: src/pages/bot-page/BotActivity.tsx:358
-#: src/pages/shell/composer.tsx:293
+#: src/pages/shell/composer.tsx:367
 #: src/pages/shell/message-view.tsx:92
 msgid "Message"
 msgstr "Message"
@@ -2766,7 +2762,7 @@ msgstr "Message"
 msgid "Message"
 msgstr "Message"
 
-#: src/pages/shell/composer.tsx:292
+#: src/pages/shell/composer.tsx:366
 msgid "Message {activeName}"
 msgstr "Message {activeName}"
 
@@ -2774,7 +2770,7 @@ msgstr "Message {activeName}"
 msgid "Message actions"
 msgstr "Message actions"
 
-#: src/pages/shell/composer.tsx:311
+#: src/pages/shell/composer.tsx:385
 msgid "Message composer"
 msgstr "Message composer"
 
@@ -2791,7 +2787,7 @@ msgstr "Message event"
 msgid "Message from {peer}"
 msgstr "Message from {peer}"
 
-#: src/pages/shell/composer.tsx:505
+#: src/pages/shell/composer.tsx:567
 msgid "Message…"
 msgstr "Message…"
 
@@ -2815,7 +2811,6 @@ msgstr "Microphone failed"
 
 #: src/pages/bot-page/model-options.ts:18
 #: src/pages/model-settings/model-detail.tsx:180
-#: src/pages/Onboarding.tsx:503
 msgid "Minimal"
 msgstr "Minimal"
 
@@ -2842,9 +2837,9 @@ msgstr "minutes"
 #: src/pages/model-settings/model-detail.tsx:112
 #: src/pages/model-settings/model-detail.tsx:222
 #: src/pages/model-settings/model-picker.tsx:198
-#: src/pages/Onboarding.tsx:433
-#: src/pages/Onboarding.tsx:529
-#: src/pages/Onboarding.tsx:541
+#: src/pages/Onboarding.tsx:504
+#: src/pages/Onboarding.tsx:522
+#: src/pages/Onboarding.tsx:537
 #: src/pages/shell/session-view.tsx:225
 msgid "Model"
 msgstr "Model"
@@ -2854,7 +2849,6 @@ msgid "Model error"
 msgstr "Model error"
 
 #: src/pages/model-settings/model-detail.tsx:146
-#: src/pages/Onboarding.tsx:471
 msgid "Model id"
 msgstr "Model id"
 
@@ -2879,11 +2873,10 @@ msgid "Models"
 msgstr "Models"
 
 #: src/pages/model-settings/model-detail.tsx:125
-#: src/pages/Onboarding.tsx:450
 msgid "Models from server"
 msgstr "Models from server"
 
-#: src/pages/Welcome.tsx:12
+#: src/pages/Welcome.tsx:13
 msgid "Mold a bot.<0/>Give it a job."
 msgstr "Mold a bot.<0/>Give it a job."
 
@@ -2914,7 +2907,7 @@ msgstr "Mute"
 
 #: src/components/AskCard.tsx:351
 #: src/components/teach/SkillDraftCard.tsx:79
-#: src/pages/Auth.tsx:314
+#: src/pages/Auth.tsx:319
 #: src/pages/bot-page/BotHero.tsx:45
 #: src/pages/bot-page/RoutineCreateForm.tsx:74
 #: src/pages/bot-page/RoutineDetail.tsx:111
@@ -2965,7 +2958,7 @@ msgid "New open-work item"
 msgstr "New open-work item"
 
 #: src/pages/AccountProfileSettings.tsx:200
-#: src/pages/Auth.tsx:432
+#: src/pages/Auth.tsx:437
 msgid "New password"
 msgstr "New password"
 
@@ -3219,7 +3212,7 @@ msgstr "Open in full screen"
 msgid "Open in full window"
 msgstr "Open in full window"
 
-#: src/pages/Auth.tsx:281
+#: src/pages/Auth.tsx:286
 msgid "Open the link sent to <0>{checkEmail}</0>."
 msgstr "Open the link sent to <0>{checkEmail}</0>."
 
@@ -3228,7 +3221,6 @@ msgid "Open work"
 msgstr "Open work"
 
 #: src/pages/model-settings/model-detail.tsx:85
-#: src/pages/Onboarding.tsx:416
 msgid "OpenAI-compatible server URL"
 msgstr "OpenAI-compatible server URL"
 
@@ -3236,7 +3228,7 @@ msgstr "OpenAI-compatible server URL"
 msgid "Opened its thread."
 msgstr "Opened its thread."
 
-#: src/pages/Onboarding.tsx:689
+#: src/pages/Onboarding.tsx:587
 msgid "Opening chat…"
 msgstr "Opening chat…"
 
@@ -3249,7 +3241,6 @@ msgid "OpenRouter API key"
 msgstr "OpenRouter API key"
 
 #: src/pages/model-settings/model-detail.tsx:290
-#: src/pages/Onboarding.tsx:636
 msgid "Optional"
 msgstr "Optional"
 
@@ -3261,7 +3252,7 @@ msgstr "Optional controls most people never need"
 msgid "Or connect an API key"
 msgstr "Or connect an API key"
 
-#: src/pages/Onboarding.tsx:647
+#: src/pages/Onboarding.tsx:402
 msgid "Or paste an API key"
 msgstr "Or paste an API key"
 
@@ -3278,8 +3269,7 @@ msgid "Other answer"
 msgstr "Other answer"
 
 #: src/pages/model-settings/model-detail.tsx:133
-#: src/pages/Onboarding.tsx:198
-#: src/pages/Onboarding.tsx:460
+#: src/pages/Onboarding.tsx:517
 msgid "Other model…"
 msgstr "Other model…"
 
@@ -3303,22 +3293,22 @@ msgstr "Park"
 
 #: src/components/AskCard.tsx:122
 #: src/pages/AccountProfileSettings.tsx:180
-#: src/pages/Auth.tsx:189
-#: src/pages/Auth.tsx:333
+#: src/pages/Auth.tsx:194
+#: src/pages/Auth.tsx:338
 msgid "Password"
 msgstr "Password"
 
-#: src/pages/Auth.tsx:92
+#: src/pages/Auth.tsx:96
 msgid "Password recovery is not configured for this server"
 msgstr "Password recovery is not configured for this server"
 
 #: src/pages/AccountProfileSettings.tsx:225
-#: src/pages/Auth.tsx:421
+#: src/pages/Auth.tsx:426
 msgid "Password updated"
 msgstr "Password updated"
 
 #: src/pages/AccountProfileSettings.tsx:150
-#: src/pages/Auth.tsx:367
+#: src/pages/Auth.tsx:371
 msgid "Passwords do not match"
 msgstr "Passwords do not match"
 
@@ -3362,6 +3352,10 @@ msgstr "Pin"
 msgid "Playing…"
 msgstr "Playing…"
 
+#: src/pages/Onboarding.tsx:351
+msgid "Plug in a brain."
+msgstr "Plug in a brain."
+
 #: src/pages/bot-page/RoutineTriggers.tsx:377
 msgid "POST to"
 msgstr "POST to"
@@ -3397,8 +3391,7 @@ msgid "Profile photo"
 msgstr "Profile photo"
 
 #: src/pages/MemorySettingsOverlay.tsx:219
-#: src/pages/Onboarding.tsx:388
-#: src/pages/Onboarding.tsx:395
+#: src/pages/Onboarding.tsx:419
 msgid "Provider"
 msgstr "Provider"
 
@@ -3435,7 +3428,6 @@ msgstr "read-only"
 
 #: src/pages/model-settings/model-detail.tsx:187
 #: src/pages/model-settings/routing-settings.tsx:132
-#: src/pages/Onboarding.tsx:510
 msgid "Reasoning effort"
 msgstr "Reasoning effort"
 
@@ -3574,8 +3566,8 @@ msgstr "Remove Git event?"
 
 #. placeholder {0}: mention.name
 #: src/pages/shell/composer-pickers.tsx:283
-msgid "Remove mention {0}"
-msgstr "Remove mention {0}"
+#~ msgid "Remove mention {0}"
+#~ msgstr "Remove mention {0}"
 
 #: src/pages/bot-page/RoutineTriggers.tsx:236
 msgid "Remove message trigger?"
@@ -3592,8 +3584,8 @@ msgstr "Remove preview"
 
 #. placeholder {0}: skill.name
 #: src/pages/shell/composer-pickers.tsx:261
-msgid "Remove skill {0}"
-msgstr "Remove skill {0}"
+#~ msgid "Remove skill {0}"
+#~ msgstr "Remove skill {0}"
 
 #: src/pages/bot-page/RoutineTriggers.tsx:233
 msgid "Remove webhook?"
@@ -3670,11 +3662,11 @@ msgstr "Reset computer"
 msgid "Reset computer?"
 msgstr "Reset computer?"
 
-#: src/pages/Auth.tsx:404
+#: src/pages/Auth.tsx:408
 msgid "Reset password"
 msgstr "Reset password"
 
-#: src/pages/Auth.tsx:415
+#: src/pages/Auth.tsx:419
 msgid "Reset your password"
 msgstr "Reset your password"
 
@@ -3917,7 +3909,7 @@ msgstr "Select a bot"
 #: src/components/ask/QuestionCard.tsx:209
 #: src/components/ask/QuestionCard.tsx:310
 #: src/components/DraftCard.tsx:329
-#: src/pages/shell/composer.tsx:403
+#: src/pages/shell/composer.tsx:460
 msgid "Send"
 msgstr "Send"
 
@@ -3925,15 +3917,15 @@ msgstr "Send"
 msgid "Send <0>{linkCode}</0> to the line from your chat app within 10 minutes. You'll get a confirmation reply once linked."
 msgstr "Send <0>{linkCode}</0> to the line from your chat app within 10 minutes. You'll get a confirmation reply once linked."
 
-#: src/pages/Auth.tsx:395
+#: src/pages/Auth.tsx:399
 msgid "Send a new link"
 msgstr "Send a new link"
 
-#: src/pages/Auth.tsx:272
+#: src/pages/Auth.tsx:277
 msgid "Send again"
 msgstr "Send again"
 
-#: src/pages/Auth.tsx:221
+#: src/pages/Auth.tsx:226
 msgid "Send reset link"
 msgstr "Send reset link"
 
@@ -3943,7 +3935,7 @@ msgid "Sending…"
 msgstr "Sending…"
 
 #: src/components/DraftSent.tsx:22
-#: src/pages/Auth.tsx:272
+#: src/pages/Auth.tsx:277
 msgid "Sent"
 msgstr "Sent"
 
@@ -3961,7 +3953,7 @@ msgstr "Server name"
 #: src/components/integrations/IntegrationSetup.tsx:169
 #: src/components/integrations/IntegrationSetup.tsx:186
 #: src/pages/model-settings/model-detail.tsx:80
-#: src/pages/Onboarding.tsx:411
+#: src/pages/Onboarding.tsx:479
 msgid "Server URL"
 msgstr "Server URL"
 
@@ -3980,11 +3972,11 @@ msgstr "Set up"
 msgid "Settings"
 msgstr "Settings"
 
-#: src/pages/shell/composer-pickers.tsx:301
+#: src/pages/shell/composer-pickers.tsx:249
 msgid "Settings: General"
 msgstr "Settings: General"
 
-#: src/pages/shell/composer-pickers.tsx:303
+#: src/pages/shell/composer-pickers.tsx:251
 msgid "Settings: Usage"
 msgstr "Settings: Usage"
 
@@ -4051,17 +4043,17 @@ msgstr "Show less"
 msgid "Show more"
 msgstr "Show more"
 
-#: src/pages/Auth.tsx:143
+#: src/pages/Auth.tsx:147
 msgid "Show password"
 msgstr "Show password"
 
 #: src/lib/localized-provider-hint.ts:7
-#: src/pages/Auth.tsx:160
-#: src/pages/Auth.tsx:305
-#: src/pages/Auth.tsx:387
+#: src/pages/Auth.tsx:165
+#: src/pages/Auth.tsx:310
+#: src/pages/Auth.tsx:391
 #: src/pages/model-settings/subscription-sign-in.tsx:101
-#: src/pages/Onboarding.tsx:187
-#: src/pages/Welcome.tsx:25
+#: src/pages/Onboarding.tsx:171
+#: src/pages/Welcome.tsx:26
 msgid "Sign in"
 msgstr "Sign in"
 
@@ -4069,13 +4061,13 @@ msgstr "Sign in"
 #~ msgid "Sign in to Tangow"
 #~ msgstr "Sign in to Tangow"
 
-#: src/pages/Auth.tsx:170
-#: src/pages/Welcome.tsx:22
+#: src/pages/Auth.tsx:175
+#: src/pages/Welcome.tsx:23
 msgid "Sign up"
 msgstr "Sign up"
 
 #. placeholder {0}: skill.name
-#: src/pages/shell/composer-pickers.tsx:199
+#: src/pages/shell/composer-pickers.tsx:210
 msgid "Skill {0}"
 msgstr "Skill {0}"
 
@@ -4172,7 +4164,6 @@ msgstr "Starting"
 
 #: src/components/teach/TeachComputerOverlay.tsx:259
 #: src/pages/model-settings/subscription-sign-in.tsx:101
-#: src/pages/Onboarding.tsx:621
 msgid "Starting…"
 msgstr "Starting…"
 
@@ -4188,7 +4179,7 @@ msgstr "stdio command"
 msgid "Steps"
 msgstr "Steps"
 
-#: src/pages/shell/composer.tsx:299
+#: src/pages/shell/composer.tsx:373
 #: src/pages/shell/side-panel.tsx:358
 #: src/pages/shell/side-panel.tsx:363
 msgid "Stop"
@@ -4224,18 +4215,16 @@ msgid "Subject"
 msgstr "Subject"
 
 #: src/pages/model-settings/subscription-sign-in.tsx:62
-#: src/pages/Onboarding.tsx:588
+#: src/pages/Onboarding.tsx:389
 msgid "Submit"
 msgstr "Submit"
 
 #: src/pages/model-settings/model-detail.tsx:209
-#: src/pages/Onboarding.tsx:520
 msgid "Supports images"
 msgstr "Supports images"
 
 #: src/pages/model-settings/model-detail.tsx:172
 #: src/pages/model-settings/routing-settings.tsx:119
-#: src/pages/Onboarding.tsx:497
 msgid "Supports thinking"
 msgstr "Supports thinking"
 
@@ -4261,7 +4250,7 @@ msgstr "Take control"
 msgid "Teach a task"
 msgstr "Teach a task"
 
-#: src/pages/shell/shell-main.tsx:271
+#: src/pages/shell/shell-main.tsx:284
 msgid "Teaching in progress. Stop teaching before sending a new message."
 msgstr "Teaching in progress. Stop teaching before sending a new message."
 
@@ -4350,7 +4339,7 @@ msgstr "This invite is for {0}."
 msgid "This invite link has expired or was already used."
 msgstr "This invite link has expired or was already used."
 
-#: src/pages/Auth.tsx:425
+#: src/pages/Auth.tsx:430
 msgid "This link has expired or was already used."
 msgstr "This link has expired or was already used."
 
@@ -4423,7 +4412,7 @@ msgid "Trigger"
 msgstr "Trigger"
 
 #: src/components/DraftCard.tsx:329
-#: src/pages/Onboarding.tsx:684
+#: src/pages/Onboarding.tsx:582
 msgid "Try again"
 msgstr "Try again"
 
@@ -4456,7 +4445,7 @@ msgid "Unpin"
 msgstr "Unpin"
 
 #. placeholder {0}: pending.file.name
-#: src/pages/shell/use-thread-send.ts:195
+#: src/pages/shell/use-thread-send.ts:183
 msgid "Unsupported file type: {0}"
 msgstr "Unsupported file type: {0}"
 
@@ -4539,7 +4528,7 @@ msgid "Usage"
 msgstr "Usage"
 
 #: src/pages/model-settings/model-detail.tsx:158
-#: src/pages/Onboarding.tsx:486
+#: src/pages/Onboarding.tsx:409
 msgid "Use a found model"
 msgstr "Use a found model"
 
@@ -4547,7 +4536,7 @@ msgstr "Use a found model"
 msgid "Use another account"
 msgstr "Use another account"
 
-#: src/pages/Auth.tsx:275
+#: src/pages/Auth.tsx:280
 msgid "Use another email"
 msgstr "Use another email"
 
@@ -4590,8 +4579,7 @@ msgstr "Waiting for {waitingOn}"
 
 #: src/pages/model-settings/subscription-sign-in.tsx:66
 #: src/pages/model-settings/subscription-sign-in.tsx:88
-#: src/pages/Onboarding.tsx:592
-#: src/pages/Onboarding.tsx:614
+#: src/pages/Onboarding.tsx:368
 msgid "Waiting for sign-in…"
 msgstr "Waiting for sign-in…"
 
@@ -4693,7 +4681,7 @@ msgid "Yesterday"
 msgstr "Yesterday"
 
 #: src/components/DraftCard.tsx:53
-#: src/pages/Shell.tsx:155
+#: src/pages/Shell.tsx:154
 #: src/pages/shell/message-view.tsx:452
 #: src/pages/shell/use-composer-draft.ts:52
 msgid "You"
