@@ -18,7 +18,7 @@ async function render(node: ReactNode) {
   return container;
 }
 
-function Email({ error, invalid }: { error?: string; invalid?: boolean }) {
+function Email() {
   const [value, setValue] = useState("");
   return (
     <FloatingField
@@ -26,8 +26,6 @@ function Email({ error, invalid }: { error?: string; invalid?: boolean }) {
       type="email"
       value={value}
       onChange={(event) => setValue(event.target.value)}
-      error={error}
-      invalid={invalid}
     />
   );
 }
@@ -46,16 +44,4 @@ it("names the field by its label and raises the label once filled", async () => 
     input.dispatchEvent(new Event("input", { bubbles: true }));
   });
   expect(label.hasAttribute("data-filled")).toBe(true);
-});
-
-it("describes the field with its error and marks it invalid only when asked", async () => {
-  const rejected = await render(<Email error="Wrong email or password." invalid />);
-  const rejectedInput = rejected.querySelector("input")!;
-  const description = document.getElementById(rejectedInput.getAttribute("aria-describedby") ?? "");
-  expect(rejectedInput.getAttribute("aria-invalid")).toBe("true");
-  expect(description?.textContent).toBe("Wrong email or password.");
-
-  const unreachable = await render(<Email error="Couldn't reach the server." />);
-  expect(unreachable.querySelector("input")!.hasAttribute("aria-invalid")).toBe(false);
-  expect(unreachable.querySelector("[role=alert]")?.textContent).toBe("Couldn't reach the server.");
 });

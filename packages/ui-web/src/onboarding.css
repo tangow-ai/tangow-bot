@@ -28,9 +28,11 @@
   .rk-onboarding {
     --gap: 16px;
     --title-h: calc(var(--type-large-title-size) * var(--type-large-title-leading) + 8px);
-    --actions-h: 156px;
-    /* Under the last field: room for a two-line error, so it never touches the button. */
-    --error-room: calc(2 * var(--type-meta-size) * var(--type-meta-leading) + 8px);
+    --actions-gap: var(--gap);
+    --line-h: calc(var(--type-row-name-size) * var(--type-row-name-leading));
+    /* The status line under the main button, reserved so it never moves the button. */
+    --status-room: calc(var(--line-h) + var(--actions-gap));
+    --actions-h: calc(156px + var(--status-room));
     display: grid;
     grid-template-columns: minmax(0, 45fr) minmax(0, 55fr);
     grid-template-areas: "pane stage";
@@ -129,7 +131,7 @@
   .rk-onboarding-actions {
     display: flex;
     flex-direction: column;
-    gap: var(--gap);
+    gap: var(--actions-gap);
     min-height: var(--actions-h);
     margin-top: auto;
   }
@@ -152,7 +154,8 @@
   }
 
   .rk-onboarding-actions > :first-child {
-    margin-top: calc(var(--error-room) - var(--gap));
+    order: -2;
+    margin-top: 8px;
   }
 
   .rk-onboarding-actions > :first-child + a {
@@ -163,7 +166,16 @@
     margin: 0;
     text-align: center;
     font-size: var(--type-row-name-size);
+    line-height: var(--type-row-name-leading);
     color: var(--muted-foreground);
+  }
+
+  /* Rendered last, shown right under the main button. */
+  .rk-onboarding-actions > .rk-onboarding-status {
+    order: -1;
+    letter-spacing: var(--type-row-name-tracking);
+    /* In ink it read as one more line of the links under it. */
+    color: var(--destructive);
   }
 
   /* A busy step button keeps its label and its size; the app's shimmer sweeps across it. */
@@ -207,7 +219,7 @@
   @media (max-width: 860px) {
     .rk-onboarding {
       --pad: 24px;
-      --actions-h: 148px;
+      --actions-h: calc(148px + var(--status-room));
       --actions-gap: 12px;
       --lift: 8px;
       --title-h: calc(
@@ -222,9 +234,10 @@
         var(--title-h) +
         var(--fields) *
         (var(--field-h, var(--size-field)) + var(--gap)) +
-        var(--error-room) +
+        var(--gap) +
         var(--actions-h)
       );
+      --last-h: var(--size-mobile-stack);
       --around-stage: calc(
         var(--size-logo-top) +
         var(--size-logo) +
@@ -243,13 +256,18 @@
     }
 
     /* Two actions (the main button and one link or line) need less room than three. */
-    .rk-onboarding:not(:has(.rk-onboarding-actions > :nth-child(3))) {
+    .rk-onboarding:not(:has(.rk-onboarding-actions > :nth-child(3):not(.rk-onboarding-status))) {
       --actions-h: calc(
         var(--lift) +
         var(--size-primary-button) +
+        var(--status-room) +
         var(--actions-gap) +
-        var(--size-mobile-stack)
+        var(--last-h)
       );
+    }
+
+    .rk-onboarding:has(.rk-onboarding-actions > :first-child + p) {
+      --last-h: var(--line-h);
     }
 
     .rk-onboarding:has(.rk-floating-field ~ .rk-floating-field) {
@@ -311,21 +329,19 @@
       font-size: var(--type-poster-size);
     }
 
-    .rk-onboarding-actions {
-      gap: var(--actions-gap);
-    }
-
     .rk-onboarding-actions > :first-child {
       margin-top: var(--lift);
     }
 
-    /* Keyboard up: the button closes up under the error room of the last field. */
+    /* Keyboard up: the button closes up under the last field, its status line under it. */
     .rk-onboarding[data-keyboard] .rk-onboarding-actions {
       min-height: 0;
-      margin-top: calc(var(--error-room) - var(--gap) - var(--lift));
+      margin-top: 0;
     }
 
-    .rk-onboarding[data-keyboard] .rk-onboarding-actions > :not(:first-child) {
+    .rk-onboarding[data-keyboard]
+      .rk-onboarding-actions
+      > :not(:first-child, .rk-onboarding-status) {
       visibility: hidden;
     }
   }
@@ -335,11 +351,9 @@
       --field-h: var(--size-field-short);
       --pad: 16px;
       --gap: 12px;
-      --actions-h: 132px;
+      --actions-h: calc(132px + var(--status-room));
       --actions-gap: 8px;
       --lift: 0px;
-      /* One line of error: the errors are short, and the scene needs the height. */
-      --error-room: calc(var(--type-meta-size) * var(--type-meta-leading) + 8px);
       --size-logo: var(--size-logo-short);
       --size-logo-top: var(--size-logo-top-short);
       --size-logo-bottom: var(--size-logo-bottom-short);

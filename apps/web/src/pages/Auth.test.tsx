@@ -146,6 +146,8 @@ it("words a sign-up refusal from its code and keeps the server's message for an 
     "This email can't sign up on this server.",
   );
   expect(refused.querySelector("#email")?.getAttribute("aria-invalid")).toBe("true");
+  const reason = refused.querySelector("#email")?.getAttribute("aria-describedby");
+  expect(refused.querySelector(`#${reason}`)?.getAttribute("role")).toBe("alert");
 
   document.body.innerHTML = "";
   const unknown = await submitSignup({ error: { code: "SOMETHING_NEW", message: "Try later" } });

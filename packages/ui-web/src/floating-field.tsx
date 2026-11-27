@@ -2,12 +2,11 @@ import { Field } from "@base-ui/react/field";
 import type { ComponentProps, ReactNode } from "react";
 import { Input } from "./components/ui/input.js";
 import { cn } from "./lib/utils.js";
+import { ONBOARDING_STATUS_ID } from "./onboarding-frame.js";
 
 export type FloatingFieldProps = Omit<ComponentProps<"input">, "children"> & {
   /** The field's accessible name, shown inside it until it has a value or focus. */
   label: ReactNode;
-  /** Shown in the gap under the field, over whatever follows, so nothing moves. */
-  error?: ReactNode;
   /** Marks the value itself as wrong; an error about something else leaves it unset. */
   invalid?: boolean;
   /** A control laid over the field's end, such as a show-password button. */
@@ -17,7 +16,6 @@ export type FloatingFieldProps = Omit<ComponentProps<"input">, "children"> & {
 /** A field whose label sits inside it while empty and rises on focus or once filled. */
 export function FloatingField({
   label,
-  error,
   invalid = false,
   className,
   children,
@@ -26,6 +24,7 @@ export function FloatingField({
   return (
     <Field.Root invalid={invalid} className={cn("rk-floating-field", className)}>
       <Input
+        aria-describedby={invalid ? ONBOARDING_STATUS_ID : undefined}
         {...props}
         className={cn(
           "h-(--field-h) rounded-card bg-card px-3.5 pt-5.5 pb-1.5 text-body focus-visible:border-foreground focus-visible:ring-foreground/10 aria-invalid:border-foreground aria-invalid:ring-0 md:text-body dark:bg-card dark:aria-invalid:border-foreground",
@@ -34,15 +33,6 @@ export function FloatingField({
       />
       <Field.Label>{label}</Field.Label>
       {children}
-      {error ? (
-        <Field.Error
-          match
-          role="alert"
-          className="absolute start-0 top-full mt-1 text-meta text-foreground"
-        >
-          {error}
-        </Field.Error>
-      ) : null}
     </Field.Root>
   );
 }

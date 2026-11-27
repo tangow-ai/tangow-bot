@@ -158,6 +158,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         onSubmit={submit}
         title={<Trans>Got the key?</Trans>}
         scene={paveScene}
+        status={error?.text}
         actions={
           <>
             <Button type="submit" size="full" disabled={pending} aria-busy={pending}>
@@ -197,7 +198,6 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           minLength={8}
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          error={error?.text}
           invalid={error?.code === "INVALID_EMAIL_OR_PASSWORD"}
         >
           {passwordToggle}
@@ -213,6 +213,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         onSubmit={submit}
         title={resetSent ? <Trans>A new key is on its way.</Trans> : <Trans>Lost the key?</Trans>}
         scene={paveScene}
+        status={error?.text}
         actions={
           <>
             {resetSent ? null : (
@@ -245,7 +246,6 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
             required
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            error={error?.text}
           />
         )}
       </OnboardingScreen>
@@ -264,6 +264,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
           </Trans>
         }
         scene={<PlateScene step="check" focus={signupFocus} />}
+        status={error?.text}
         actions={
           <>
             <Button
@@ -286,7 +287,6 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
             Open the link sent to <span className="text-foreground">{checkEmail}</span>.
           </Trans>
         </p>
-        {error ? <p role="alert">{error.text}</p> : null}
       </OnboardingScreen>
     );
   }
@@ -298,6 +298,7 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
       onSubmit={submit}
       title={<Trans>Grab some clay.</Trans>}
       scene={<PlateScene step="signup" focus={signupFocus} />}
+      status={error?.text}
       actions={
         <>
           <Button type="submit" size="full" disabled={pending} aria-busy={pending}>
@@ -341,7 +342,6 @@ export function AuthPage({ mode }: { mode: AuthMode }) {
         minLength={8}
         value={password}
         onChange={(e) => setPassword(e.target.value)}
-        error={error?.text}
       >
         {passwordToggle}
       </FloatingField>
@@ -419,6 +419,7 @@ export function PasswordResetPage() {
       title={<Trans>Reset your password</Trans>}
       scene={paveScene}
       actions={actions}
+      status={error}
     >
       {step === "done" ? (
         <p role="status">
@@ -451,7 +452,6 @@ export function PasswordResetPage() {
             minLength={8}
             value={confirmation}
             onChange={(e) => setConfirmation(e.target.value)}
-            error={error}
             invalid={mismatch}
           />
         </>

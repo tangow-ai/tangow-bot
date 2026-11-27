@@ -1,4 +1,4 @@
-import type { Page, TestInfo } from "@playwright/test";
+import type { Locator, Page, TestInfo } from "@playwright/test";
 import { captureScreenshot, completeOnboarding, signup } from "./helpers";
 import { expect, test } from "./test";
 
@@ -13,9 +13,38 @@ async function captureOnboardingStep(page: Page, testInfo: TestInfo, name: strin
     await captureScreenshot(page, testInfo, `${name}-${colorScheme}`);
     await page.setViewportSize({ width: 390, height: 844 });
     await captureScreenshot(page, testInfo, `${name}-${colorScheme}-phone`);
+    await page.setViewportSize(shortPhone);
+    await captureScreenshot(page, testInfo, `${name}-${colorScheme}-short-phone`);
     if (desktopViewport) await page.setViewportSize(desktopViewport);
   }
   await page.emulateMedia({ colorScheme: "light" });
+}
+
+const shortPhone = { width: 393, height: 694 };
+
+/** A box read once it stops moving: the button eases its margin when the viewport changes. */
+async function settledBox(locator: Locator) {
+  let last: Awaited<ReturnType<Locator["boundingBox"]>> = null;
+  await expect
+    .poll(async () => {
+      const box = await locator.boundingBox();
+      const settled = JSON.stringify(box) === JSON.stringify(last);
+      last = box;
+      return settled;
+    })
+    .toBe(true);
+  return last;
+}
+
+/** The main button's box on the desktop viewport, and with the scene card's on a short phone. */
+async function stepLayout(page: Page, button: Locator) {
+  const desktopViewport = page.viewportSize();
+  const desktop = await settledBox(button);
+  await page.setViewportSize(shortPhone);
+  const phone = await settledBox(button);
+  const card = await page.locator(".rk-onboarding-stage").boundingBox();
+  if (desktopViewport) await page.setViewportSize(desktopViewport);
+  return { desktop, phone, card };
 }
 
 test("the clay plays forward into sign-up and stands still going back", async ({
@@ -103,8 +132,15 @@ test("restricted signup waits for mailbox verification", async ({ page }, testIn
   await page.getByLabel("Name").fill("Pending User");
   await page.getByLabel("Email").fill("pending@example.test");
   await page.getByLabel("Password", { exact: true }).fill("password12");
-  await page.getByRole("button", { name: "Create account", exact: true }).click();
-  await expect(page.getByRole("alert")).toHaveText("Sign-ups are closed on this server.");
+  const create = page.getByRole("button", { name: "Create account", exact: true });
+  const quiet = await stepLayout(page, create);
+  expect(quiet.card?.width).toBe(shortPhone.width - 32);
+  await create.click();
+  const status = page.getByRole("alert");
+  await expect(status).toHaveText("Sign-ups are closed on this server.");
+  expect(await stepLayout(page, create)).toEqual(quiet);
+  const [button, line] = [await create.boundingBox(), await status.boundingBox()];
+  expect(line!.y).toBeGreaterThanOrEqual(button!.y + button!.height);
   await captureOnboardingStep(page, testInfo, "40-sign-up-refused");
 
   refuse = false;
@@ -200,9 +236,13 @@ test("logout protects bot deep links and sign-in restores the session", async ({
   await page.getByLabel("Email").fill(email);
   await page.getByLabel("Password", { exact: true }).fill("wrong-password12");
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
-  await expect(page.locator("form").getByText(/wrong email or password/i)).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveText(/wrong email or password/i);
+  await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute(
+    "aria-invalid",
+    "true",
+  );
   await expect(page).toHaveURL(/\/sign-in$/);
-  await captureScreenshot(page, testInfo, "39-invalid-credentials");
+  await captureOnboardingStep(page, testInfo, "39-invalid-credentials");
 
   await page.getByLabel("Password", { exact: true }).fill(password);
   await page.getByRole("button", { name: "Sign in", exact: true }).click();
@@ -313,6 +353,11 @@ test("changes and recovers an email password", async ({ page }, testInfo) => {
   await expect(page.getByRole("heading", { name: "Reset your password" })).toBeVisible();
   await captureOnboardingStep(page, testInfo, "43-new-password");
   await page.getByLabel("New password").fill(resetPassword);
+  await page.getByLabel("Confirm password").fill(`${resetPassword}x`);
+  await page.getByRole("button", { name: "Reset password" }).click();
+  await expect(page.getByRole("alert")).toHaveText("Passwords do not match");
+  await expect(page.getByLabel("Confirm password")).toHaveAttribute("aria-invalid", "true");
+  await captureOnboardingStep(page, testInfo, "43-new-password-mismatch");
   await page.getByLabel("Confirm password").fill(resetPassword);
   await page.getByRole("button", { name: "Reset password" }).click();
   await expect(page.getByText("Password updated")).toBeVisible();
