@@ -1,5 +1,5 @@
 import { ORPCError } from "@orpc/server";
-import type { SecretStore } from "@tangow/adapter-kit";
+import type { EncryptedSecretStore } from "@tangow/adapters";
 import {
   classifyMemoryProviderSettings,
   MemoryProviderDeploymentOwnerRequiredError,
@@ -13,7 +13,7 @@ import { withSerializableRetry } from "./serializable-retry.js";
 
 export interface MemoryProviderConfigDeps {
   prisma: PrismaClient;
-  secrets: Pick<SecretStore, "put">;
+  secrets: Pick<EncryptedSecretStore, "put">;
   /** Test seam: override DNS/trust classification without probing. */
   classifySettings?: (
     provider: string,

@@ -1,9 +1,8 @@
 import { createHash } from "node:crypto";
-import type { WorkerSkill } from "@tangow/adapter-kit";
+import type { SecretStore, WorkerSkill } from "@tangow/adapter-kit";
 import { containsSecret, parseSkillMd } from "@tangow/core";
 import type { PrismaClient } from "@tangow/db";
 import { getLogger } from "@tangow/logging";
-import type { EncryptedSecretStore } from "./secrets.js";
 
 /** Reports are observations by an untrusted guest. Reject secrets instead of storing masked skills. */
 export async function indexWorkerSkills(
@@ -12,17 +11,22 @@ export async function indexWorkerSkills(
   skills: readonly WorkerSkill[],
   sources: readonly WorkerSkill["source"][],
   secrets: readonly string[],
-  secretStore: Pick<EncryptedSecretStore, "load">,
+  secretStore: Pick<SecretStore, "open">,
   receivedAt = new Date(),
 ): Promise<void> {
-  const sharedSecrets = sources.includes("shared")
-    ? (
-        await prisma.botSecret.findMany({
-          where: { spaceId: owner.spaceId },
-          select: { id: true, ciphertext: true },
-        })
-      ).map((row) => secretStore.load(row.ciphertext, row.id))
-    : [];
+  const sharedSecrets: string[] = [];
+  if (sources.includes("shared")) {
+    const rows = await prisma.botSecret.findMany({
+      where: { spaceId: owner.spaceId },
+      select: { id: true, ciphertext: true },
+    });
+    for (const row of rows) {
+      const opened = await secretStore.open(row.ciphertext, row.id);
+      // Without every saved credential the report cannot be checked, so it is not indexed.
+      if (!opened.ok) throw new Error(`Saved credentials are not readable: ${opened.reason}`);
+      sharedSecrets.push(opened.plaintext);
+    }
+  }
   const clean = skills.filter((skill) => {
     if (skill.source === "managed" || !sources.includes(skill.source)) return false;
     const parsed = parseSkillMd(skill.content);

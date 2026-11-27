@@ -1,5 +1,10 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes, scryptSync } from "node:crypto";
-import type { AdapterContext, SecretRecord, SecretStore } from "@tangow/adapter-kit";
+import type {
+  AdapterContext,
+  SecretOpenResult,
+  SecretRecord,
+  SecretStore,
+} from "@tangow/adapter-kit";
 
 const VERSION_PREFIX = "v2:";
 const SALT_BYTES = 16;
@@ -17,24 +22,28 @@ function keyFrom(secret: string, salt: Buffer): Buffer {
 export class EncryptedSecretStore implements SecretStore {
   constructor(private readonly encryptionKey: string) {}
 
-  describe() {
-    return {
-      id: "app-encrypted",
-      contractVersion: "1",
-      adapterVersion: "0.2.0",
-      capabilities: { rotate: true },
-    };
-  }
-
   async put(
     plaintext: string,
     _context: AdapterContext,
     recordId = randomBytes(12).toString("hex"),
   ): Promise<SecretRecord> {
-    return { id: recordId, ciphertext: this.seal(plaintext, recordId) };
+    return { id: recordId, ciphertext: this.encrypt(plaintext, recordId) };
   }
 
-  private seal(plaintext: string, recordId: string): string {
+  async seal(plaintext: string, recordId: string): Promise<string> {
+    return this.encrypt(plaintext, recordId);
+  }
+
+  async open(sealedValue: string, recordId: string): Promise<SecretOpenResult> {
+    if (!sealedValue.startsWith(VERSION_PREFIX)) return { ok: false, reason: "cannot_open" };
+    try {
+      return { ok: true, plaintext: this.load(sealedValue, recordId) };
+    } catch {
+      return { ok: false, reason: "cannot_open" };
+    }
+  }
+
+  private encrypt(plaintext: string, recordId: string): string {
     const salt = randomBytes(SALT_BYTES);
     const iv = randomBytes(IV_BYTES);
     const cipher = createCipheriv("aes-256-gcm", keyFrom(this.encryptionKey, salt), iv);
@@ -42,10 +51,6 @@ export class EncryptedSecretStore implements SecretStore {
     const enc = Buffer.concat([cipher.update(plaintext, "utf8"), cipher.final()]);
     const tag = cipher.getAuthTag();
     return `${VERSION_PREFIX}${Buffer.concat([salt, iv, tag, enc]).toString("base64")}`;
-  }
-
-  async get(id: string, _context: AdapterContext): Promise<string> {
-    throw new Error(`SecretStore.get requires persistence; use load(${id})`);
   }
 
   load(ciphertext: string, recordId: string): string {
@@ -74,11 +79,5 @@ export class EncryptedSecretStore implements SecretStore {
     const decipher = createDecipheriv("aes-256-gcm", legacyKeyFrom(this.encryptionKey), iv);
     decipher.setAuthTag(tag);
     return Buffer.concat([decipher.update(enc), decipher.final()]).toString("utf8");
-  }
-
-  redact(value: string): string {
-    return value
-      .replace(/sk-[a-zA-Z0-9-_]{8,}/g, "[redacted]")
-      .replace(/eyJ[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+\.[a-zA-Z0-9_-]+/g, "[redacted]");
   }
 }

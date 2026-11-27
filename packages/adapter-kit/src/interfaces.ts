@@ -52,7 +52,6 @@ import type {
   SandboxCapabilities,
   ScreenRequest,
   ScreenSession,
-  SecretRecord,
   SemanticMemoryCapabilities,
   SemanticMemoryForgetRequest,
   SemanticMemoryPurgeHistoryRequest,
@@ -314,12 +313,13 @@ export interface ArtifactStore {
   remove(id: string, context: AdapterContext): Promise<void>;
 }
 
+export type SecretOpenResult =
+  | { ok: true; plaintext: string }
+  | { ok: false; reason: "cannot_open" | "unavailable" };
+
 export interface SecretStore {
-  describe(): AdapterDescriptor<{ rotate: boolean }>;
-  /** Optional recordId binds ciphertext AAD to the persisted secret/session row id. */
-  put(plaintext: string, context: AdapterContext, recordId?: string): Promise<SecretRecord>;
-  get(id: string, context: AdapterContext): Promise<string>;
-  redact(value: string): string;
+  seal(plaintext: string, recordId: string): Promise<string>;
+  open(sealedValue: string, recordId: string): Promise<SecretOpenResult>;
 }
 
 export interface RealtimeFanout {
