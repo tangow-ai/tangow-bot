@@ -63,7 +63,7 @@ the same place on every step. Under 860 px wide the card sits above the box and
 the actions sit under the thumb; while a phone keyboard is up only the main
 button and its status line show, just above it. Under 760 px tall the form
 tightens (`fieldShort`). An error goes in `status`: one centered line under the
-main button (`rowName`, `foreground`), in room the actions always reserve, so it
+main button (`rowName`, `destructive`, so it does not read as one more line of the links), in room the actions always reserve, so it
 never moves the button; the field at fault only takes the ink border (`invalid`).
 A step with no field, such as a sent link, says its sentence in a `p` under the
 title (body size, `muted-foreground`). A busy main button keeps its label and its

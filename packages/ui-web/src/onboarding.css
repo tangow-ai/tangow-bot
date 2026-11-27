@@ -174,7 +174,8 @@
   .rk-onboarding-actions > .rk-onboarding-status {
     order: -1;
     letter-spacing: var(--type-row-name-tracking);
-    color: var(--foreground);
+    /* In ink it read as one more line of the links under it. */
+    color: var(--destructive);
   }
 
   /* A busy step button keeps its label and its size; the app's shimmer sweeps across it. */
