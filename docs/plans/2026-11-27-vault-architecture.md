@@ -59,7 +59,7 @@ value is bound to its record ID. Opening it under a different ID must fail.
 | Slice | Target | Scope |
 | --- | --- | --- |
 | T0 | No PR | Run a disposable OpenBao trial. |
-| T1 | `main` | Put the vault call sites on `main` behind the port: one seal and one open. Add shared offline conformance tests. The check that opens every key of a space arrives with T3a and must handle engine unavailability there. |
+| T1 | `main` | Put the three vault call sites behind the port: one seal and two opens, the second being the shared-skill check that opens every key of a space. Add shared offline conformance tests. |
 | T2a | `main` | Add the OpenBao adapter, setting, Compose service, and install and restore docs. Keep existing engine selection. |
 | T2b | `main` | Switch the server-stack vault to OpenBao and keep the local store for other secrets. If startup resealing is present when this lands, exclude OpenBao rows from it. |
 | T3a | `feature/vault-openbao` | Re-propose the earlier per-person API keys, sharing, and web and mobile screens as one reviewable unit. |
