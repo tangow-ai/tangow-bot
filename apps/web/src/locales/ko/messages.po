@@ -341,6 +341,7 @@ msgstr "활동, 마지막 실행 실패"
 #: src/pages/PluginsOverlay.tsx:72
 #: src/pages/ScratchpadSection.tsx:196
 #: src/pages/shell/message-cards.tsx:201
+#: src/pages/VaultSettingsPanel.tsx:84
 msgid "Add"
 msgstr "추가"
 
@@ -806,6 +807,7 @@ msgstr "서버에 연결할 수 없습니다."
 #: src/pages/shell/dialogs.tsx:395
 #: src/pages/shell/dialogs.tsx:448
 #: src/pages/shell/dialogs.tsx:505
+#: src/pages/VaultSettingsPanel.tsx:285
 msgid "Cancel"
 msgstr "취소"
 
@@ -1500,6 +1502,7 @@ msgstr "루틴을 실행할 수 없습니다"
 #: src/pages/bot-page/RoutineDetail.tsx:87
 #: src/pages/ExternalConversationSettings.tsx:250
 #: src/pages/KnowledgeSection.tsx:207
+#: src/pages/VaultSettingsPanel.tsx:173
 msgid "Could not save"
 msgstr "저장하지 못했습니다."
 
@@ -1625,8 +1628,10 @@ msgstr "스페이스 이름을 바꾸지 못했습니다"
 msgid "Couldn't revoke the invite link"
 msgstr ""
 
-#: src/pages/ShareBotDialog.tsx:118
-#: src/pages/ShareBotDialog.tsx:133
+#: src/pages/ShareBotDialog.tsx:128
+#: src/pages/ShareBotDialog.tsx:143
+#: src/pages/ShareBotDialog.tsx:156
+#: src/pages/VaultSettingsPanel.tsx:328
 msgid "Couldn't save"
 msgstr ""
 
@@ -1789,6 +1794,8 @@ msgstr "기본 기억 범위"
 #: src/pages/shell/dialogs.tsx:470
 #: src/pages/shell/sidebar-footer.tsx:99
 #: src/pages/shell/sidebar-footer.tsx:132
+#: src/pages/VaultSettingsPanel.tsx:193
+#: src/pages/VaultSettingsPanel.tsx:281
 msgid "Delete"
 msgstr "삭제"
 
@@ -1803,6 +1810,7 @@ msgstr "{0} 삭제"
 #. placeholder {0}: item.name
 #: src/pages/shell/dialogs.tsx:346
 #: src/pages/shell/dialogs.tsx:439
+#: src/pages/VaultSettingsPanel.tsx:193
 msgid "Delete {0}?"
 msgstr "{0}을 제거할까요?"
 
@@ -2067,6 +2075,15 @@ msgstr "매"
 msgid "every {intervalAmountSelect} {intervalUnitSelect}"
 msgstr "{intervalAmountSelect} {intervalUnitSelect}마다"
 
+#. placeholder {0}: space.name
+#: src/pages/VaultSettingsPanel.tsx:378
+msgid "Every current and future member of {0} can use this key on its site, from their bots and yours that you can see, including webhooks and routines."
+msgstr ""
+
+#: src/pages/ShareBotDialog.tsx:258
+msgid "Every current and future member of {spaceName} can use ticked keys on their sites, from their bots and yours that you can see, including webhooks and routines."
+msgstr ""
+
 #: src/pages/bot-page/RoutineTriggers.tsx:78
 #: src/pages/RoutineSchedule.tsx:37
 #: src/pages/RoutineSchedule.tsx:166
@@ -2097,6 +2114,16 @@ msgstr "매주"
 #: src/pages/usage-settings.tsx:47
 msgid "Everyday"
 msgstr "일상"
+
+#: src/pages/VaultSettingsPanel.tsx:73
+msgid "Everyone"
+msgstr ""
+
+#. placeholder {0}: space.name
+#: src/pages/VaultSettingsPanel.tsx:338
+#: src/pages/VaultSettingsPanel.tsx:340
+msgid "Everyone in {0}"
+msgstr ""
 
 #: src/pages/ShareBotDialog.tsx:159
 #: src/pages/ShareBotDialog.tsx:161
@@ -2287,7 +2314,12 @@ msgstr "전화를 끊은 다음 화면에 표시된 코드를 입력하세요."
 msgid "header"
 msgstr "header"
 
+#: src/pages/VaultSettingsPanel.tsx:245
+msgid "Header"
+msgstr ""
+
 #: src/pages/custom-apps/AppEditor.tsx:127
+#: src/pages/VaultSettingsPanel.tsx:253
 msgid "Header name"
 msgstr "헤더 이름"
 
@@ -2481,6 +2513,14 @@ msgstr "기억은 유지"
 #: src/pages/bot-page/RoutineTriggers.tsx:380
 msgid "key"
 msgstr "key"
+
+#: src/pages/VaultSettingsPanel.tsx:264
+msgid "Key"
+msgstr ""
+
+#: src/pages/ShareBotDialog.tsx:244
+msgid "Keys"
+msgstr ""
 
 #: src/pages/bot-page/BotPage.tsx:101
 msgid "Knowledge"
@@ -2864,6 +2904,7 @@ msgstr ""
 #: src/pages/shell/dialogs.tsx:187
 #: src/pages/shell/dialogs.tsx:250
 #: src/pages/SpaceGeneralSettings.tsx:118
+#: src/pages/VaultSettingsPanel.tsx:228
 msgid "Name"
 msgstr "이름"
 
@@ -2889,6 +2930,10 @@ msgstr "확인 필요"
 
 #: src/components/AskCard.tsx:244
 msgid "Needs your call"
+msgstr ""
+
+#: src/pages/VaultSettingsPanel.tsx:206
+msgid "New API key"
 msgstr ""
 
 #: src/pages/shell/bot-panel.tsx:93
@@ -3564,6 +3609,7 @@ msgid "Replace API key"
 msgstr "API 키 교체"
 
 #: src/pages/ProvidersSettings.tsx:267
+#: src/pages/VaultSettingsPanel.tsx:288
 msgid "Replace key"
 msgstr "키 교체"
 
@@ -3758,6 +3804,7 @@ msgstr ""
 #: src/pages/KnowledgeSection.tsx:706
 #: src/pages/model-settings/model-detail.tsx:332
 #: src/pages/shell/dialogs.tsx:266
+#: src/pages/VaultSettingsPanel.tsx:288
 msgid "Save"
 msgstr "저장"
 
@@ -3873,6 +3920,11 @@ msgstr "보내는 중…"
 msgid "Sent"
 msgstr ""
 
+#: src/pages/VaultSettingsPanel.tsx:235
+#: src/pages/VaultSettingsPanel.tsx:237
+msgid "Sent as"
+msgstr ""
+
 #: src/components/integrations/IntegrationSetup.tsx:94
 #: src/pages/AccountSettingsOverlay.tsx:166
 msgid "Server integrations"
@@ -3947,6 +3999,14 @@ msgstr ""
 msgid "Shared documents"
 msgstr "공유 문서"
 
+#: src/pages/VaultSettingsPanel.tsx:336
+msgid "Shared with"
+msgstr ""
+
+#: src/pages/VaultSettingsPanel.tsx:107
+msgid "Shared with you"
+msgstr ""
+
 #: src/pages/AccountSettingsOverlay.tsx:108
 msgid "Show agent steps, and every run in a bot's activity."
 msgstr "에이전트 단계와 봇 활동의 모든 실행을 표시합니다."
@@ -3997,6 +4057,10 @@ msgstr "Tangow 로그인"
 #: src/pages/Welcome.tsx:32
 msgid "Sign up"
 msgstr "가입하기"
+
+#: src/pages/VaultSettingsPanel.tsx:221
+msgid "Site"
+msgstr ""
 
 #. placeholder {0}: skill.name
 #: src/pages/shell/composer-pickers.tsx:200
@@ -4235,6 +4299,14 @@ msgstr "API가 다시 작동하지 않습니다. 이 페이지를 새로 고침�
 #: src/pages/MemorySettingsOverlay.tsx:245
 msgid "The selected memory provider is not available in this build."
 msgstr "선택한 기억 서비스는 현재 빌드에서 사용할 수 없습니다."
+
+#: src/pages/VaultSettingsPanel.tsx:382
+msgid "These people can use this key on its site, from their bots and yours that you can see, including webhooks and routines."
+msgstr ""
+
+#: src/pages/ShareBotDialog.tsx:259
+msgid "These people can use ticked keys on their sites, from their bots and yours that you can see, including webhooks and routines."
+msgstr ""
 
 #: src/pages/bot-page/SettingDetails.tsx:139
 msgid "Thinking"
@@ -4475,6 +4547,14 @@ msgstr ""
 #: src/pages/model-settings/model-detail.tsx:362
 msgid "Use this model"
 msgstr "이 모델 사용"
+
+#: src/pages/VaultSettingsPanel.tsx:259
+msgid "Username"
+msgstr ""
+
+#: src/pages/settings-sections.ts:50
+msgid "Vault"
+msgstr ""
 
 #: src/pages/bot-page/SettingDetails.tsx:185
 #: src/pages/bot-page/SettingDetails.tsx:189

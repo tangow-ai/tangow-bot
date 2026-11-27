@@ -1,7 +1,6 @@
 import type { AgentRunRequest, ConnectorTool } from "@tangow/adapter-kit";
 import {
   BotSecretDestination,
-  BotSecretName,
   ModelCategorySchema,
   SecretAskPurpose,
   SecretHttpRequest,
@@ -444,7 +443,7 @@ that merely narrate internal operations.`,
   {
     name: "list_secrets",
     description:
-      "List saved credential names and destinations available to this bot and user. Values are never returned.",
+      "List saved credential names and destinations available to this user in this space. Values are never returned. A credential marked shared belongs to someone else, who chose the site it is sent to.",
     inputSchema: { type: "object", properties: {} },
   },
   {
@@ -452,12 +451,6 @@ that merely narrate internal operations.`,
     description:
       "Make an authenticated HTTPS request using a saved credential name. The backend injects authentication only at its saved origin. Redirects are rejected; response echoes of the credential are redacted. Use normal request URLs and bodies without secret placeholders.",
     inputSchema: z.toJSONSchema(SecretHttpRequest, { io: "input" }),
-  },
-  {
-    name: "forget_secret",
-    description:
-      "Remove a saved credential for this bot and user, preventing future requests from using it.",
-    inputSchema: z.toJSONSchema(z.object({ name: BotSecretName })),
   },
   {
     name: "show_widget",

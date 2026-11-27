@@ -194,15 +194,13 @@ describe("secrets model-visibility conformance", () => {
         },
         "secret-1",
       );
-      const row = { ...scope, ...destination, ...encrypted };
+      const row = { ...scope, ...destination, ...encrypted, createdAt: new Date() };
       const prisma = {
-        botSecret: {
-          findFirst: vi.fn(async ({ where }) =>
-            Object.entries(where).every(([key, value]) => row[key as keyof typeof row] === value)
-              ? row
-              : null,
-          ),
+        bot: {
+          findFirst: async () => ({ userId: scope.userId, visibility: "private", shares: [] }),
         },
+        spaceMember: { count: async () => 1 },
+        botSecret: { findMany: async () => [row] },
       } as unknown as PrismaClient;
       const fetch = vi.fn<typeof globalThis.fetch>(async (_url, init) => {
         expect(new Headers(init?.headers).get("Authorization")).toBe(`Bearer ${BOT_SECRET}`);
@@ -216,7 +214,8 @@ describe("secrets model-visibility conformance", () => {
       const result = await requestWithBotSecret({
         prisma,
         secretStore: secretStore,
-        scope,
+        run: scope,
+        botId: scope.botId,
         request: { name: destination.name, url: `${destination.origin}/v1/items` },
         signal: new AbortController().signal,
         remote: {

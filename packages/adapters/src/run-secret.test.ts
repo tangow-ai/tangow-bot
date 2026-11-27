@@ -1,6 +1,8 @@
+import type { Prisma } from "@tangow/db";
 import { describe, expect, it, vi } from "vitest";
 import {
   commitConsumedRunSecret,
+  createRunSecretWriter,
   normalizeSecretAskPurpose,
   reconcileManagedConnection,
   resolveCompletedSecretLeftover,
@@ -9,6 +11,7 @@ import {
   secretPausedToolResult,
   tryCompleteConnectionWithCode,
 } from "./run-secret.js";
+import { EncryptedSecretStore } from "./secrets.js";
 
 describe("runSecretKind", () => {
   it("scopes secrets to a single run", () => {
@@ -278,5 +281,35 @@ describe("tryCompleteConnectionWithCode", () => {
         "bad",
       ),
     ).resolves.toEqual({ connected: false, error: "Connection could not be completed." });
+  });
+});
+
+describe("createRunSecretWriter", () => {
+  it("saves a reusable key only from the run user's own bot", async () => {
+    const create = vi.fn();
+    const tx = {
+      bot: { count: vi.fn(async () => 0) },
+      botSecret: { create, findFirst: vi.fn(), count: vi.fn(), update: vi.fn() },
+      $executeRaw: vi.fn(),
+    } as unknown as Prisma.TransactionClient;
+    await expect(
+      createRunSecretWriter(new EncryptedSecretStore("test-key")).store({
+        botId: "someone-elses-bot",
+        credential: {
+          name: "example_api",
+          origin: "https://api.example.test",
+          auth: { type: "bearer" },
+        },
+        runId: "run-1",
+        userId: "member",
+        spaceId: "space-1",
+        plaintext: "fake-key",
+        tx,
+      }),
+    ).rejects.toThrow("Saved API keys can only be added on your own bots.");
+    expect(tx.bot.count).toHaveBeenCalledWith({
+      where: { id: "someone-elses-bot", userId: "member", spaceId: "space-1" },
+    });
+    expect(create).not.toHaveBeenCalled();
   });
 });

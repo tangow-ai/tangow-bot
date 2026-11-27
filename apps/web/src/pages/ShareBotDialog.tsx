@@ -5,13 +5,17 @@ import type {
   BotSharing,
   ConnectionCatalogItem,
   SpaceMembers,
+  VaultItem,
 } from "@tangow/contracts";
 import type { ShareableApp } from "@tangow/core";
 import {
   connectorKey,
   declareApp,
   givableSkills,
+  keyLockedBySpace,
+  keySharedWithAudience,
   shareableApps,
+  shareKeyWithAudience,
   shareWithPerson,
   shareWithSpace,
 } from "@tangow/core";
@@ -47,7 +51,8 @@ async function givenServers(botId: string) {
  * Who besides its owner uses the bot: everyone in the Space, or the people ticked. Each change
  * saves itself; no one ticked means only the owner. Once shared, the bot uses only the skills
  * ticked for it, and a member's run only the apps and MCP servers ticked, with the member's own
- * accounts and credentials.
+ * accounts and credentials. The keys this bot saved can be shared with the same audience, one
+ * explicit tick each.
  */
 export function ShareBotDialog({
   bot,
@@ -65,6 +70,7 @@ export function ShareBotDialog({
   const [people, setPeople] = useState<SpaceMembers["members"]>([]);
   const [skills, setSkills] = useState<AgentSkillCatalogEntry[]>([]);
   const [apps, setApps] = useState<ShareableApp[]>([]);
+  const [keys, setKeys] = useState<VaultItem[]>([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,6 +100,10 @@ export function ShareBotDialog({
     ]).then(
       ([rows, catalog, servers, current]) =>
         live && setApps(shareableApps(rows, catalog, servers, current.connectors, t`Deleted`)),
+      () => undefined,
+    );
+    rpc.vault.list().then(
+      (vault) => live && setKeys(vault.mine.filter((key) => key.botId === bot.id)),
       () => undefined,
     );
     return () => {
@@ -130,6 +140,19 @@ export function ShareBotDialog({
       });
       setSkills((list) => list.map((entry) => (entry.id === updated.id ? updated : entry)));
     } catch {
+      setError(t`Couldn't save`);
+    }
+  }
+
+  async function shareKey(key: VaultItem, checked: boolean) {
+    if (!sharing) return;
+    const next = { ...key, ...shareKeyWithAudience(key, sharing, checked) };
+    setError(null);
+    setKeys((list) => list.map((entry) => (entry.name === key.name ? next : entry)));
+    try {
+      await rpc.vault.share({ name: key.name, userIds: next.userIds, space: next.space });
+    } catch {
+      setKeys((list) => list.map((entry) => (entry.name === key.name ? key : entry)));
       setError(t`Couldn't save`);
     }
   }
@@ -215,6 +238,27 @@ export function ShareBotDialog({
                   </SettingRow>
                 ))}
               </SettingsGroup>
+            ) : null}
+            {sharing.visibility !== "private" && keys.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                <SettingsGroup label={t`Keys`}>
+                  {keys.map((key) => (
+                    <SettingRow key={key.name} label={key.name} subline={new URL(key.origin).host}>
+                      <Checkbox
+                        aria-label={key.name}
+                        checked={keySharedWithAudience(key, sharing)}
+                        disabled={pending || keyLockedBySpace(key, sharing)}
+                        onCheckedChange={(checked) => void shareKey(key, checked)}
+                      />
+                    </SettingRow>
+                  ))}
+                </SettingsGroup>
+                <p className="text-meta text-muted-foreground">
+                  {everyone
+                    ? t`Every current and future member of ${spaceName} can use ticked keys on their sites, from their bots and yours that you can see, including webhooks and routines.`
+                    : t`These people can use ticked keys on their sites, from their bots and yours that you can see, including webhooks and routines.`}
+                </p>
+              </div>
             ) : null}
             {sharing.visibility === "private" ? null : (
               <p className="text-meta text-muted-foreground">

@@ -113,12 +113,17 @@ export function createRunSecretWriter(secretStore: EncryptedSecretStore): RunSec
   return {
     async store({ runId, userId, spaceId, botId, credential, plaintext, tx }) {
       if (credential) {
+        // Only into the run user's own vault, and only from their own bot: a shared bot's run
+        // never saves, replaces or targets anyone's key.
+        const own = await tx.bot.count({ where: { id: botId, userId, spaceId } });
+        if (own !== 1) throw new Error("Saved API keys can only be added on your own bots.");
         await storeBotSecret({
           tx,
           secretStore,
-          scope: { userId, spaceId, botId },
+          scope: { userId, spaceId },
           destination: credential,
           plaintext,
+          createdByBotId: botId,
         });
         return;
       }

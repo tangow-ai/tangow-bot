@@ -7,6 +7,7 @@ import {
   Cpu,
   Gauge,
   KeyRound,
+  LockKeyhole,
   Monitor,
   Signpost,
   SlidersHorizontal,
@@ -26,6 +27,7 @@ export const SPACE_SETTINGS_SECTIONS = [
   "memory",
   "decision-model",
   "computer",
+  "vault",
   "usage",
 ] as const;
 
@@ -45,6 +47,7 @@ export const SETTINGS_NAV: Record<SettingsSection, { label: MessageDescriptor; i
     memory: { label: msg`Memory`, icon: Brain },
     "decision-model": { label: msg`Decision Model`, icon: Signpost },
     computer: { label: msg`Computer`, icon: Monitor },
+    vault: { label: msg`Vault`, icon: LockKeyhole },
     usage: { label: msg`Usage`, icon: Gauge },
   };
 

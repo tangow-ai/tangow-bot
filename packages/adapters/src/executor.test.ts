@@ -1690,7 +1690,6 @@ describe("buildSystemInstructions", () => {
       "request_secret",
       "list_secrets",
       "secret_request",
-      "forget_secret",
       "remember",
       "scratchpad_add",
       "scratchpad_update",
