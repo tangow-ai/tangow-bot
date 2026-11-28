@@ -177,7 +177,7 @@ it("shows the open eyes alone for 400 ms under reduced motion", async () => {
   expect(awoke).toHaveBeenCalledTimes(1);
 });
 
-it("plays nothing toward the model step once the app shell forgot the plate", async () => {
+it("plays nothing toward the model step once the plate is forgotten", async () => {
   const router = await onSignup(() => {});
   const { forgetPlate } = await import("./onboarding-screen");
   forgetPlate();
