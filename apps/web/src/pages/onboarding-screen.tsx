@@ -85,11 +85,13 @@ function Scene({
 /** The step the plate last rested on, kept across the route change and any loading between two steps. */
 let restedOn: PlateStep | undefined;
 
-/** A screen off the plate (sign-in, a reset) breaks the sequence. */
+/** Leaving the steps (for the app, or a screen off the plate) breaks the sequence. */
+export function forgetPlate() {
+  restedOn = undefined;
+}
+
 function Pave() {
-  useEffect(() => {
-    restedOn = undefined;
-  }, []);
+  useEffect(forgetPlate, []);
   return <Scene picture={[pave800, pave1600]} />;
 }
 

@@ -32,9 +32,14 @@
     inset-inline-end: 8px;
     padding-inline: 12px;
     border-radius: var(--corner-chip);
-    background: var(--muted);
+    /* `muted` melts into the dark card; `outline` is the line that still shows on it. */
+    background: var(--outline);
     font-size: var(--type-row-name-size);
     font-weight: 500;
+  }
+
+  [data-theme="light"] .rk-field-action {
+    background: var(--muted);
   }
 
   .rk-field-action:disabled {

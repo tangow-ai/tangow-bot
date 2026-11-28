@@ -94,6 +94,19 @@ test("onboarding uses compact model selects without misleading latest labels", a
   await expect(discovered).toHaveCount(0);
   await manualModel.fill("probed-model-custom");
   await expect(manualModel).toHaveValue("probed-model-custom");
-
   await captureScreenshot(page, testInfo, "onboarding-model-labels");
+
+  // Onboarding has no advanced settings: a server connects with their defaults.
+  await page.route("**/rpc/models/connect", (route) => route.fulfill({ json: { json: {} } }));
+  const connect = page.waitForRequest("**/rpc/models/connect");
+  await page.getByRole("button", { name: "Continue", exact: true }).click();
+  expect((await connect).postDataJSON().json).toMatchObject({
+    provider: "openai-compatible",
+    modelId: "probed-model-custom",
+    reasoning: false,
+    thinkingLevel: null,
+    maxTokens: 4_096,
+    contextWindow: 32_768,
+    supportsImages: false,
+  });
 });

@@ -15,7 +15,7 @@ import { IntegrationSetup } from "../components/integrations/IntegrationSetup";
 import type { ModelCatalogEntry } from "../lib/model-auth";
 import { rpc } from "../lib/rpc";
 import { useModelOAuthSignIn } from "../lib/use-model-oauth-signin";
-import { OnboardingScreen, PlateScene } from "./onboarding-screen";
+import { forgetPlate, OnboardingScreen, PlateScene } from "./onboarding-screen";
 
 const CUSTOM_MODEL_OPTION = "__tangow_custom_model__";
 const FIRST_BOT_NAME = "Chief";
@@ -270,7 +270,7 @@ export function OnboardingPage() {
       setPhase("idle");
       setError({
         text: err instanceof Error ? err.message : t`Could not save model`,
-        field: isOpenAiCompatible ? "url" : "key",
+        field: isOpenAiCompatible && !(keyChosen && apiKey.trim()) ? "url" : "key",
       });
     }
   }
@@ -309,6 +309,7 @@ export function OnboardingPage() {
       if (started) {
         await rpc.onboarding.promptFocus({ botId: bot.id }).catch(() => undefined);
       }
+      forgetPlate();
       navigate(`/app/${bot.id}`);
     } catch (err) {
       createStartedRef.current = false;
@@ -401,16 +402,13 @@ export function OnboardingPage() {
             {(view === "subscription" || view === "waiting") && acceptsKey
               ? link(<Trans>Or paste an API key</Trans>, chooseKey)
               : null}
+            {view === "waiting" && !acceptsKey
+              ? link(<Trans>Cancel</Trans>, () => cancelOAuthAttempt())
+              : null}
             {view === "key" && subscriptionSignIn
               ? link(signInLabel, () => setKeyChosen(false))
               : null}
             {view === "server" && !keyChosen ? link(<Trans>Add API key</Trans>, chooseKey) : null}
-            {view === "server" && probeModels.length && manualModelId
-              ? link(<Trans>Use a found model</Trans>, () => {
-                  setManualModelId(false);
-                  setModelId(probeModels[0] ?? "");
-                })
-              : null}
           </>
         }
       >
@@ -526,6 +524,20 @@ export function OnboardingPage() {
                   setManualModelId(true);
                   setModelId(e.target.value);
                 }}
+                action={
+                  probeModels.length ? (
+                    <button
+                      type="button"
+                      className="rk-field-action"
+                      onClick={() => {
+                        setManualModelId(false);
+                        setModelId(probeModels[0] ?? "");
+                      }}
+                    >
+                      <Trans>Use a found model</Trans>
+                    </button>
+                  ) : undefined
+                }
               />
             )}
             {keyChosen ? keyField : null}

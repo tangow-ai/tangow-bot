@@ -389,7 +389,7 @@ msgstr "Add a schedule, webhook, GitHub, or message trigger"
 msgid "Add another"
 msgstr "Add another"
 
-#: src/pages/Onboarding.tsx:407
+#: src/pages/Onboarding.tsx:411
 msgid "Add API key"
 msgstr "Add API key"
 
@@ -539,7 +539,7 @@ msgstr "API is back, but the update did not finish. Check the host logs."
 #: src/pages/model-settings/model-detail.tsx:284
 #: src/pages/model-settings/model-detail.tsx:287
 #: src/pages/model-settings/model-detail.tsx:306
-#: src/pages/Onboarding.tsx:333
+#: src/pages/Onboarding.tsx:334
 #: src/pages/ProvidersSettings.tsx:247
 msgid "API key"
 msgstr "API key"
@@ -827,6 +827,7 @@ msgstr "Can't reach the server."
 #: src/pages/custom-apps/CustomApps.tsx:255
 #: src/pages/KnowledgeSection.tsx:227
 #: src/pages/KnowledgeSection.tsx:692
+#: src/pages/Onboarding.tsx:406
 #: src/pages/shell/dialogs.tsx:88
 #: src/pages/shell/dialogs.tsx:199
 #: src/pages/shell/dialogs.tsx:263
@@ -1050,7 +1051,7 @@ msgstr "Cloud"
 msgid "Code"
 msgstr "Code"
 
-#: src/pages/Onboarding.tsx:448
+#: src/pages/Onboarding.tsx:446
 msgid "Code or URL"
 msgstr "Code or URL"
 
@@ -1195,7 +1196,7 @@ msgstr "Connected. Its tools are available from your next message."
 #: src/pages/DecisionModelSettingsPanel.tsx:176
 #: src/pages/memory-providers/SerenitySettingsForm.tsx:107
 #: src/pages/memory-providers/SupermemorySettingsForm.tsx:82
-#: src/pages/Onboarding.tsx:364
+#: src/pages/Onboarding.tsx:365
 #: src/pages/ProvidersSettings.tsx:265
 #: src/pages/shell/message-cards.tsx:295
 #: src/pages/shell/screen-frame.tsx:34
@@ -1217,7 +1218,7 @@ msgstr "Context limit"
 
 #: src/components/integrations/IntegrationSetup.tsx:244
 #: src/pages/Invite.tsx:108
-#: src/pages/Onboarding.tsx:398
+#: src/pages/Onboarding.tsx:399
 msgid "Continue"
 msgstr "Continue"
 
@@ -1348,7 +1349,7 @@ msgstr "Could not create section"
 msgid "Could not create space"
 msgstr "Could not create space"
 
-#: src/pages/Onboarding.tsx:315
+#: src/pages/Onboarding.tsx:316
 msgid "Could not create your bot"
 msgstr "Could not create your bot"
 
@@ -2091,7 +2092,7 @@ msgstr "Enter a whole number from 1 to 1000 for the image limit."
 
 #. placeholder {0}: oauth.verificationUri.replace(/^https:\/\//, "")
 #: src/pages/model-settings/subscription-sign-in.tsx:72
-#: src/pages/Onboarding.tsx:459
+#: src/pages/Onboarding.tsx:457
 msgid "Enter this code at <0>{0}</0>"
 msgstr "Enter this code at <0>{0}</0>"
 
@@ -2220,17 +2221,17 @@ msgid "Filter skills"
 msgstr "Filter skills"
 
 #: src/pages/model-settings/model-detail.tsx:107
-#: src/pages/Onboarding.tsx:496
+#: src/pages/Onboarding.tsx:494
 msgid "Find models"
 msgstr "Find models"
 
 #: src/pages/model-settings/model-detail.tsx:107
-#: src/pages/Onboarding.tsx:493
+#: src/pages/Onboarding.tsx:491
 msgid "Finding…"
 msgstr "Finding…"
 
 #. placeholder {0}: new URL(oauth.verificationUri).hostname
-#: src/pages/Onboarding.tsx:433
+#: src/pages/Onboarding.tsx:431
 msgid "Finish signing in at <0>{0}</0>, then paste the code or the page’s address here."
 msgstr "Finish signing in at <0>{0}</0>, then paste the code or the page’s address here."
 
@@ -2651,7 +2652,7 @@ msgstr "Loading voice providers…"
 
 #: src/App.tsx:71
 #: src/pages/IntegrationSetup.tsx:74
-#: src/pages/Onboarding.tsx:564
+#: src/pages/Onboarding.tsx:576
 #: src/pages/PeerMessagesOverlay.tsx:165
 #: src/pages/shell/session-view.tsx:129
 #: src/pages/shell/transcript.tsx:290
@@ -2837,9 +2838,9 @@ msgstr "minutes"
 #: src/pages/model-settings/model-detail.tsx:112
 #: src/pages/model-settings/model-detail.tsx:222
 #: src/pages/model-settings/model-picker.tsx:198
-#: src/pages/Onboarding.tsx:504
-#: src/pages/Onboarding.tsx:522
-#: src/pages/Onboarding.tsx:537
+#: src/pages/Onboarding.tsx:502
+#: src/pages/Onboarding.tsx:520
+#: src/pages/Onboarding.tsx:549
 #: src/pages/shell/session-view.tsx:225
 msgid "Model"
 msgstr "Model"
@@ -3228,7 +3229,7 @@ msgstr "OpenAI-compatible server URL"
 msgid "Opened its thread."
 msgstr "Opened its thread."
 
-#: src/pages/Onboarding.tsx:587
+#: src/pages/Onboarding.tsx:599
 msgid "Opening chat…"
 msgstr "Opening chat…"
 
@@ -3252,7 +3253,7 @@ msgstr "Optional controls most people never need"
 msgid "Or connect an API key"
 msgstr "Or connect an API key"
 
-#: src/pages/Onboarding.tsx:402
+#: src/pages/Onboarding.tsx:403
 msgid "Or paste an API key"
 msgstr "Or paste an API key"
 
@@ -3269,7 +3270,7 @@ msgid "Other answer"
 msgstr "Other answer"
 
 #: src/pages/model-settings/model-detail.tsx:133
-#: src/pages/Onboarding.tsx:517
+#: src/pages/Onboarding.tsx:515
 msgid "Other model…"
 msgstr "Other model…"
 
@@ -3352,7 +3353,7 @@ msgstr "Pin"
 msgid "Playing…"
 msgstr "Playing…"
 
-#: src/pages/Onboarding.tsx:351
+#: src/pages/Onboarding.tsx:352
 msgid "Plug in a brain."
 msgstr "Plug in a brain."
 
@@ -3391,7 +3392,7 @@ msgid "Profile photo"
 msgstr "Profile photo"
 
 #: src/pages/MemorySettingsOverlay.tsx:219
-#: src/pages/Onboarding.tsx:419
+#: src/pages/Onboarding.tsx:417
 msgid "Provider"
 msgstr "Provider"
 
@@ -3953,7 +3954,7 @@ msgstr "Server name"
 #: src/components/integrations/IntegrationSetup.tsx:169
 #: src/components/integrations/IntegrationSetup.tsx:186
 #: src/pages/model-settings/model-detail.tsx:80
-#: src/pages/Onboarding.tsx:479
+#: src/pages/Onboarding.tsx:477
 msgid "Server URL"
 msgstr "Server URL"
 
@@ -4215,7 +4216,7 @@ msgid "Subject"
 msgstr "Subject"
 
 #: src/pages/model-settings/subscription-sign-in.tsx:62
-#: src/pages/Onboarding.tsx:389
+#: src/pages/Onboarding.tsx:390
 msgid "Submit"
 msgstr "Submit"
 
@@ -4412,7 +4413,7 @@ msgid "Trigger"
 msgstr "Trigger"
 
 #: src/components/DraftCard.tsx:329
-#: src/pages/Onboarding.tsx:582
+#: src/pages/Onboarding.tsx:594
 msgid "Try again"
 msgstr "Try again"
 
@@ -4528,7 +4529,7 @@ msgid "Usage"
 msgstr "Usage"
 
 #: src/pages/model-settings/model-detail.tsx:158
-#: src/pages/Onboarding.tsx:409
+#: src/pages/Onboarding.tsx:537
 msgid "Use a found model"
 msgstr "Use a found model"
 
@@ -4579,7 +4580,7 @@ msgstr "Waiting for {waitingOn}"
 
 #: src/pages/model-settings/subscription-sign-in.tsx:66
 #: src/pages/model-settings/subscription-sign-in.tsx:88
-#: src/pages/Onboarding.tsx:368
+#: src/pages/Onboarding.tsx:369
 msgid "Waiting for sign-in…"
 msgstr "Waiting for sign-in…"
 

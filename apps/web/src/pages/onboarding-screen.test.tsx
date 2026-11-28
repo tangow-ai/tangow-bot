@@ -176,3 +176,12 @@ it("shows the open eyes alone for 400 ms under reduced motion", async () => {
   await act(async () => vi.advanceTimersByTime(1));
   expect(awoke).toHaveBeenCalledTimes(1);
 });
+
+it("plays nothing toward the model step once the steps were left for the app", async () => {
+  const router = await onSignup(() => {});
+  const { forgetPlate } = await import("./onboarding-screen");
+  forgetPlate();
+  expect(await framesAfter(() => router.navigate("/onboarding", { replace: true }))).toEqual([
+    "11",
+  ]);
+});

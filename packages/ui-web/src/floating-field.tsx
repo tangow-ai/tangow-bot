@@ -34,7 +34,7 @@ export function FloatingField({
       <Input
         aria-describedby={invalid ? ONBOARDING_STATUS_ID : undefined}
         {...props}
-        className={cn(fieldClass, action ? "pe-32" : children ? "pe-12" : undefined)}
+        className={cn(fieldClass, action ? "pe-40" : children ? "pe-12" : undefined)}
       />
       <Field.Label>{label}</Field.Label>
       {children}

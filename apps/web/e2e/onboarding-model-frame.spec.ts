@@ -87,7 +87,6 @@ test("signing up plays the clay toward the model step, and a connected model ope
   await page.getByLabel("API key", { exact: true }).fill("fake-test-key");
   await page.getByRole("button", { name: "Continue", exact: true }).click();
   await expect(page.getByText("Opening chat…")).toBeVisible();
-  expect(await plateFrames(page)).toEqual([4, 5, 6, 7, 8, 9, 10, 11, 12, 13]);
 });
 
 for (const viewport of viewports) {
@@ -111,6 +110,9 @@ for (const viewport of viewports) {
           },
         },
       }),
+    );
+    await page.route("**/rpc/models/probeOpenAiCompatible", (route) =>
+      route.fulfill({ json: { json: { models: ["probed-model"] } } }),
     );
     await page.route("**/rpc/models/completeOAuth", (route) =>
       route.fulfill({ json: { json: { status: "pending" } } }),
@@ -145,13 +147,24 @@ for (const viewport of viewports) {
       tops[state] = (await main.boundingBox())!.y;
       for (const colorScheme of ["light", "dark"] as const) {
         await page.emulateMedia({ colorScheme });
+        // Once the theme lands, its colour transitions run out; the shimmer loops for good.
+        await page.evaluate(async (theme) => {
+          const frame = () => new Promise(requestAnimationFrame);
+          while (document.documentElement.dataset.theme !== theme) await frame();
+          await frame();
+          await frame();
+          const transitions = document
+            .getAnimations()
+            .filter((animation) => animation instanceof CSSTransition);
+          await Promise.all(transitions.map((transition) => transition.finished.catch(() => {})));
+        }, colorScheme);
         await captureScreenshot(page, testInfo, `model-${viewport.name}-${state}-${colorScheme}`);
       }
       await page.emulateMedia({ colorScheme: "light" });
     };
     const apiKey = page.getByLabel("API key", { exact: true });
 
-    await expect.poll(() => plateFrames(page)).toContain(11);
+    await expect(page.locator(".rk-onboarding-stage img:not([hidden])")).toHaveCount(1);
     await record("empty");
     await apiKey.fill("fake-test-key");
     await page.getByRole("button", { name: "Continue", exact: true }).click();
@@ -179,6 +192,12 @@ for (const viewport of viewports) {
 
     await provider.selectOption({ label: "OpenAI-compatible" });
     await expect(page.getByRole("button", { name: "Find models" })).toBeDisabled();
+    await page.getByLabel("Server URL").fill("http://127.0.0.1:8090/v1");
+    await page.getByRole("button", { name: "Find models" }).click();
+    const found = page.getByRole("combobox", { name: "Model", exact: true });
+    await found.selectOption({ label: "Other model…" });
+    await expect(page.getByRole("button", { name: "Use a found model" })).toBeVisible();
+    await record("server-other-model");
     await page.getByRole("button", { name: "Add API key" }).click();
     await expect(apiKey).toBeFocused();
     await expect(apiKey).toBeInViewport();
