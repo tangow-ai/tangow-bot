@@ -9,7 +9,10 @@ import { describe, expect, it } from "vitest";
 import {
   declareApp,
   givableSkills,
+  keyLockedBySpace,
+  keySharedWithAudience,
   shareableApps,
+  shareKeyWithAudience,
   shareWithPerson,
   shareWithSpace,
   showsTeamMemory,
@@ -103,5 +106,48 @@ describe("showsTeamMemory", () => {
     expect(showsTeamMemory({ visibility: "space" }, [])).toBe(true);
     expect(showsTeamMemory({ visibility: "private" }, [{}])).toBe(true);
     expect(showsTeamMemory({ visibility: "private" }, [])).toBe(false);
+  });
+});
+
+describe("a key in a bot's share sheet", () => {
+  const key = { userIds: ["grace"], space: false };
+  const people: Pick<BotSharing, "visibility" | "userIds"> = {
+    visibility: "people",
+    userIds: ["grace", "linus"],
+  };
+  const space: Pick<BotSharing, "visibility" | "userIds"> = { visibility: "space", userIds: [] };
+
+  it("is ticked only when everyone the bot is shared with already has it", () => {
+    expect(keySharedWithAudience(key, people)).toBe(false);
+    expect(
+      keySharedWithAudience({ userIds: ["grace", "linus", "ada"], space: false }, people),
+    ).toBe(true);
+    expect(keySharedWithAudience(key, { visibility: "private", userIds: [] })).toBe(false);
+  });
+
+  it("adds or takes away exactly the bot's people, never the whole Space", () => {
+    expect(shareKeyWithAudience(key, people, true)).toEqual({
+      userIds: ["grace", "linus"],
+      space: false,
+    });
+    expect(
+      shareKeyWithAudience({ userIds: ["grace", "ada"], space: false }, people, false),
+    ).toEqual({
+      userIds: ["ada"],
+      space: false,
+    });
+  });
+
+  it("shows a key shared with the whole Space as ticked and locked for chosen people", () => {
+    const everyone = { userIds: [], space: true };
+    expect(keySharedWithAudience(everyone, people)).toBe(true);
+    expect(keyLockedBySpace(everyone, people)).toBe(true);
+    expect(shareKeyWithAudience(everyone, people, false)).toEqual(everyone);
+  });
+
+  it("follows the whole Space only from the owner's own tick", () => {
+    expect(keySharedWithAudience(key, space)).toBe(false);
+    expect(shareKeyWithAudience(key, space, true)).toEqual({ userIds: ["grace"], space: true });
+    expect(shareKeyWithAudience({ userIds: ["grace"], space: true }, space, false)).toEqual(key);
   });
 });

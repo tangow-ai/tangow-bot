@@ -524,6 +524,7 @@ export function ShellOverlays({
             name={userName}
             initials={initials}
             image={userImage}
+            userId={bootstrapMe?.userId}
             email={email}
             initialSection={overlays.settingsSection}
             isDeploymentOwner={bootstrapMe?.isDeploymentOwner === true}

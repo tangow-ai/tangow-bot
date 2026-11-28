@@ -59,6 +59,7 @@ import {
   pushTokenPath,
   reconcileComputerUpdates,
   removeUserSkillDirs,
+  resealLegacySecrets,
   SmtpEmailProvider,
   SpaceDecisionProviderResolver,
   SpaceMemoryProviderResolver,
@@ -171,6 +172,8 @@ export async function createApp(
         })
       : new InMemoryRealtimeFanout());
   const secrets = new EncryptedSecretStore(env.encryptionKey);
+  // Before serving: readers accept only v2 ciphertexts.
+  await resealLegacySecrets(prisma, secrets);
   await moveMcpSources(prisma, secrets, (message) => logger.warn(message));
   const events = createThreadEvents(prisma, realtime, {
     runSecretWriter: createRunSecretWriter(secrets),

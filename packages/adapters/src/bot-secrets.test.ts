@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 import { requestWithBotSecret } from "./bot-secrets.js";
 import { EncryptedSecretStore } from "./secrets.js";
 
-const scope = { userId: "user-1", spaceId: "space-1", botId: "bot-1" };
+const run = { userId: "user-1", spaceId: "space-1" };
 const destination: BotSecretDestination = {
   name: "example_api",
   origin: "https://api.example.test",
@@ -18,32 +18,33 @@ async function fixture(auth = destination.auth) {
   const encrypted = await secretStore.put(
     secret,
     {
-      ...scope,
+      ...run,
       operationId: "test",
       traceId: "test",
       signal: new AbortController().signal,
     },
     "secret-1",
   );
-  const row = { ...scope, ...destination, auth, ...encrypted };
-  const findFirst = vi.fn(async ({ where }) =>
-    Object.entries(where).every(([key, value]) => row[key as keyof typeof row] === value)
-      ? row
-      : null,
-  );
-  const prisma = { botSecret: { findFirst } } as unknown as PrismaClient;
+  // Which rows a run may use is usableSecretsWhere's job, covered against Postgres in testkit.
+  const row = { ...run, ...destination, auth, ...encrypted, createdAt: new Date() };
+  const prisma = {
+    bot: { findFirst: async () => ({ userId: run.userId, visibility: "private", shares: [] }) },
+    spaceMember: { count: async () => 1 },
+    botSecret: { findMany: async () => [row] },
+  } as unknown as PrismaClient;
   const fetch = vi.fn<typeof globalThis.fetch>(async () => Response.json({ ok: true }));
   const registerRedactions = vi.fn();
   const input = {
     prisma,
     secretStore,
-    scope,
+    run,
+    botId: "bot-1",
     request: { name: destination.name, url: `${destination.origin}/v1/items` },
     signal: new AbortController().signal,
     remote: { fetch, resolveHostname: publicResolver },
     registerRedactions,
   };
-  return { input, fetch, findFirst, registerRedactions };
+  return { input, fetch, registerRedactions };
 }
 
 describe("authenticated secret requests", () => {
@@ -78,23 +79,6 @@ describe("authenticated secret requests", () => {
       expect(JSON.stringify(result)).not.toContain(value);
       expect(JSON.stringify(result)).not.toContain(encodeURIComponent(secret));
       expect(registerRedactions).toHaveBeenCalledWith(expect.arrayContaining([secret, value]));
-    },
-  );
-
-  it.each(["userId", "spaceId", "botId"] as const)(
-    "denies a different %s before decrypting or sending",
-    async (key) => {
-      const { input, fetch } = await fixture();
-      const load = vi.spyOn(secretStore, "load");
-      try {
-        expect(
-          await requestWithBotSecret({ ...input, scope: { ...scope, [key]: "other" } }),
-        ).toMatchObject({ error: expect.any(String) });
-        expect(load).not.toHaveBeenCalled();
-        expect(fetch).not.toHaveBeenCalled();
-      } finally {
-        load.mockRestore();
-      }
     },
   );
 

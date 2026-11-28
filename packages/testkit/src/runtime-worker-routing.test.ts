@@ -635,11 +635,16 @@ describe("where a product run executes", () => {
     const run = await fixture([
       {
         expect() {},
-        response: { type: "tool", id: "forget", name: "forget_secret", arguments: { name: "x" } },
+        response: {
+          type: "tool",
+          id: "request",
+          name: "secret_request",
+          arguments: { name: "x", url: "https://api.example.test/" },
+        },
       },
       {
         expect(request) {
-          expect(JSON.stringify(request.messages.at(-1))).toContain("tool: forget_secret");
+          expect(JSON.stringify(request.messages.at(-1))).toContain("tool: secret_request");
         },
         response: { type: "text", text: '{"decision":"pass","reason":"Harmless."}' },
       },
@@ -650,16 +655,16 @@ describe("where a product run executes", () => {
     await run.prisma.actionAutoReviewPreference.create({
       data: { spaceId: run.spaceId, userId: run.userId, enabled: true },
     });
-    const runId = await run.send("Forget x.");
+    const runId = await run.send("Call x.");
     await run.continueRun(runId);
 
     run.model.assertComplete();
     expect(
       await run.prisma.externalEffect.findMany({
-        where: { runId, kind: "forget_secret" },
+        where: { runId, kind: "secret_request" },
         select: { kind: true, reviewDecision: true },
       }),
-    ).toEqual([{ kind: "forget_secret", reviewDecision: "pass" }]);
+    ).toEqual([{ kind: "secret_request", reviewDecision: "pass" }]);
     expect(await attemptsOf(run, runId)).toEqual([{ workerState: "released" }]);
   });
 });

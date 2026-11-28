@@ -20,14 +20,14 @@ describe("secret store", () => {
     expect(() => store.load(record.ciphertext, "another-row")).toThrow();
   });
 
-  it("keeps legacy ciphertext readable without rewriting it at startup", () => {
+  it("refuses a pre-v2 ciphertext: only the startup reseal reads that format", () => {
     const key = "legacy-test-key";
     const iv = Buffer.alloc(12, 7);
     const cipher = createCipheriv("aes-256-gcm", createHash("sha256").update(key).digest(), iv);
     const encrypted = Buffer.concat([cipher.update("legacy-secret", "utf8"), cipher.final()]);
     const legacy = Buffer.concat([iv, cipher.getAuthTag(), encrypted]).toString("base64");
     const store = new EncryptedSecretStore(key);
-    expect(store.load(legacy, "secret-row")).toBe("legacy-secret");
+    expect(() => store.load(legacy, "secret-row")).toThrow();
   });
 });
 

@@ -1,6 +1,14 @@
-import type { AgentSkillCatalogEntry, BotSharing } from "@tangow/contracts";
+import type { AgentSkillCatalogEntry, BotSharing, VaultItem, VaultList } from "@tangow/contracts";
 import type { ShareableApp } from "@tangow/core";
-import { connectorKey, declareApp, shareWithPerson, shareWithSpace } from "@tangow/core";
+import {
+  connectorKey,
+  declareApp,
+  keyLockedBySpace,
+  keySharedWithAudience,
+  shareKeyWithAudience,
+  shareWithPerson,
+  shareWithSpace,
+} from "@tangow/core";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { ScrollView, StyleSheet, Text } from "react-native";
@@ -20,7 +28,8 @@ import { nativeTextStyle } from "../lib/typography";
  * Who besides its owner uses the bot: everyone in the Space, or the people switched on. Each change
  * saves itself; nobody on means only the owner. Once shared, the bot uses only the skills switched
  * on for it, and a member's run only the apps and MCP servers switched on, with the member's own
- * accounts and credentials. Mirrors web's share sheet; the rules are `@tangow/core`'s.
+ * accounts and credentials. The keys this bot saved can be shared with the same audience, one
+ * explicit switch each. Mirrors web's share sheet; the rules are `@tangow/core`'s.
  */
 export default function BotShareScreen() {
   const { botId = "" } = useLocalSearchParams<{ botId: string }>();
@@ -30,6 +39,7 @@ export default function BotShareScreen() {
   const [sheet, setSheet] = useState<ShareSheet | null>(null);
   const [spaceName, setSpaceName] = useState("");
   const [apps, setApps] = useState<ShareableApp[]>([]);
+  const [keys, setKeys] = useState<VaultItem[]>([]);
   const [failed, setFailed] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,6 +65,10 @@ export default function BotShareScreen() {
         (list) => live && setApps(list),
         () => undefined,
       );
+    rpc<VaultList>("vault/list").then(
+      (vault) => live && setKeys(vault.mine.filter((key) => key.botId === botId)),
+      () => undefined,
+    );
     return () => {
       live = false;
     };
@@ -97,6 +111,19 @@ export default function BotShareScreen() {
           },
       );
     } catch {
+      setError(t("Could not save"));
+    }
+  }
+
+  async function shareKey(key: VaultItem, checked: boolean) {
+    if (!sheet) return;
+    const next = { ...key, ...shareKeyWithAudience(key, sheet.sharing, checked) };
+    setError(null);
+    setKeys((list) => list.map((entry) => (entry.name === key.name ? next : entry)));
+    try {
+      await rpc("vault/share", { name: key.name, userIds: next.userIds, space: next.space });
+    } catch {
+      setKeys((list) => list.map((entry) => (entry.name === key.name ? key : entry)));
       setError(t("Could not save"));
     }
   }
@@ -198,6 +225,37 @@ export default function BotShareScreen() {
                   />
                 ))}
               </Group>
+            ) : null}
+            {sharing.visibility !== "private" && keys.length > 0 ? (
+              <>
+                <Group label={t("Keys")}>
+                  {keys.map((key) => (
+                    <Row
+                      key={key.name}
+                      label={key.name}
+                      subline={new URL(key.origin).host}
+                      control={
+                        <InkSwitch
+                          accessibilityLabel={key.name}
+                          value={keySharedWithAudience(key, sharing)}
+                          disabled={pending || keyLockedBySpace(key, sharing)}
+                          onValueChange={(checked) => void shareKey(key, checked)}
+                        />
+                      }
+                    />
+                  ))}
+                </Group>
+                <Text style={styles.note}>
+                  {everyone
+                    ? t(
+                        "Every current and future member of {space} can use the keys switched on, each on its own site, from their bots and yours that you can see, including webhooks and routines.",
+                        { space: spaceName },
+                      )
+                    : t(
+                        "These people can use the keys switched on, each on its own site, from their bots and yours that you can see, including webhooks and routines.",
+                      )}
+                </Text>
+              </>
             ) : null}
             {sharing.visibility === "private" ? null : (
               <Text style={styles.note}>

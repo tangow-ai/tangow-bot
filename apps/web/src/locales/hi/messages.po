@@ -341,6 +341,7 @@ msgstr "गतिविधि, पिछला रन विफल रहा"
 #: src/pages/PluginsOverlay.tsx:72
 #: src/pages/ScratchpadSection.tsx:196
 #: src/pages/shell/message-cards.tsx:201
+#: src/pages/VaultSettingsPanel.tsx:84
 msgid "Add"
 msgstr "जोड़ें"
 
@@ -806,6 +807,7 @@ msgstr "सर्वर तक नहीं पहुंचा जा सका�
 #: src/pages/shell/dialogs.tsx:395
 #: src/pages/shell/dialogs.tsx:448
 #: src/pages/shell/dialogs.tsx:505
+#: src/pages/VaultSettingsPanel.tsx:285
 msgid "Cancel"
 msgstr "रद्द करें"
 
@@ -1500,6 +1502,7 @@ msgstr "रूटीन चलाया नहीं जा सका"
 #: src/pages/bot-page/RoutineDetail.tsx:87
 #: src/pages/ExternalConversationSettings.tsx:250
 #: src/pages/KnowledgeSection.tsx:207
+#: src/pages/VaultSettingsPanel.tsx:173
 msgid "Could not save"
 msgstr "सहेजा नहीं जा सका"
 
@@ -1625,8 +1628,10 @@ msgstr "स्पेस का नाम नहीं बदला जा सक
 msgid "Couldn't revoke the invite link"
 msgstr ""
 
-#: src/pages/ShareBotDialog.tsx:118
-#: src/pages/ShareBotDialog.tsx:133
+#: src/pages/ShareBotDialog.tsx:128
+#: src/pages/ShareBotDialog.tsx:143
+#: src/pages/ShareBotDialog.tsx:156
+#: src/pages/VaultSettingsPanel.tsx:328
 msgid "Couldn't save"
 msgstr ""
 
@@ -1789,6 +1794,8 @@ msgstr "डिफ़ॉल्ट स्कोप"
 #: src/pages/shell/dialogs.tsx:470
 #: src/pages/shell/sidebar-footer.tsx:99
 #: src/pages/shell/sidebar-footer.tsx:132
+#: src/pages/VaultSettingsPanel.tsx:193
+#: src/pages/VaultSettingsPanel.tsx:281
 msgid "Delete"
 msgstr "डिलीट करें"
 
@@ -1803,6 +1810,7 @@ msgstr "{0} डिलीट करें"
 #. placeholder {0}: item.name
 #: src/pages/shell/dialogs.tsx:346
 #: src/pages/shell/dialogs.tsx:439
+#: src/pages/VaultSettingsPanel.tsx:193
 msgid "Delete {0}?"
 msgstr "{0} डिलीट करें?"
 
@@ -2067,6 +2075,15 @@ msgstr "हर"
 msgid "every {intervalAmountSelect} {intervalUnitSelect}"
 msgstr "हर {intervalAmountSelect} {intervalUnitSelect}"
 
+#. placeholder {0}: space.name
+#: src/pages/VaultSettingsPanel.tsx:378
+msgid "Every current and future member of {0} can use this key on its site, from their bots and yours that you can see, including webhooks and routines."
+msgstr ""
+
+#: src/pages/ShareBotDialog.tsx:258
+msgid "Every current and future member of {spaceName} can use ticked keys on their sites, from their bots and yours that you can see, including webhooks and routines."
+msgstr ""
+
 #: src/pages/bot-page/RoutineTriggers.tsx:78
 #: src/pages/RoutineSchedule.tsx:37
 #: src/pages/RoutineSchedule.tsx:166
@@ -2097,6 +2114,16 @@ msgstr "हर सप्ताह"
 #: src/pages/usage-settings.tsx:47
 msgid "Everyday"
 msgstr "रोज़मर्रा"
+
+#: src/pages/VaultSettingsPanel.tsx:73
+msgid "Everyone"
+msgstr ""
+
+#. placeholder {0}: space.name
+#: src/pages/VaultSettingsPanel.tsx:338
+#: src/pages/VaultSettingsPanel.tsx:340
+msgid "Everyone in {0}"
+msgstr ""
 
 #: src/pages/ShareBotDialog.tsx:159
 #: src/pages/ShareBotDialog.tsx:161
@@ -2287,7 +2314,12 @@ msgstr "कॉल समाप्त करें, फिर स्क्री�
 msgid "header"
 msgstr "हेडर"
 
+#: src/pages/VaultSettingsPanel.tsx:245
+msgid "Header"
+msgstr ""
+
 #: src/pages/custom-apps/AppEditor.tsx:127
+#: src/pages/VaultSettingsPanel.tsx:253
 msgid "Header name"
 msgstr "हेडर नाम"
 
@@ -2481,6 +2513,14 @@ msgstr "मेमोरी रखें"
 #: src/pages/bot-page/RoutineTriggers.tsx:380
 msgid "key"
 msgstr "कुंजी"
+
+#: src/pages/VaultSettingsPanel.tsx:264
+msgid "Key"
+msgstr ""
+
+#: src/pages/ShareBotDialog.tsx:244
+msgid "Keys"
+msgstr ""
 
 #: src/pages/bot-page/BotPage.tsx:101
 msgid "Knowledge"
@@ -2864,6 +2904,7 @@ msgstr ""
 #: src/pages/shell/dialogs.tsx:187
 #: src/pages/shell/dialogs.tsx:250
 #: src/pages/SpaceGeneralSettings.tsx:118
+#: src/pages/VaultSettingsPanel.tsx:228
 msgid "Name"
 msgstr "नाम"
 
@@ -2889,6 +2930,10 @@ msgstr "आपकी ज़रूरत है"
 
 #: src/components/AskCard.tsx:244
 msgid "Needs your call"
+msgstr ""
+
+#: src/pages/VaultSettingsPanel.tsx:206
+msgid "New API key"
 msgstr ""
 
 #: src/pages/shell/bot-panel.tsx:93
@@ -3564,6 +3609,7 @@ msgid "Replace API key"
 msgstr "API कुंजी बदलें"
 
 #: src/pages/ProvidersSettings.tsx:267
+#: src/pages/VaultSettingsPanel.tsx:288
 msgid "Replace key"
 msgstr "कुंजी बदलें"
 
@@ -3758,6 +3804,7 @@ msgstr ""
 #: src/pages/KnowledgeSection.tsx:706
 #: src/pages/model-settings/model-detail.tsx:332
 #: src/pages/shell/dialogs.tsx:266
+#: src/pages/VaultSettingsPanel.tsx:288
 msgid "Save"
 msgstr "सहेजें"
 
@@ -3873,6 +3920,11 @@ msgstr "भेजा जा रहा है…"
 msgid "Sent"
 msgstr ""
 
+#: src/pages/VaultSettingsPanel.tsx:235
+#: src/pages/VaultSettingsPanel.tsx:237
+msgid "Sent as"
+msgstr ""
+
 #: src/components/integrations/IntegrationSetup.tsx:94
 #: src/pages/AccountSettingsOverlay.tsx:166
 msgid "Server integrations"
@@ -3947,6 +3999,14 @@ msgstr ""
 msgid "Shared documents"
 msgstr "साझा दस्तावेज़"
 
+#: src/pages/VaultSettingsPanel.tsx:336
+msgid "Shared with"
+msgstr ""
+
+#: src/pages/VaultSettingsPanel.tsx:107
+msgid "Shared with you"
+msgstr ""
+
 #: src/pages/AccountSettingsOverlay.tsx:108
 msgid "Show agent steps, and every run in a bot's activity."
 msgstr "एजेंट के चरण और बॉट की गतिविधि में हर रन दिखाएँ।"
@@ -3997,6 +4057,10 @@ msgstr "Tangow में साइन इन करें"
 #: src/pages/Welcome.tsx:32
 msgid "Sign up"
 msgstr "साइन अप करें"
+
+#: src/pages/VaultSettingsPanel.tsx:221
+msgid "Site"
+msgstr ""
 
 #. placeholder {0}: skill.name
 #: src/pages/shell/composer-pickers.tsx:200
@@ -4235,6 +4299,14 @@ msgstr "API वापस नहीं आया। इस पेज को र�
 #: src/pages/MemorySettingsOverlay.tsx:245
 msgid "The selected memory provider is not available in this build."
 msgstr "चयनित मेमोरी प्रोवाइडर इस बिल्ड में उपलब्ध नहीं है।"
+
+#: src/pages/VaultSettingsPanel.tsx:382
+msgid "These people can use this key on its site, from their bots and yours that you can see, including webhooks and routines."
+msgstr ""
+
+#: src/pages/ShareBotDialog.tsx:259
+msgid "These people can use ticked keys on their sites, from their bots and yours that you can see, including webhooks and routines."
+msgstr ""
 
 #: src/pages/bot-page/SettingDetails.tsx:139
 msgid "Thinking"
@@ -4475,6 +4547,14 @@ msgstr ""
 #: src/pages/model-settings/model-detail.tsx:362
 msgid "Use this model"
 msgstr "यह मॉडल उपयोग करें"
+
+#: src/pages/VaultSettingsPanel.tsx:259
+msgid "Username"
+msgstr ""
+
+#: src/pages/settings-sections.ts:50
+msgid "Vault"
+msgstr ""
 
 #: src/pages/bot-page/SettingDetails.tsx:185
 #: src/pages/bot-page/SettingDetails.tsx:189

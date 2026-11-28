@@ -162,6 +162,15 @@ export default function Layout() {
               <Stack.Screen name="integrations" options={{ title: t("Integrations") }} />
               <Stack.Screen name="custom-apps" options={{ title: t("Custom apps") }} />
               <Stack.Screen name="skills" options={{ title: t("Skills") }} />
+              <Stack.Screen name="vault" options={{ title: t("Vault") }} />
+              <Stack.Screen
+                name="vault-item"
+                options={{
+                  presentation: "formSheet",
+                  sheetAllowedDetents: [1],
+                  sheetGrabberVisible: true,
+                }}
+              />
               <Stack.Screen
                 name="new"
                 options={{
