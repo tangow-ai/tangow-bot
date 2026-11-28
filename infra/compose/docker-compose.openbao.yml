@@ -1,0 +1,40 @@
+# Optional overlay for docker-compose.prod.yml.
+services:
+  openbao:
+    image: openbao/openbao:2.7.3
+    command: ["server"]
+    restart: unless-stopped
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      BAO_ADDR: http://openbao:8200
+      BAO_PG_CONNECTION_URL: postgres://${POSTGRES_USER:-tangow}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-tangow}?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [data]
+    healthcheck:
+      test: ["CMD", "bao", "status"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    volumes:
+      - ./openbao.hcl:/openbao/config/tangow.hcl:ro
+      - type: bind
+        source: ./openbao-private/unseal.key
+        target: /run/secrets/unseal.key
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./openbao-private/role-id
+        target: /run/secrets/role-id
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./openbao-private/secret-id
+        target: /run/secrets/secret-id
+        read_only: true
+        bind:
+          create_host_path: false

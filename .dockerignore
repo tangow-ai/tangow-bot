@@ -39,3 +39,6 @@ apps/desktop/out
 **/*.apk
 **/*.aab
 **/*.tsbuildinfo
+
+# OpenBao unseal key and bootstrap credentials
+infra/compose/openbao-private
