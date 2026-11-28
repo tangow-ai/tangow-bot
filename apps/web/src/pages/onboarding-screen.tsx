@@ -8,11 +8,29 @@ import p03800 from "@tangow/avatars/onboarding/plateau/p03-800.webp";
 import p031600 from "@tangow/avatars/onboarding/plateau/p03-1600.webp";
 import p04800 from "@tangow/avatars/onboarding/plateau/p04-800.webp";
 import p041600 from "@tangow/avatars/onboarding/plateau/p04-1600.webp";
+import p05800 from "@tangow/avatars/onboarding/plateau/p05-800.webp";
+import p051600 from "@tangow/avatars/onboarding/plateau/p05-1600.webp";
+import p06800 from "@tangow/avatars/onboarding/plateau/p06-800.webp";
+import p061600 from "@tangow/avatars/onboarding/plateau/p06-1600.webp";
+import p07800 from "@tangow/avatars/onboarding/plateau/p07-800.webp";
+import p071600 from "@tangow/avatars/onboarding/plateau/p07-1600.webp";
+import p08800 from "@tangow/avatars/onboarding/plateau/p08-800.webp";
+import p081600 from "@tangow/avatars/onboarding/plateau/p08-1600.webp";
+import p09800 from "@tangow/avatars/onboarding/plateau/p09-800.webp";
+import p091600 from "@tangow/avatars/onboarding/plateau/p09-1600.webp";
+import p10800 from "@tangow/avatars/onboarding/plateau/p10-800.webp";
+import p101600 from "@tangow/avatars/onboarding/plateau/p10-1600.webp";
+import p11800 from "@tangow/avatars/onboarding/plateau/p11-800.webp";
+import p111600 from "@tangow/avatars/onboarding/plateau/p11-1600.webp";
+import p12800 from "@tangow/avatars/onboarding/plateau/p12-800.webp";
+import p121600 from "@tangow/avatars/onboarding/plateau/p12-1600.webp";
+import p13800 from "@tangow/avatars/onboarding/plateau/p13-800.webp";
+import p131600 from "@tangow/avatars/onboarding/plateau/p13-1600.webp";
 import type { PlateBeat, PlateStep } from "@tangow/contracts";
-import { plateBeats, plateForward, plateStill } from "@tangow/contracts";
+import { plateBeats, plateForward, plateModelConnected, plateStill } from "@tangow/contracts";
 import type { OnboardingFrameProps } from "@tangow/ui-web";
 import { OnboardingFrame, usePrefersReducedMotion } from "@tangow/ui-web";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigationType } from "react-router-dom";
 import { desktopBridge } from "../lib/desktop";
 import { WindowChrome } from "./WindowChrome";
@@ -25,6 +43,15 @@ const plate: Partial<Record<number, Picture>> = {
   2: [p02800, p021600],
   3: [p03800, p031600],
   4: [p04800, p041600],
+  5: [p05800, p051600],
+  6: [p06800, p061600],
+  7: [p07800, p071600],
+  8: [p08800, p081600],
+  9: [p09800, p091600],
+  10: [p10800, p101600],
+  11: [p11800, p111600],
+  12: [p12800, p121600],
+  13: [p13800, p131600],
 };
 
 const sizes = "(max-width: 860px) calc(100vw - 32px), 55vw";
@@ -55,10 +82,20 @@ function Scene({
   );
 }
 
-export const paveScene = <Scene picture={[pave800, pave1600]} />;
-
-/** The step the plate last rested on, kept across the route change between two steps. */
+/** The step the plate last rested on, kept across the route change and any loading between two steps. */
 let restedOn: PlateStep | undefined;
+
+/** Leaving the steps (for the app, or a screen off the plate) breaks the sequence. */
+export function forgetPlate() {
+  restedOn = undefined;
+}
+
+function Pave() {
+  useEffect(forgetPlate, []);
+  return <Scene picture={[pave800, pave1600]} />;
+}
+
+export const paveScene = <Pave />;
 /** Frames decoded ahead: a transition shows only these and never waits for the rest. */
 const decoded = new Set<number>();
 
@@ -77,50 +114,73 @@ function preload(frame: number) {
 
 /** Once a step's still is in: the frames toward every step it moves forward to, and their stills. */
 function preloadForward(step: PlateStep) {
+  if (step === "model") for (const [frame] of plateModelConnected.motion) preload(frame);
   for (const [to, beats] of Object.entries(plateForward[step] ?? {})) {
     for (const [frame] of beats) preload(frame);
     preload(plateStill[to as PlateStep]);
   }
 }
 
-type Plan = { step: PlateStep; beats: readonly PlateBeat[] };
+type Plan = { step: PlateStep; beats: readonly PlateBeat[]; still: number; awake: boolean };
+
+const decodedOnly = (beats: readonly PlateBeat[]) => beats.filter(([frame]) => decoded.has(frame));
 
 /**
  * The clay plate of a step: its still, after the frames from the previous step when
  * the person moved forward with a link or a button. The frames stack in order, so a
- * frame slow to paint leaves the one before it showing.
+ * frame slow to paint leaves the one before it showing. `awake` plays the model
+ * step's connected frames, then `onAwake` lets the step move on.
  */
-export function PlateScene({ step, focus }: { step: PlateStep; focus?: string }) {
+export function PlateScene({
+  step,
+  focus,
+  awake = false,
+  onAwake,
+}: {
+  step: PlateStep;
+  focus?: string;
+  awake?: boolean;
+  onAwake?: () => void;
+}) {
   const replayed = useNavigationType() === "POP";
   const reducedMotion = usePrefersReducedMotion();
   const planFor = (to: PlateStep): Plan => ({
     step: to,
-    beats: plateBeats(replayed ? undefined : restedOn, to, reducedMotion).filter(([frame]) =>
-      decoded.has(frame),
-    ),
+    beats: decodedOnly(plateBeats(replayed ? undefined : restedOn, to, reducedMotion)),
+    still: plateStill[to],
+    awake: false,
   });
   const [plan, setPlan] = useState(() => planFor(step));
   const [shown, setShown] = useState(0);
   if (plan.step !== step) {
     setPlan(planFor(step));
     setShown(0);
+  } else if (awake && !plan.awake) {
+    const beats = plateModelConnected[reducedMotion ? "reduced" : "motion"];
+    setPlan({ step, beats: decodedOnly(beats), still: beats[beats.length - 1]![0], awake });
+    setShown(0);
   }
+  const onAwakeRef = useRef(onAwake);
+  onAwakeRef.current = onAwake;
 
   useEffect(() => {
     restedOn = plan.step;
+    const played = () => {
+      if (plan.awake) onAwakeRef.current?.();
+    };
+    if (!plan.beats.length) played();
     let at = 0;
     const timers = plan.beats.map(([, ms], index) => {
       at += ms;
-      return setTimeout(() => setShown(index + 1), at);
+      return setTimeout(() => {
+        setShown(index + 1);
+        if (index === plan.beats.length - 1) played();
+      }, at);
     });
-    return () => {
-      timers.forEach(clearTimeout);
-      // A screen off the plate (sign-in, a reset) breaks the sequence.
-      restedOn = undefined;
-    };
+    return () => timers.forEach(clearTimeout);
   }, [plan]);
 
-  const still = plate[plateStill[plan.step]];
+  const still = plate[plan.still];
   return (
     <>
       {/* Once played, the still stands alone: the frames are not kept decoded. */}

@@ -3,33 +3,19 @@ import {
   DEFAULT_MODEL_CONTEXT_WINDOW,
   DEFAULT_MODEL_MAX_TOKENS,
   type IntegrationSetupState,
-  MAX_MODEL_CONTEXT_WINDOW,
-  MAX_MODEL_MAX_TOKENS,
   OPENAI_COMPATIBLE_PROVIDER_ID,
   openAiCompatibleConnectReady,
-  openAiCompatibleProbeSuccessMessage,
-  parseModelContextWindow,
-  parseModelMaxImagesPerPrompt,
-  parseModelMaxTokens,
-  type ThinkingLevel,
 } from "@tangow/contracts";
 import { createModelProbe, initialModelProbeState } from "@tangow/core";
-import {
-  Button,
-  Input,
-  ModelThinkingOptions,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@tangow/ui-web";
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { Button, FloatingField, FloatingSelect, Shimmer } from "@tangow/ui-web";
+import type { FormEvent, ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { IntegrationSetup } from "../components/integrations/IntegrationSetup";
 import type { ModelCatalogEntry } from "../lib/model-auth";
 import { rpc } from "../lib/rpc";
 import { useModelOAuthSignIn } from "../lib/use-model-oauth-signin";
+import { OnboardingScreen, PlateScene } from "./onboarding-screen";
 
 const CUSTOM_MODEL_OPTION = "__tangow_custom_model__";
 const FIRST_BOT_NAME = "Chief";
@@ -97,10 +83,13 @@ function nextStepAfterModel(needsIntegrationSetup: boolean): "integrations" | "b
   return needsIntegrationSetup ? "integrations" : "bot";
 }
 
+/** What the model step asks for: a key, a subscription sign-in, its wait, or a server of one's own. */
+type ModelView = "key" | "subscription" | "waiting" | "server";
+type StepError = { text: string; field?: "key" | "url" | "code" };
+
 export function OnboardingPage() {
   const { t } = useLingui();
   const navigate = useNavigate();
-  const fieldId = useId();
   const [step, setStep] = useState<"loading" | "model" | "integrations" | "bot">("loading");
   const [integrationSetup, setIntegrationSetup] = useState<IntegrationSetupState | null>(null);
   const needsIntegrationSetup = integrationSetup?.needsSetup ?? false;
@@ -110,19 +99,16 @@ export function OnboardingPage() {
   const [modelId, setModelId] = useState("");
   const [apiKey, setApiKey] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
-  const [reasoning, setReasoning] = useState(false);
   const [manualModelId, setManualModelId] = useState(false);
-  const [thinkingLevel, setThinkingLevel] = useState<ThinkingLevel | null>(null);
-  const [maxTokens, setMaxTokens] = useState(String(DEFAULT_MODEL_MAX_TOKENS));
-  const [contextWindow, setContextWindow] = useState(String(DEFAULT_MODEL_CONTEXT_WINDOW));
-  const [supportsImages, setSupportsImages] = useState(false);
-  const [maxImagesPerPrompt, setMaxImagesPerPrompt] = useState("");
+  /** The key field a subscription or a server keeps behind a link, once asked for. */
+  const [keyChosen, setKeyChosen] = useState(false);
   const [{ models: probeModels, probing }, setProbe] = useState(initialModelProbeState);
   const [modelProbe] = useState(() => createModelProbe(setProbe));
   const resetOpenAiCompatibleProbe = modelProbe.reset;
   const createStartedRef = useRef(false);
-  const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  /** `awake` plays the connected frames, the button held, before the next step. */
+  const [phase, setPhase] = useState<"idle" | "connecting" | "awake">("idle");
+  const [error, setError] = useState<StepError | null>(null);
 
   const {
     oauth,
@@ -134,10 +120,8 @@ export function OnboardingPage() {
     submitOAuthCode,
   } = useModelOAuthSignIn({
     onClearError: () => setError(null),
-    onError: setError,
-    onFinished: () => {
-      setStep(nextStepAfterModel(needsIntegrationSetup));
-    },
+    onError: (text) => setError({ text, field: "code" }),
+    onFinished: () => setPhase("awake"),
   });
 
   useEffect(() => {
@@ -185,32 +169,22 @@ export function OnboardingPage() {
   const subscriptionSignIn = selected?.signIn !== undefined;
   const acceptsKey = selected?.auth !== "oauth";
   const signInLabel = selected?.oauthLabel ?? t`Sign in`;
-  const openAiCompatibleReady = openAiCompatibleConnectReady({
-    baseUrl,
-    modelId,
-  });
+  const view: ModelView = isOpenAiCompatible
+    ? "server"
+    : oauth
+      ? "waiting"
+      : subscriptionSignIn && !(acceptsKey && keyChosen)
+        ? "subscription"
+        : "key";
+  const busy = phase !== "idle";
   const canSaveModel = Boolean(
     selected &&
       modelId.trim() &&
       !oauthPending &&
-      (isOpenAiCompatible ? openAiCompatibleReady : acceptsKey && apiKey.trim()),
-  );
-  const otherModelLabel = t`Other model…`;
-  // Base UI Select.Value only resolves labels when Root gets `items`.
-  const providerItems = useMemo(
-    () => providers.map((entry) => ({ value: entry.provider, label: providerLabel(entry) })),
-    [providers],
-  );
-  const modelItems = useMemo(
-    () => modelsForProvider.map((entry) => ({ value: entry.id, label: entry.label })),
-    [modelsForProvider],
-  );
-  const probeModelItems = useMemo(
-    () => [
-      ...probeModels.map((id) => ({ value: id, label: id })),
-      { value: CUSTOM_MODEL_OPTION, label: otherModelLabel },
-    ],
-    [otherModelLabel, probeModels],
+      !busy &&
+      (isOpenAiCompatible
+        ? openAiCompatibleConnectReady({ baseUrl, modelId })
+        : acceptsKey && apiKey.trim()),
   );
 
   function updateBaseUrl(nextBaseUrl: string) {
@@ -218,7 +192,6 @@ export function OnboardingPage() {
     // Keep Other model… mode across URL edits; only provider change clears it.
     resetOpenAiCompatibleProbe();
     setError(null);
-    setNotice(null);
   }
 
   function updateApiKey(nextApiKey: string) {
@@ -237,22 +210,15 @@ export function OnboardingPage() {
         : (catalog.find((item) => item.provider === nextProvider)?.id ?? ""),
     );
     setBaseUrl("");
-    setReasoning(false);
-    setThinkingLevel(null);
     setManualModelId(false);
-    setSupportsImages(false);
-    setMaxTokens(String(DEFAULT_MODEL_MAX_TOKENS));
-    setContextWindow(String(DEFAULT_MODEL_CONTEXT_WINDOW));
-    setMaxImagesPerPrompt("");
+    setKeyChosen(false);
     resetOpenAiCompatibleProbe();
     setError(null);
-    setNotice(null);
   }
 
   async function probeServerModels() {
     if (!baseUrl.trim()) return;
     setError(null);
-    setNotice(null);
     await modelProbe.probe({
       baseUrl,
       apiKey,
@@ -268,76 +234,61 @@ export function OnboardingPage() {
           );
           return next;
         });
-        setNotice(openAiCompatibleProbeSuccessMessage(models.length));
       },
       onError: (err) =>
-        setError(err instanceof Error ? err.message : t`Could not reach this model server`),
+        setError({
+          text: err instanceof Error ? err.message : t`Could not reach this model server`,
+          field: "url",
+        }),
     });
   }
 
   async function saveModel() {
     if (!canSaveModel) return;
     setError(null);
+    setPhase("connecting");
+    const label = selected?.providerName ?? provider;
     try {
-      if (isOpenAiCompatible) {
-        const parsedMaxImagesPerPrompt = parseModelMaxImagesPerPrompt(
-          maxImagesPerPrompt,
-          supportsImages,
-        );
-        if (supportsImages && maxImagesPerPrompt.trim() && parsedMaxImagesPerPrompt === undefined) {
-          setError(t`Enter a whole number from 1 to 1000 for the image limit.`);
-          return;
-        }
-        const maxImagesPerPromptInput =
-          supportsImages && !maxImagesPerPrompt.trim() ? null : parsedMaxImagesPerPrompt;
-
-        const parsedMaxTokens = parseModelMaxTokens(maxTokens);
-        if (parsedMaxTokens === undefined) {
-          setError(
-            t`Enter a whole number from 1 to ${MAX_MODEL_MAX_TOKENS} for maximum output tokens.`,
-          );
-          return;
-        }
-        const parsedContextWindow = parseModelContextWindow(contextWindow);
-        if (parsedContextWindow === undefined) {
-          setError(
-            t`Enter a whole number from 1 to ${MAX_MODEL_CONTEXT_WINDOW} for the context limit.`,
-          );
-          return;
-        }
-        await rpc.models.connect({
-          provider,
-          baseUrl: baseUrl.trim(),
-          modelId: modelId.trim(),
-          reasoning,
-          thinkingLevel: reasoning ? thinkingLevel : null,
-          maxTokens: parsedMaxTokens,
-          contextWindow: parsedContextWindow,
-          supportsImages,
-          maxImagesPerPrompt: maxImagesPerPromptInput,
-          apiKey: apiKey.trim() || undefined,
-          label: selected?.providerName ?? provider,
-        });
-      } else if (apiKey) {
-        await rpc.models.connect({
-          provider,
-          apiKey,
-          modelId,
-          label: selected?.providerName ?? provider,
-        });
-      }
-      setStep(nextStepAfterModel(needsIntegrationSetup));
+      await rpc.models.connect(
+        isOpenAiCompatible
+          ? {
+              provider,
+              baseUrl: baseUrl.trim(),
+              modelId: modelId.trim(),
+              reasoning: false,
+              thinkingLevel: null,
+              maxTokens: DEFAULT_MODEL_MAX_TOKENS,
+              contextWindow: DEFAULT_MODEL_CONTEXT_WINDOW,
+              supportsImages: false,
+              apiKey: apiKey.trim() || undefined,
+              label,
+            }
+          : { provider, apiKey, modelId, label },
+      );
+      setPhase("awake");
     } catch (err) {
-      setError(err instanceof Error ? err.message : t`Could not save model`);
+      setPhase("idle");
+      setError({
+        text: err instanceof Error ? err.message : t`Could not save model`,
+        field: isOpenAiCompatible && !(keyChosen && apiKey.trim()) ? "url" : "key",
+      });
     }
   }
 
-  function beginSelectedSubscriptionSignIn() {
-    void startSubscriptionSignIn({
-      provider,
-      modelId,
-      label: selected?.providerName ?? provider,
-    });
+  function submitModel(event: FormEvent) {
+    event.preventDefault();
+    if (busy) return;
+    if (view === "subscription") {
+      void startSubscriptionSignIn({
+        provider,
+        modelId,
+        label: selected?.providerName ?? provider,
+      });
+    } else if (view === "waiting") {
+      void submitOAuthCode();
+    } else {
+      void saveModel();
+    }
   }
 
   async function createFirstBot() {
@@ -361,7 +312,7 @@ export function OnboardingPage() {
       navigate(`/app/${bot.id}`);
     } catch (err) {
       createStartedRef.current = false;
-      setError(err instanceof Error ? err.message : t`Could not create your bot`);
+      setError({ text: err instanceof Error ? err.message : t`Could not create your bot` });
     }
   }
 
@@ -370,6 +321,252 @@ export function OnboardingPage() {
     void createFirstBot();
   }, [step]);
 
+  if (step === "model") {
+    const link = (label: ReactNode, onClick: () => void) => (
+      <button type="button" className="rk-onboarding-link" disabled={busy} onClick={onClick}>
+        {label}
+      </button>
+    );
+    const keyField = (
+      <FloatingField
+        id="api-key"
+        label={<Trans>API key</Trans>}
+        type="password"
+        autoComplete="new-password"
+        value={apiKey}
+        onChange={(e) => updateApiKey(e.target.value)}
+        invalid={error?.field === "key"}
+      />
+    );
+    // A fourth field lands below the scroll fold, so it takes the focus as it appears.
+    const chooseKey = () => {
+      cancelOAuthAttempt();
+      setKeyChosen(true);
+      requestAnimationFrame(() => document.getElementById("api-key")?.focus());
+    };
+    return (
+      <OnboardingScreen
+        scroll
+        onSubmit={submitModel}
+        title={<Trans>Plug in a brain.</Trans>}
+        scene={
+          <PlateScene
+            step="model"
+            awake={phase === "awake"}
+            onAwake={() => setStep(nextStepAfterModel(needsIntegrationSetup))}
+          />
+        }
+        status={
+          error ? (
+            error.text
+          ) : phase === "connecting" ? (
+            <Shimmer>
+              <Trans>Connecting…</Trans>
+            </Shimmer>
+          ) : view === "waiting" ? (
+            <Shimmer>
+              <Trans>Waiting for sign-in…</Trans>
+            </Shimmer>
+          ) : null
+        }
+        actions={
+          <>
+            {view === "subscription" ? (
+              <Button
+                type="submit"
+                size="full"
+                disabled={oauthPending || busy}
+                aria-busy={oauthPending}
+              >
+                {signInLabel}
+              </Button>
+            ) : view === "waiting" ? (
+              <Button
+                type="submit"
+                size="full"
+                disabled={oauth?.mode !== "auth-url" || !pasteCode.trim()}
+              >
+                <Trans>Submit</Trans>
+              </Button>
+            ) : (
+              <Button
+                type="submit"
+                size="full"
+                disabled={!canSaveModel}
+                aria-busy={phase === "connecting"}
+              >
+                <Trans>Continue</Trans>
+              </Button>
+            )}
+            {(view === "subscription" || view === "waiting") && acceptsKey
+              ? link(<Trans>Or paste an API key</Trans>, chooseKey)
+              : null}
+            {view === "waiting" && !acceptsKey
+              ? link(<Trans>Cancel</Trans>, () => cancelOAuthAttempt())
+              : null}
+            {view === "key" && subscriptionSignIn
+              ? link(signInLabel, () => setKeyChosen(false))
+              : null}
+            {view === "server" && !keyChosen ? link(<Trans>Add API key</Trans>, chooseKey) : null}
+          </>
+        }
+      >
+        <FloatingSelect
+          id="provider"
+          label={<Trans>Provider</Trans>}
+          value={provider}
+          disabled={busy}
+          onChange={(e) => selectProvider(e.target.value)}
+        >
+          {providers.map((entry) => (
+            <option key={entry.provider} value={entry.provider}>
+              {providerLabel(entry)}
+            </option>
+          ))}
+        </FloatingSelect>
+        {view === "waiting" && oauth?.mode === "auth-url" ? (
+          <>
+            <p>
+              <Trans>
+                Finish signing in at{" "}
+                <a
+                  href={oauth.verificationUri}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-foreground underline"
+                >
+                  {new URL(oauth.verificationUri).hostname}
+                </a>
+                , then paste the code or the page’s address here.
+              </Trans>
+            </p>
+            <FloatingField
+              id="oauth-code"
+              label={<Trans>Code or URL</Trans>}
+              autoComplete="off"
+              spellCheck={false}
+              value={pasteCode}
+              onChange={(e) => setPasteCode(e.target.value)}
+              invalid={error?.field === "code"}
+            />
+          </>
+        ) : view === "waiting" && oauth?.mode === "device-code" ? (
+          <>
+            <p>
+              <Trans>
+                Enter this code at{" "}
+                <a
+                  href={oauth.verificationUri}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-foreground underline"
+                >
+                  {oauth.verificationUri.replace(/^https:\/\//, "")}
+                </a>
+              </Trans>
+            </p>
+            <p className="font-mono text-[22px] tracking-[0.2em] text-foreground">
+              {oauth.userCode}
+            </p>
+          </>
+        ) : view === "server" ? (
+          <>
+            <FloatingField
+              id="server-url"
+              label={<Trans>Server URL</Trans>}
+              autoComplete="off"
+              value={baseUrl}
+              onChange={(e) => updateBaseUrl(e.target.value)}
+              invalid={error?.field === "url"}
+              action={
+                <button
+                  type="button"
+                  className="rk-field-action"
+                  disabled={probing || !baseUrl.trim()}
+                  onClick={() => void probeServerModels()}
+                >
+                  {probing ? (
+                    <Shimmer>
+                      <Trans>Finding…</Trans>
+                    </Shimmer>
+                  ) : (
+                    <Trans>Find models</Trans>
+                  )}
+                </button>
+              }
+            />
+            {probeModels.length && !manualModelId ? (
+              <FloatingSelect
+                id="model"
+                label={<Trans>Model</Trans>}
+                value={modelId}
+                onChange={(e) => {
+                  const next = e.target.value;
+                  setManualModelId(next === CUSTOM_MODEL_OPTION);
+                  setModelId(next === CUSTOM_MODEL_OPTION ? "" : next);
+                }}
+              >
+                {probeModels.map((id) => (
+                  <option key={id} value={id}>
+                    {id}
+                  </option>
+                ))}
+                <option value={CUSTOM_MODEL_OPTION}>{t`Other model…`}</option>
+              </FloatingSelect>
+            ) : (
+              <FloatingField
+                id="model"
+                label={<Trans>Model</Trans>}
+                autoComplete="off"
+                value={modelId}
+                onChange={(e) => {
+                  setManualModelId(true);
+                  setModelId(e.target.value);
+                }}
+                action={
+                  probeModels.length ? (
+                    <button
+                      type="button"
+                      className="rk-field-action"
+                      onClick={() => {
+                        setManualModelId(false);
+                        setModelId(probeModels[0] ?? "");
+                      }}
+                    >
+                      <Trans>Use a found model</Trans>
+                    </button>
+                  ) : undefined
+                }
+              />
+            )}
+            {keyChosen ? keyField : null}
+          </>
+        ) : (
+          <>
+            <FloatingSelect
+              id="model"
+              label={<Trans>Model</Trans>}
+              value={selected?.id ?? modelId}
+              disabled={busy}
+              onChange={(e) => {
+                if (e.target.value === modelId) return;
+                cancelOAuthAttempt();
+                setModelId(e.target.value);
+              }}
+            >
+              {modelsForProvider.map((entry) => (
+                <option key={`${entry.provider}:${entry.id}`} value={entry.id}>
+                  {entry.label}
+                </option>
+              ))}
+            </FloatingSelect>
+            {view === "key" && acceptsKey ? keyField : null}
+          </>
+        )}
+      </OnboardingScreen>
+    );
+  }
+
   return (
     <div className="min-h-full bg-background px-6 py-12">
       <div className="mx-auto w-full max-w-[560px]">
@@ -377,294 +574,6 @@ export function OnboardingPage() {
           <p className="text-muted-foreground">
             <Trans>Loading…</Trans>
           </p>
-        ) : null}
-        {step === "model" ? (
-          <div>
-            <h1 className="text-[32px] font-medium text-foreground">
-              <Trans>Connect a model</Trans>
-            </h1>
-            <div className="mt-8 block text-sm font-medium text-foreground">
-              <span>
-                <Trans>Provider</Trans>
-              </span>
-              <Select
-                value={provider}
-                onValueChange={(value) => selectProvider(String(value))}
-                items={providerItems}
-              >
-                <SelectTrigger aria-label={t`Provider`} className="mt-2 w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {providers.map((entry) => (
-                    <SelectItem key={entry.provider} value={entry.provider}>
-                      {providerLabel(entry)}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="mt-6 block text-sm text-foreground">
-              {isOpenAiCompatible ? (
-                <>
-                  <label htmlFor={`${fieldId}-base-url`} className="block font-medium">
-                    <Trans>Server URL</Trans>
-                    <Input
-                      id={`${fieldId}-base-url`}
-                      value={baseUrl}
-                      onChange={(e) => updateBaseUrl(e.target.value)}
-                      aria-label={t`OpenAI-compatible server URL`}
-                      placeholder="http://127.0.0.1:8000/v1"
-                      autoComplete="off"
-                      className="mt-2"
-                    />
-                  </label>
-                  <div className="mt-3">
-                    <Button
-                      variant="outline"
-                      disabled={probing || !baseUrl.trim()}
-                      onClick={() => void probeServerModels()}
-                    >
-                      {probing ? <Trans>Finding…</Trans> : <Trans>Find models</Trans>}
-                    </Button>
-                  </div>
-                  <div className="mt-4 block">
-                    <span className="font-medium">
-                      <Trans>Model</Trans>
-                    </span>
-                    {probeModels.length && !manualModelId ? (
-                      <Select
-                        value={modelId}
-                        onValueChange={(value) => {
-                          const next = String(value);
-                          if (next === CUSTOM_MODEL_OPTION) {
-                            setManualModelId(true);
-                            setModelId("");
-                          } else {
-                            setManualModelId(false);
-                            setModelId(next);
-                          }
-                        }}
-                        items={probeModelItems}
-                      >
-                        <SelectTrigger aria-label={t`Models from server`} className="mt-2 w-full">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {probeModels.map((id) => (
-                            <SelectItem key={id} value={id}>
-                              {id}
-                            </SelectItem>
-                          ))}
-                          <SelectItem value={CUSTOM_MODEL_OPTION}>
-                            <Trans>Other model…</Trans>
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    ) : (
-                      <Input
-                        value={modelId}
-                        onChange={(e) => {
-                          setManualModelId(true);
-                          setModelId(e.target.value);
-                        }}
-                        aria-label={t`Model id`}
-                        placeholder="exact-model-id"
-                        className="mt-2"
-                      />
-                    )}
-                    {probeModels.length && manualModelId ? (
-                      <Button
-                        variant="link"
-                        size="xs"
-                        className="mt-2 px-0 text-muted-foreground"
-                        onClick={() => {
-                          setManualModelId(false);
-                          setModelId(probeModels[0] ?? "");
-                        }}
-                      >
-                        <Trans>Use a found model</Trans>
-                      </Button>
-                    ) : null}
-                  </div>
-                  <ModelThinkingOptions
-                    reasoning={reasoning}
-                    onReasoningChange={(value) => {
-                      setReasoning(value);
-                      if (!value) setThinkingLevel(null);
-                    }}
-                    advancedLabel={t`Advanced`}
-                    thinkingLabel={t`Supports thinking`}
-                    thinkingLevel={thinkingLevel}
-                    onThinkingLevelChange={(value) =>
-                      setThinkingLevel(value as ThinkingLevel | null)
-                    }
-                    thinkingLevelOptions={[
-                      { value: "minimal", label: t`Minimal` },
-                      { value: "low", label: t`Low` },
-                      { value: "medium", label: t`Medium` },
-                      { value: "high", label: t`High` },
-                      { value: "xhigh", label: t`Extra high` },
-                      { value: "max", label: t`Max` },
-                    ]}
-                    thinkingLevelLabel={t`Reasoning effort`}
-                    thinkingLevelDefaultLabel={t`Default`}
-                    maxTokens={maxTokens}
-                    onMaxTokensChange={setMaxTokens}
-                    maxTokensLabel={t`Maximum output tokens`}
-                    contextWindow={contextWindow}
-                    onContextWindowChange={setContextWindow}
-                    contextWindowLabel={t`Context limit`}
-                    supportsImages={supportsImages}
-                    onSupportsImagesChange={setSupportsImages}
-                    imagesLabel={t`Supports images`}
-                    maxImagesPerPrompt={maxImagesPerPrompt}
-                    onMaxImagesPerPromptChange={setMaxImagesPerPrompt}
-                    maxImagesLabel={t`Maximum images per request`}
-                  />
-                </>
-              ) : (
-                <>
-                  <span className="font-medium">
-                    <Trans>Model</Trans>
-                  </span>
-                  <Select
-                    value={selected?.id ?? modelId}
-                    onValueChange={(value) => {
-                      const next = String(value);
-                      if (next === modelId) return;
-                      cancelOAuthAttempt();
-                      setModelId(next);
-                    }}
-                    items={modelItems}
-                  >
-                    <SelectTrigger aria-label={t`Model`} className="mt-2 w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {modelsForProvider.map((entry) => (
-                        <SelectItem key={`${entry.provider}:${entry.id}`} value={entry.id}>
-                          {entry.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </>
-              )}
-            </div>
-            {subscriptionSignIn ? (
-              <div className="mt-4">
-                {oauth ? (
-                  <div className="rounded-lg border border-border px-3.5 py-3">
-                    {oauth.mode === "auth-url" ? (
-                      <>
-                        <p className="text-sm text-muted-foreground">
-                          <Trans>
-                            Finish signing in at{" "}
-                            <a
-                              href={oauth.verificationUri}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-foreground underline"
-                            >
-                              {new URL(oauth.verificationUri).hostname}
-                            </a>
-                            . The final page may not load; paste its URL or code here.
-                          </Trans>
-                        </p>
-                        <div className="mt-3 flex items-center gap-2">
-                          <Input
-                            value={pasteCode}
-                            onChange={(e) => setPasteCode(e.target.value)}
-                            aria-label={t`Authorization code or callback URL`}
-                            autoComplete="off"
-                            spellCheck={false}
-                            placeholder="http://localhost:53692/callback?code=…"
-                          />
-                          <Button
-                            disabled={!pasteCode.trim()}
-                            onClick={() => void submitOAuthCode()}
-                          >
-                            <Trans>Submit</Trans>
-                          </Button>
-                        </div>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                          <Trans>Waiting for sign-in…</Trans>
-                        </p>
-                      </>
-                    ) : (
-                      <>
-                        <p className="text-sm text-muted-foreground">
-                          <Trans>
-                            Enter this code at{" "}
-                            <a
-                              href={oauth.verificationUri}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-foreground underline"
-                            >
-                              {oauth.verificationUri.replace(/^https:\/\//, "")}
-                            </a>
-                          </Trans>
-                        </p>
-                        <p className="mt-2 font-mono text-[22px] tracking-[0.2em] text-foreground">
-                          {oauth.userCode}
-                        </p>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                          <Trans>Waiting for sign-in…</Trans>
-                        </p>
-                      </>
-                    )}
-                  </div>
-                ) : (
-                  <Button disabled={oauthPending} onClick={() => beginSelectedSubscriptionSignIn()}>
-                    {oauthPending ? <Trans>Starting…</Trans> : signInLabel}
-                  </Button>
-                )}
-              </div>
-            ) : null}
-            {acceptsKey ? (
-              isOpenAiCompatible ? (
-                <details className="mt-4 text-sm text-muted-foreground">
-                  <summary className="w-fit cursor-pointer select-none">
-                    <Trans>API key</Trans>
-                  </summary>
-                  <Input
-                    aria-label={t`API key`}
-                    value={apiKey}
-                    onChange={(e) => updateApiKey(e.target.value)}
-                    placeholder={t`Optional`}
-                    type="password"
-                    autoComplete="new-password"
-                    className="mt-2"
-                  />
-                </details>
-              ) : (
-                <label
-                  htmlFor={`${fieldId}-api-key`}
-                  className="mt-4 block text-sm font-medium text-foreground"
-                >
-                  {subscriptionSignIn ? <Trans>Or paste an API key</Trans> : <Trans>API key</Trans>}
-                  <Input
-                    id={`${fieldId}-api-key`}
-                    value={apiKey}
-                    onChange={(e) => updateApiKey(e.target.value)}
-                    placeholder="sk-…"
-                    type="password"
-                    autoComplete="new-password"
-                    className="mt-2"
-                  />
-                </label>
-              )
-            ) : null}
-            {notice ? <p className="mt-3 text-sm text-success">{notice}</p> : null}
-            {error ? <p className="mt-3 text-sm text-destructive">{error}</p> : null}
-            <div className="mt-6 flex gap-3">
-              <Button disabled={!canSaveModel} onClick={() => void saveModel()}>
-                <Trans>Continue</Trans>
-              </Button>
-            </div>
-          </div>
         ) : null}
         {step === "integrations" ? (
           <IntegrationSetup
@@ -679,7 +588,7 @@ export function OnboardingPage() {
           <div>
             {error ? (
               <div>
-                <p className="text-sm text-destructive">{error}</p>
+                <p className="text-sm text-destructive">{error.text}</p>
                 <Button className="mt-4" onClick={() => void createFirstBot()}>
                   <Trans>Try again</Trans>
                 </Button>
