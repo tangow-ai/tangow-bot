@@ -4886,6 +4886,7 @@ function SecretAskBlock({
   actionProps: MessageActionProps;
 }) {
   const tokens = useMobileTokens();
+  const router = useRouter();
   const { t } = useI18n();
   const [answer, setAnswer] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -4913,11 +4914,25 @@ function SecretAskBlock({
   }
 
   const answeredLine =
-    ask.status === "answered"
-      ? t("Saved")
-      : !canAnswer
-        ? t("Waiting for this bot’s response.")
-        : undefined;
+    ask.status === "answered" ? (
+      ask.credential ? (
+        <Text
+          accessibilityRole="link"
+          onPress={() => router.push("/vault")}
+          style={{
+            color: tokens.foreground,
+            textDecorationLine: "underline",
+            ...nativeTextStyle("meta"),
+          }}
+        >
+          {t("Saved in Vault")}
+        </Text>
+      ) : (
+        t("Saved")
+      )
+    ) : !canAnswer ? (
+      t("Waiting for this bot’s response.")
+    ) : undefined;
 
   return (
     <FramedBlock

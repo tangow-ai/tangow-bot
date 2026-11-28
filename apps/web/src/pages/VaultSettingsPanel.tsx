@@ -1,5 +1,12 @@
 import { useLingui } from "@lingui/react/macro";
-import type { BotSecretDestination, SpaceMembers, VaultItem, VaultList } from "@tangow/contracts";
+import type {
+  BotSecretDestination,
+  SharedVaultItem,
+  SpaceMembers,
+  VaultItem,
+  VaultList,
+} from "@tangow/contracts";
+import { filterVault, vaultInitial } from "@tangow/core";
 import {
   Button,
   Checkbox,
@@ -15,7 +22,7 @@ import {
   Switch,
   UserAvatar,
 } from "@tangow/ui-web";
-import { Plus } from "lucide-react";
+import { Plus, Search } from "lucide-react";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useId, useState } from "react";
 import { rpc } from "../lib/rpc";
@@ -36,6 +43,10 @@ function siteOrigin(site: string): string {
 
 type Member = SpaceMembers["members"][number];
 type Space = { id: string; name: string };
+type VaultDialog =
+  | { kind: "new" }
+  | { kind: "detail"; item: VaultItem | SharedVaultItem }
+  | { kind: "edit"; item: VaultItem };
 
 /**
  * The person's credentials in this space, then the ones others share with them (read-only).
@@ -46,7 +57,16 @@ export function VaultSettingsPanel({ space, userId }: { space?: Space; userId?: 
   const [vault, setVault] = useState<VaultList | null>(null);
   const [people, setPeople] = useState<Member[]>([]);
   const [failed, setFailed] = useState(false);
-  const [editing, setEditing] = useState<VaultItem | "new" | null>(null);
+  const [selection, setSelection] = useState<VaultDialog | null>(null);
+  const [query, setQuery] = useState("");
+  const visible = vault && filterVault(vault, query);
+  const hasItems = vault !== null && (vault.mine.length > 0 || vault.shared.length > 0);
+
+  function onSaved() {
+    setSelection(null);
+    setQuery("");
+    load();
+  }
 
   const load = useCallback(() => {
     setFailed(false);
@@ -78,62 +98,209 @@ export function VaultSettingsPanel({ space, userId }: { space?: Space; userId?: 
 
   return (
     <div data-testid="vault-settings" className="flex flex-col gap-4">
-      <div className="flex justify-end">
-        <Button onClick={() => setEditing("new")}>
+      <div className="flex items-center justify-end gap-2">
+        {hasItems ? (
+          <div className="relative min-w-0 flex-1 sm:max-w-56">
+            <Search
+              className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden
+            />
+            <Input
+              type="search"
+              aria-label={t`Search the vault`}
+              placeholder={t`Search`}
+              className="ps-8"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </div>
+        ) : null}
+        <Button onClick={() => setSelection({ kind: "new" })}>
           <Plus />
           {t`Add`}
         </Button>
       </div>
-      {vault === null ? (
+      {!visible ? (
         <PendingRead failed={failed} onRetry={load} />
+      ) : !hasItems ? (
+        <div className="flex flex-col items-center gap-1 rounded-card bg-group px-6 py-8 text-center shadow-group">
+          <p className="text-row-name">{t`Nothing in your vault yet`}</p>
+          <p className="text-meta text-muted-foreground">{t`Add a key, or let a bot ask you for one.`}</p>
+        </div>
+      ) : visible.mine.length === 0 && visible.shared.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-6">
+          <p className="text-meta text-muted-foreground" role="status">{t`No match`}</p>
+          <Button variant="ghost" onClick={() => setQuery("")}>{t`Clear`}</Button>
+        </div>
       ) : (
         <>
-          {vault.mine.length > 0 ? (
+          {visible.mine.length > 0 ? (
             <SettingsGroup>
-              {vault.mine.map((item) => (
+              {visible.mine.map((item) => (
                 <SettingRow
                   key={item.name}
+                  leading={<VaultTile item={item} />}
                   label={item.name}
                   subline={[new URL(item.origin).host, sharedWith(item)]
                     .filter(Boolean)
                     .join(" · ")}
                   chevron
-                  onClick={() => setEditing(item)}
+                  className="break-all"
+                  onClick={() => setSelection({ kind: "detail", item })}
                 />
               ))}
             </SettingsGroup>
           ) : null}
-          {vault.shared.length > 0 ? (
+          {visible.shared.length > 0 ? (
             <SettingsGroup label={t`Shared with you`}>
-              {vault.shared.map((item) => (
+              {visible.shared.map((item) => (
                 <SettingRow
                   key={`${item.ownerName}:${item.name}:${item.origin}`}
+                  leading={<VaultTile item={item} />}
                   label={item.name}
                   subline={`${new URL(item.origin).host} · ${item.ownerName}`}
+                  chevron
+                  className="break-all"
+                  onClick={() => setSelection({ kind: "detail", item })}
                 />
               ))}
             </SettingsGroup>
           ) : null}
         </>
       )}
-      {editing ? (
+      {selection?.kind === "detail" ? (
+        <VaultDetailDialog
+          item={selection.item}
+          sharedWith={"ownerName" in selection.item ? "" : sharedWith(selection.item)}
+          onClose={() => setSelection(null)}
+          onRemoved={onSaved}
+          onEdit={(item) => setSelection({ kind: "edit", item })}
+        />
+      ) : selection ? (
         <VaultItemDialog
-          item={editing === "new" ? null : editing}
+          item={selection.kind === "edit" ? selection.item : null}
           space={space}
           people={people}
           onShared={load}
-          onClose={() => setEditing(null)}
-          onSaved={() => {
-            setEditing(null);
-            load();
-          }}
+          onClose={() => setSelection(null)}
+          onSaved={onSaved}
         />
       ) : null}
     </div>
   );
 }
 
-/** Adds a credential, or replaces the value of `item` and offers to delete it. */
+const vaultDialogClass = "max-h-11/12 overflow-y-auto sm:max-w-md";
+
+function VaultTile({ item }: { item: BotSecretDestination }) {
+  return (
+    <span
+      aria-hidden
+      className="grid size-7 shrink-0 place-items-center rounded-row bg-muted text-label font-semibold text-muted-foreground"
+    >
+      {vaultInitial(item)}
+    </span>
+  );
+}
+
+function VaultDetailDialog({
+  item,
+  sharedWith,
+  onClose,
+  onRemoved,
+  onEdit,
+}: {
+  item: VaultItem | SharedVaultItem;
+  sharedWith: string;
+  onClose: () => void;
+  onRemoved: () => void;
+  onEdit: (item: VaultItem) => void;
+}) {
+  const { t } = useLingui();
+  const { confirm, dialog } = useConfirm();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const owned = "ownerName" in item ? null : item;
+  const auth = item.auth;
+
+  async function remove() {
+    if (!owned || busy || !(await confirm(t`Remove ${owned.name}?`, t`Remove`))) return;
+    setBusy(true);
+    setError(null);
+    try {
+      await rpc.vault.remove({ name: owned.name });
+      onRemoved();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : t`Could not remove key`);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open && !busy) onClose();
+      }}
+    >
+      <DialogContent
+        data-testid="vault-item-dialog"
+        className={vaultDialogClass}
+        showCloseButton={false}
+      >
+        <DialogHeader className="flex-row items-center">
+          <VaultTile item={item} />
+          <DialogTitle className="break-all">{item.name}</DialogTitle>
+        </DialogHeader>
+        <SettingsGroup>
+          <SettingRow label={t`Site`} subline={new URL(item.origin).host} className="break-all" />
+          <SettingRow
+            label={t`Sent as`}
+            subline={
+              auth.type === "bearer" ? "Bearer" : auth.type === "basic" ? "Basic" : t`Header`
+            }
+          />
+          {auth.type === "header" ? (
+            <SettingRow label={t`Header name`} subline={auth.name} className="break-all" />
+          ) : null}
+          {auth.type === "basic" ? (
+            <SettingRow label={t`Username`} subline={auth.username} className="break-all" />
+          ) : null}
+          <SettingRow label={t`Key`} subline={<span aria-hidden>••••••••••••</span>} />
+          {"ownerName" in item ? (
+            <SettingRow label={t`Shared by`} subline={item.ownerName} />
+          ) : null}
+          {sharedWith ? <SettingRow label={t`Shared with`} subline={sharedWith} /> : null}
+        </SettingsGroup>
+        {error ? (
+          <p role="alert" className="text-meta text-destructive">
+            {error}
+          </p>
+        ) : null}
+        <DialogFooter className="flex-row justify-end">
+          {owned ? (
+            <>
+              <Button
+                variant="ghost"
+                className="me-auto text-destructive"
+                disabled={busy}
+                onClick={() => void remove()}
+              >{t`Remove`}</Button>
+              <Button
+                variant="outline"
+                disabled={busy}
+                onClick={() => onEdit(owned)}
+              >{t`Edit`}</Button>
+            </>
+          ) : null}
+          <Button disabled={busy} onClick={onClose}>{t`Done`}</Button>
+        </DialogFooter>
+        {dialog}
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function VaultItemDialog({
   item,
   space,
@@ -150,7 +317,6 @@ function VaultItemDialog({
   onSaved: () => void;
 }) {
   const { t } = useLingui();
-  const { confirm, dialog } = useConfirm();
   const [site, setSite] = useState("");
   const [name, setName] = useState("");
   const [authType, setAuthType] = useState<AuthType>("bearer");
@@ -189,11 +355,6 @@ function VaultItemDialog({
     void run(() => rpc.vault.put({ ...destination, value }));
   }
 
-  async function remove() {
-    if (!item || busy || !(await confirm(t`Delete ${item.name}?`, t`Delete`))) return;
-    void run(() => rpc.vault.remove({ name: item.name }));
-  }
-
   return (
     <Dialog
       open
@@ -201,7 +362,11 @@ function VaultItemDialog({
         if (!open && !busy) onClose();
       }}
     >
-      <DialogContent data-testid="vault-item-dialog">
+      <DialogContent
+        data-testid="vault-item-dialog"
+        className={vaultDialogClass}
+        showCloseButton={false}
+      >
         <DialogHeader>
           <DialogTitle>{item ? item.name : t`New API key`}</DialogTitle>
         </DialogHeader>
@@ -269,18 +434,7 @@ function VaultItemDialog({
             autoFocus={item !== null}
           />
           {error ? <p className="text-meta text-destructive">{error}</p> : null}
-          <DialogFooter>
-            {item ? (
-              <Button
-                type="button"
-                variant="ghost"
-                className="me-auto text-destructive"
-                disabled={busy}
-                onClick={() => void remove()}
-              >
-                {t`Delete`}
-              </Button>
-            ) : null}
+          <DialogFooter className="flex-row justify-end">
             <Button type="button" variant="outline" disabled={busy} onClick={onClose}>
               {t`Cancel`}
             </Button>
@@ -289,7 +443,6 @@ function VaultItemDialog({
             </Button>
           </DialogFooter>
         </form>
-        {dialog}
       </DialogContent>
     </Dialog>
   );

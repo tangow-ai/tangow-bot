@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### 2026-11-28
+
+#### Added
+
+- **Save and share API keys in your Vault.** On web, desktop, and mobile, add a key yourself or save it when a bot asks for one, then find it in the Vault. Keep keys private or share them with people in your space without revealing the key values.
+
 ### 2026-11-23
 
 #### Added

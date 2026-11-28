@@ -96,6 +96,7 @@ export * from "./thread-subscription.js";
 export * from "./thread-time-markers.js";
 export * from "./tool-activity.js";
 export * from "./usage-breakdown.js";
+export { filterVault, vaultInitial } from "./vault.js";
 export * from "./waiting-ask.js";
 export * from "./worker-plan.js";
 export * from "./worker-stop.js";
