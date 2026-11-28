@@ -22,6 +22,39 @@ msgstr " (unread)"
 msgid "(empty)"
 msgstr "(empty)"
 
+#: src/pages/VaultSettingsPanel.tsx:127
+msgid "Add a key, or let a bot ask you for one."
+msgstr "Add a key, or let a bot ask you for one."
+
+#: src/pages/VaultSettingsPanel.tsx:233
+msgid "Could not remove key"
+msgstr "Could not remove key"
+
+#: src/pages/VaultSettingsPanel.tsx:131
+msgid "No match"
+msgstr "No match"
+
+#: src/pages/VaultSettingsPanel.tsx:126
+msgid "Nothing in your vault yet"
+msgstr "Nothing in your vault yet"
+
+#. placeholder {0}: owned.name
+#: src/pages/VaultSettingsPanel.tsx:226
+msgid "Remove {0}?"
+msgstr "Remove {0}?"
+
+#: src/components/AskCard.tsx:61
+msgid "Saved in <0>Vault</0>"
+msgstr "Saved in <0>Vault</0>"
+
+#: src/pages/VaultSettingsPanel.tsx:109
+msgid "Search the vault"
+msgstr "Search the vault"
+
+#: src/pages/VaultSettingsPanel.tsx:270
+msgid "Shared by"
+msgstr "Shared by"
+
 #. placeholder {0}: totals.compactions.count
 #. placeholder {1}: tokens(totals.compactions.inputTokens)
 #. placeholder {2}: tokens(totals.compactions.outputTokens)

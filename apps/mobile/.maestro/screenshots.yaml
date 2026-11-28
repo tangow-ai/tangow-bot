@@ -135,12 +135,16 @@ tags:
 - assertVisible: "release_api(, .*)?"
 - takeScreenshot: "10f-vault"
 - tapOn: "example_api(, .*)?"
+- assertVisible: "Site"
+- assertVisible: "Remove"
+- takeScreenshot: "10g-vault-detail"
+- tapOn: "Edit"
 - assertVisible: "Key"
 - extendedWaitUntil:
     visible: "Shared with"
     timeout: 10000
 - assertVisible: "Grace Hopper(, .*)?"
-- takeScreenshot: "10g-vault-replace"
+- takeScreenshot: "10h-vault-replace"
 - tapOn: "Cancel"
 - runFlow:
     file: subflows/open-link.yaml

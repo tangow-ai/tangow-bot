@@ -1,4 +1,5 @@
 import type { BotSecretDestination, VaultItem as Key } from "@tangow/contracts";
+import { SharedVaultItem, VaultItem as VaultItemSchema } from "@tangow/contracts";
 import { Stack, useLocalSearchParams, useRouter } from "expo-router";
 import type { ComponentProps } from "react";
 import { useEffect, useState } from "react";
@@ -28,14 +29,27 @@ function siteOrigin(site: string): string {
   }
 }
 
-/** Adds a credential, or replaces the value of the one passed in and offers to delete it. */
+function readItem(param?: string) {
+  if (!param) return null;
+  try {
+    const value: unknown = JSON.parse(param);
+    const owned = VaultItemSchema.safeParse(value);
+    if (owned.success) return owned.data;
+    const shared = SharedVaultItem.safeParse(value);
+    return shared.success ? shared.data : null;
+  } catch {
+    return null;
+  }
+}
 export default function VaultItem() {
   const { t } = useI18n();
   const router = useRouter();
   const tokens = useMobileTokens();
   const styles = useThemedStyles(createVaultItemStyles);
   const params = useLocalSearchParams<{ item?: string }>();
-  const item = params.item ? (JSON.parse(params.item) as Key) : null;
+  const selected = readItem(params.item);
+  const item = selected && !("ownerName" in selected) ? selected : null;
+  const [editing, setEditing] = useState(false);
   const [site, setSite] = useState("");
   const [name, setName] = useState("");
   const [authType, setAuthType] = useState<AuthType>("bearer");
@@ -53,14 +67,14 @@ export default function VaultItem() {
     else router.replace("/vault");
   }
 
-  async function run(action: () => Promise<unknown>) {
+  async function run(action: () => Promise<unknown>, fallback: string) {
     setBusy(true);
     setError(null);
     try {
       await action();
       close();
     } catch (cause) {
-      setError(serverMessage(cause) || t("Could not save"));
+      setError(serverMessage(cause) || fallback);
       setBusy(false);
     }
   }
@@ -78,19 +92,79 @@ export default function VaultItem() {
       : { name, origin: siteOrigin(site), auth };
     // Cleared before the request, so the value is never shown again.
     setValue("");
-    void run(() => rpc("vault/put", { ...destination, value }));
+    void run(() => rpc("vault/put", { ...destination, value }), t("Could not save"));
   }
 
   function remove() {
     if (!item || busy) return;
-    Alert.alert(t("Delete {name}?", { name: item.name }), undefined, [
+    Alert.alert(t("Remove {name}?", { name: item.name }), undefined, [
       { text: t("Cancel"), style: "cancel" },
       {
-        text: t("Delete"),
+        text: t("Remove"),
         style: "destructive",
-        onPress: () => void run(() => rpc("vault/remove", { name: item.name })),
+        onPress: () =>
+          void run(() => rpc("vault/remove", { name: item.name }), t("Could not remove key")),
       },
     ]);
+  }
+
+  if (selected && !editing) {
+    const auth = selected.auth;
+    return (
+      <>
+        <Stack.Screen
+          options={{
+            title: selected.name,
+            headerBackVisible: false,
+            unstable_headerLeftItems: () =>
+              item
+                ? [
+                    {
+                      type: "button",
+                      label: t("Edit"),
+                      disabled: busy,
+                      onPress: () => {
+                        setError(null);
+                        setEditing(true);
+                      },
+                    },
+                  ]
+                : [],
+            unstable_headerRightItems: () => [
+              { type: "button", label: t("Done"), variant: "done", disabled: busy, onPress: close },
+            ],
+          }}
+        />
+        <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+          <Group>
+            <Row label={t("Site")} subline={new URL(selected.origin).host} />
+            <Row
+              label={t("Sent as")}
+              subline={
+                auth.type === "bearer" ? "Bearer" : auth.type === "basic" ? "Basic" : t("Header")
+              }
+            />
+            {auth.type === "header" ? <Row label={t("Header name")} subline={auth.name} /> : null}
+            {auth.type === "basic" ? <Row label={t("Username")} subline={auth.username} /> : null}
+            <Row label={t("Key")} subline="••••••••••••" />
+            {"ownerName" in selected ? (
+              <Row label={t("Shared by")} subline={selected.ownerName} />
+            ) : null}
+          </Group>
+          <SpokenError>{error}</SpokenError>
+          {item ? (
+            <Pressable
+              accessibilityRole="button"
+              disabled={busy}
+              onPress={remove}
+              style={({ pressed }) => [styles.delete, pressed && styles.pressed]}
+            >
+              <Text style={styles.deleteLabel}>{t("Remove")}</Text>
+            </Pressable>
+          ) : null}
+        </ScrollView>
+      </>
+    );
   }
 
   const field = (
@@ -196,16 +270,6 @@ export default function VaultItem() {
           autoFocus: item !== null,
         })}
         <SpokenError>{error}</SpokenError>
-        {item ? (
-          <Pressable
-            accessibilityRole="button"
-            disabled={busy}
-            onPress={remove}
-            style={({ pressed }) => [styles.delete, pressed && styles.pressed]}
-          >
-            <Text style={styles.deleteLabel}>{t("Delete")}</Text>
-          </Pressable>
-        ) : null}
       </ScrollView>
     </>
   );

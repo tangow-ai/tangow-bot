@@ -16,7 +16,7 @@ import { Button, FramedBlock, Input, Textarea } from "@tangow/ui-web";
 import { ChevronRight, Repeat } from "lucide-react";
 import type { ComponentProps, ReactNode } from "react";
 import { Fragment, useId, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { approvalActionLabel } from "../lib/approval-labels";
 import { QuestionCard } from "./ask/QuestionCard";
 import { DraftCard } from "./DraftCard";
@@ -51,6 +51,24 @@ function formatAnsweredState(
   if (answer === "always") return t`Always allowed`;
   if (answer === "deny") return t`Denied`;
   return t`Answered: ${answer}`;
+}
+
+function VaultSaved() {
+  const { search } = useLocation();
+  const params = new URLSearchParams(search);
+  params.set("settings", "vault");
+  return (
+    <Trans>
+      Saved in{" "}
+      <Link
+        className="text-foreground underline underline-offset-2"
+        to={{ search: params.toString() }}
+        replace
+      >
+        Vault
+      </Link>
+    </Trans>
+  );
 }
 
 /** What became of a routine card: a link to the routine, or why there is none. */
@@ -254,6 +272,8 @@ export function AskCard({
     block.status === "answered" ? (
       routineCard ? (
         <RoutineSettled block={block} botId={botId} />
+      ) : secretInput && block.credential ? (
+        <VaultSaved />
       ) : (
         formatAnsweredState(
           block.answer,

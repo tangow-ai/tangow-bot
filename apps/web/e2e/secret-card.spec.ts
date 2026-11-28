@@ -76,7 +76,7 @@ test("renders masked secret card and saves without putting the value in chat", a
   await secretField.fill(secretValue);
   await card.getByRole("button", { name: "Save", exact: true }).click();
 
-  await expect(page.getByText("Saved", { exact: true })).toBeVisible({ timeout: 30_000 });
+  await expect(card.getByRole("link", { name: "Vault" })).toBeVisible({ timeout: 30_000 });
   await expect(page.getByText(secretValue)).toHaveCount(0);
   await expect(composer).not.toHaveValue(secretValue);
 
@@ -109,8 +109,15 @@ test("renders masked secret card and saves without putting the value in chat", a
   const history = await rpc(page, "threads/messages", { botId });
   expect(JSON.stringify(history)).not.toContain(secretValue);
   await page.reload({ waitUntil: "domcontentloaded" });
-  await expect(card.getByText("Saved", { exact: true })).toBeVisible();
+  await expect(card.getByRole("link", { name: "Vault" })).toBeVisible();
   await expect(card.locator("input")).toHaveCount(0);
   await expect(page.getByText(secretValue)).toHaveCount(0);
+  await expect(card).toContainText("Saved in Vault");
   await captureScreenshot(page, testInfo, "secret-card-saved");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await captureScreenshot(page, testInfo, "secret-card-saved-phone");
+  await card.getByRole("link", { name: "Vault" }).click();
+  await expect(
+    page.getByTestId("vault-settings").getByRole("button", { name: /example_api/ }),
+  ).toBeVisible();
 });

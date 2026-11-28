@@ -21,31 +21,58 @@ test("adds, replaces and deletes a vault key without ever showing its value", as
   const dialog = page.getByTestId("vault-item-dialog");
   const row = settings.getByRole("button", { name: /example_api/ });
 
+  const desktop = page.viewportSize();
+  async function capture(name: string) {
+    await captureScreenshot(page, testInfo, name);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await captureScreenshot(page, testInfo, `${name}-phone`);
+    if (desktop) await page.setViewportSize(desktop);
+  }
+
+  await expect(settings.getByText("Nothing in your vault yet")).toBeVisible();
+  await capture("vault-empty");
   await settings.getByRole("button", { name: "Add", exact: true }).click();
   await dialog.getByLabel("Site").fill("api.example.test");
   await dialog.getByLabel("Name").fill("example_api");
+  await expect(dialog.getByLabel("Key")).toHaveAttribute("type", "password");
   await dialog.getByLabel("Key").fill(first);
-  await captureScreenshot(page, testInfo, "vault-add");
+  await capture("vault-add");
+  await dialog.getByRole("button", { name: "Header", exact: true }).click();
+  await dialog.getByLabel("Header name").fill("X-Example-Key");
   await dialog.getByRole("button", { name: "Save", exact: true }).click();
   await expect(row).toContainText("api.example.test");
-  await captureScreenshot(page, testInfo, "vault-list");
+
+  const search = settings.getByRole("searchbox", { name: "Search the vault" });
+  await search.fill("no-such-key");
+  await expect(row).toBeHidden();
+  await expect(settings.getByText("No match")).toBeVisible();
+  await settings.getByRole("button", { name: "Clear", exact: true }).click();
+  await expect(row).toBeVisible();
+  await search.fill("API.EXAMPLE");
+  await expect(row).toBeVisible();
+  await capture("vault-list-search");
 
   await row.click();
+  await expect(dialog.getByRole("heading", { name: "example_api" })).toBeVisible();
+  await expect(dialog.getByText("X-Example-Key")).toBeVisible();
+  await capture("vault-detail");
+  await dialog.getByRole("button", { name: "Done" }).click();
+  await expect(dialog).toBeHidden();
+  await row.click();
+  await dialog.getByRole("button", { name: "Edit" }).click();
   await expect(dialog.getByLabel("Key")).toHaveValue("");
   await dialog.getByLabel("Key").fill(second);
   await dialog.getByRole("button", { name: "Replace key" }).click();
   await expect(dialog).toBeHidden();
 
-  await page.setViewportSize({ width: 390, height: 844 });
   await row.click();
-  await expect(dialog.getByLabel("Key")).toHaveValue("");
-  await captureScreenshot(page, testInfo, "vault-replace-phone");
+  await expect(dialog.locator("input")).toHaveCount(0);
   for (const value of [first, second]) {
     await expect(page.locator("body")).not.toContainText(value);
   }
-  await dialog.getByRole("button", { name: "Delete", exact: true }).click();
-  await page.getByRole("alertdialog").getByRole("button", { name: "Delete" }).click();
-  await expect(row).toBeHidden();
+  await dialog.getByRole("button", { name: "Remove", exact: true }).click();
+  await page.getByRole("alertdialog").getByRole("button", { name: "Remove" }).click();
+  await expect(settings.getByText("Nothing in your vault yet")).toBeVisible();
 });
 
 test("an owner shares the key a bot saved with someone, who sees it under Shared with you", async ({
@@ -119,6 +146,7 @@ test("an owner shares the key a bot saved with someone, who sees it under Shared
   await captureScreenshot(page, testInfo, "vault-share-list");
   await settings.getByRole("button", { name: /example_api/ }).click();
   const dialog = page.getByTestId("vault-item-dialog");
+  await dialog.getByRole("button", { name: "Edit" }).click();
   await expect(dialog.getByRole("checkbox", { name: "Grace Guest" })).toBeChecked();
   await expect(dialog.getByRole("switch", { name: "Everyone in Studio" })).not.toBeChecked();
   await page.setViewportSize({ width: 390, height: 844 });
@@ -132,6 +160,13 @@ test("an owner shares the key a bot saved with someone, who sees it under Shared
   await captureScreenshot(guest, testInfo, "vault-shared-with-you");
   await guest.setViewportSize({ width: 390, height: 844 });
   await captureScreenshot(guest, testInfo, "vault-shared-with-you-phone");
+  await guestSettings.getByRole("searchbox").fill("ada owner");
+  await guestSettings.getByRole("button", { name: /example_api/ }).click();
+  const sharedDetail = guest.getByTestId("vault-item-dialog");
+  await expect(sharedDetail.getByText("Ada Owner")).toBeVisible();
+  await expect(sharedDetail.getByRole("button", { name: "Edit" })).toHaveCount(0);
+  await expect(sharedDetail.getByRole("button", { name: "Remove" })).toHaveCount(0);
+  await sharedDetail.getByRole("button", { name: "Done" }).click();
   for (const view of [page, guest]) await expect(view.locator("body")).not.toContainText(value);
   await guestContext.close();
 });

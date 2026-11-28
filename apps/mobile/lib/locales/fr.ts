@@ -844,6 +844,15 @@ export const FR_MESSAGES: Record<string, string> = {
   Key: "Clé",
   Everyone: "Tout le monde",
   "Shared with you": "Partagées avec vous",
+  "Saved in Vault": "Enregistrée dans le coffre",
+  "Remove {name}?": "Supprimer {name} ?",
+  "Could not remove key": "Impossible de supprimer la clé",
+  "Search the vault": "Rechercher dans le coffre",
+  "No match": "Aucun résultat",
+  "Nothing in your vault yet": "Votre coffre est vide",
+  "Add a key, or let a bot ask you for one.":
+    "Ajoutez une clé, ou laissez un bot vous en demander une.",
+  "Shared by": "Partagée par",
   "Shared with": "Partagée avec",
   Keys: "Clés",
   "Every current and future member of {space} can use this key on its site, from their bots and yours that you can see, including webhooks and routines.":

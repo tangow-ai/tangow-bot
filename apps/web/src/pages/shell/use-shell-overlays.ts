@@ -33,6 +33,19 @@ export function useShellOverlays(sessionUser: unknown, spaceId: string | undefin
   }, [params, setParams]);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection | null>(null);
+  useEffect(() => {
+    if (params.get("settings") !== "vault") return;
+    setSettingsSection("vault");
+    setSettingsOpen(true);
+    setParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        next.delete("settings");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [params, setParams]);
   const [messagingSettingsOpen, setMessagingSettingsOpen] = useState(false);
   const [messagingSurfaceEnabled, setMessagingSurfaceEnabled] = useState(false);
   const [messagingProviders, setMessagingProviders] = useState<string[]>([]);

@@ -22,6 +22,39 @@ msgstr " (अपठित)"
 msgid "(empty)"
 msgstr "(खाली)"
 
+#: src/pages/VaultSettingsPanel.tsx:127
+msgid "Add a key, or let a bot ask you for one."
+msgstr ""
+
+#: src/pages/VaultSettingsPanel.tsx:233
+msgid "Could not remove key"
+msgstr ""
+
+#: src/pages/VaultSettingsPanel.tsx:131
+msgid "No match"
+msgstr ""
+
+#: src/pages/VaultSettingsPanel.tsx:126
+msgid "Nothing in your vault yet"
+msgstr ""
+
+#. placeholder {0}: owned.name
+#: src/pages/VaultSettingsPanel.tsx:226
+msgid "Remove {0}?"
+msgstr ""
+
+#: src/components/AskCard.tsx:61
+msgid "Saved in <0>Vault</0>"
+msgstr ""
+
+#: src/pages/VaultSettingsPanel.tsx:109
+msgid "Search the vault"
+msgstr ""
+
+#: src/pages/VaultSettingsPanel.tsx:270
+msgid "Shared by"
+msgstr ""
+
 #. placeholder {0}: totals.compactions.count
 #. placeholder {1}: tokens(totals.compactions.inputTokens)
 #. placeholder {2}: tokens(totals.compactions.outputTokens)
