@@ -21,6 +21,7 @@ import type {
   NotificationMessage,
   NotificationProvider,
   SandboxProvider,
+  SecretStore,
   SemanticMemoryProvider,
   SessionEntryDraft,
   SessionLog,
@@ -807,6 +808,7 @@ export interface ExecutorDeps {
   connectors?: { managed(id: string): ManagedConnectorProvider | undefined };
   secrets: string[];
   secretStore: EncryptedSecretStore;
+  vaultSecretStore: SecretStore;
   deploymentModelKey?: string;
   dataDir?: string;
   notifications?: NotificationProvider;
@@ -4919,7 +4921,7 @@ export function createRunExecutor(deps: ExecutorDeps) {
             try {
               const result = await requestWithBotSecret({
                 prisma: deps.prisma,
-                secretStore: deps.secretStore,
+                secretStore: deps.vaultSecretStore,
                 scope: run,
                 request: args,
                 signal: context.signal,
@@ -6302,7 +6304,7 @@ export function createRunExecutor(deps: ExecutorDeps) {
                   skills,
                   sources,
                   runSecrets,
-                  deps.secretStore,
+                  deps.vaultSecretStore,
                   receivedAt,
                 ),
               attempt: { id: attempt.id, fence },

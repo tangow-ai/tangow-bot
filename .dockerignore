@@ -42,3 +42,4 @@ apps/desktop/out
 
 # OpenBao unseal key and bootstrap credentials
 infra/compose/openbao-private
+infra/compose/.env.tangow-vault-*

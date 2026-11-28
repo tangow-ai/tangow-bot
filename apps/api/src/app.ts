@@ -36,6 +36,7 @@ import {
   createSandboxProvider,
   createSkillLineSweep,
   createTraceExporterFromEnv,
+  createVaultSecretStore,
   createWebProvider,
   createWorkerProvider,
   destroyBot,
@@ -171,9 +172,10 @@ export async function createApp(
         })
       : new InMemoryRealtimeFanout());
   const secrets = new EncryptedSecretStore(env.encryptionKey);
+  const vaultSecrets = createVaultSecretStore(env.encryptionKey, env.vault);
   await moveMcpSources(prisma, secrets, (message) => logger.warn(message));
   const events = createThreadEvents(prisma, realtime, {
-    runSecretWriter: createRunSecretWriter(secrets),
+    runSecretWriter: createRunSecretWriter(secrets, vaultSecrets),
   });
   const environmentSignupPolicy = signupPolicyFromEnv(env);
   const deploymentSettings = await prisma.deploymentSettings.upsert({
@@ -411,6 +413,7 @@ export async function createApp(
       feedback?.secret ?? "",
     ].filter(Boolean),
     secretStore: secrets,
+    vaultSecretStore: vaultSecrets,
     secretHttp: remoteConnectors,
     deploymentModelKey: env.deploymentModelKey,
     dataDir: env.dataDir,

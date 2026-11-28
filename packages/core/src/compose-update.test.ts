@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
 import {
@@ -115,7 +116,11 @@ describe("mode selection", () => {
     });
     expect(source.kind).toBe("source");
     expect(source.mode).toBe("checkout");
-    expect(manualUpgradeCommands("compose")).toEqual([...COMPOSE_UPGRADE_COMMANDS]);
+    const docs = readFileSync(new URL("../../../docs/self-host.md", import.meta.url), "utf8");
+    const upgrade = docs.split("\n## Upgrade\n")[1]?.match(/```bash\n([\s\S]+?)\n```/)?.[1];
+    const documentedCommands = upgrade?.replace(/ +\\\n +/g, " ").split("\n");
+    expect(COMPOSE_UPGRADE_COMMANDS).toEqual(documentedCommands);
+    expect(manualUpgradeCommands("compose")).toEqual(documentedCommands);
     expect(manualUpgradeCommands("source")).toEqual([...SOURCE_MANUAL_UPGRADE_COMMANDS]);
     expect(manualUpgradeCommands("sidecar")).toEqual([]);
   });

@@ -182,6 +182,8 @@ export function resolveInstallKind(input: {
 /** Exact host commands from docs/self-host.md for a Compose install: rebuild from the checkout. */
 export const COMPOSE_UPGRADE_COMMANDS = [
   "git pull",
+  'docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/checkout" -w /checkout node:22-bookworm@sha256:0557ac14e0d45d02ed563067b82856ca5e7aa3437fa28d98d4350ea9c3d9494a node scripts/tangow-vault.mjs',
+  "docker compose --env-file .env -f infra/compose/docker-compose.prod.yml pull --policy missing openbao",
   "GIT_SHA=$(git rev-parse HEAD) docker compose --env-file .env -f infra/compose/docker-compose.prod.yml up -d --wait --pull never --build api worker web",
 ] as const;
 
@@ -246,6 +248,13 @@ function targetServices(target: ComposeTarget): readonly string[] {
 }
 
 const RESTORE_WAIT_TIMEOUT_S = 300;
+
+export function composePullArgv(target: ComposeTarget, service: string): ComposeInvocation {
+  return {
+    command: "docker",
+    args: [...composeBase(target), "pull", "--policy", "missing", service],
+  };
+}
 
 /**
  * `restore` brings back a previous image without its dependencies: a release older than the

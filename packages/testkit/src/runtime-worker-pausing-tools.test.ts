@@ -239,7 +239,7 @@ describe("pausing tools a worker harness leaves to the controller", () => {
 
     const secrets = new EncryptedSecretStore("worker-fixture-encryption-key");
     const events = createThreadEvents(g.run.prisma, undefined, {
-      runSecretWriter: createRunSecretWriter(secrets),
+      runSecretWriter: createRunSecretWriter(secrets, secrets),
     });
     expect(
       await events.answerRunInput({

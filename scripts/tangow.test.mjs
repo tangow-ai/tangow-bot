@@ -769,3 +769,50 @@ finally:
   assert.equal(readFileSync(path.join(f.root, ".env"), "utf8"), original);
   assert.equal(existsSync(path.join(f.root, ".env.tangow.lock")), false);
 });
+
+test("production vault setup creates private files silently and preserves existing values", (t) => {
+  const root = mkdtempSync(path.join(tmpdir(), "tangow-vault-"));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  mkdirSync(path.join(root, "scripts"));
+  const script = path.join(root, "scripts/tangow-vault.mjs");
+  copyFileSync(new URL("./tangow-vault.mjs", import.meta.url), script);
+  const run = () => {
+    const result = spawnSync(
+      process.execPath,
+      [
+        "-e",
+        'process.umask(0o077); import(require("node:url").pathToFileURL(process.argv[1]));',
+        script,
+      ],
+      { encoding: "utf8" },
+    );
+    return result;
+  };
+  const runSuccessfully = () => {
+    const result = run();
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(result.stdout + result.stderr, "");
+  };
+  const vault = path.join(root, "infra/compose/openbao-private");
+  const key = path.join(vault, "unseal.key");
+  const role = path.join(vault, "role-id");
+  const secret = path.join(vault, "secret-id");
+  runSuccessfully();
+  assert.equal(statSync(vault).mode & 0o777, 0o700);
+  for (const file of [key, role, secret]) assert.equal(statSync(file).mode & 0o777, 0o444);
+  const originalKey = readFileSync(key);
+  const originalRole = readFileSync(role, "utf8");
+  assert.equal(originalKey.length, 32);
+  assert.match(originalRole, /^[a-f0-9]{64}$/);
+  const originalSecret = readFileSync(secret, "utf8");
+  runSuccessfully();
+  assert.equal(readFileSync(secret, "utf8"), originalSecret);
+  rmSync(secret);
+  const partial = run();
+  assert.notEqual(partial.status, 0);
+  assert.match(partial.stderr, /Restore all three original vault files/);
+  assert.equal(existsSync(secret), false);
+  assert.deepEqual(readFileSync(key), originalKey);
+  assert.equal(readFileSync(role, "utf8"), originalRole);
+  assert.match(originalSecret, /^[a-f0-9]{64}$/);
+});

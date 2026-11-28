@@ -289,7 +289,7 @@ export async function startWorkerRun<
     data: { spaceId: SPACE, userId: USER, botId: bot.id },
   });
   const events = createThreadEvents(prisma, undefined, {
-    runSecretWriter: createRunSecretWriter(secretStore),
+    runSecretWriter: createRunSecretWriter(secretStore, secretStore),
   });
 
   const build = () => {
@@ -326,6 +326,7 @@ export async function startWorkerRun<
       memory: options.memory ?? emptyMemory,
       memoryProviders: options.memoryProviders ?? { resolve: async () => null },
       secretStore,
+      vaultSecretStore: secretStore,
       jobs: new InMemoryJobQueue(),
       skillLock: createInMemorySkillLock(),
       skillLearning: "off",

@@ -1,3 +1,6 @@
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { OpenBaoSecretStore } from "./openbao-secret-store.js";
 import { testSecretStore } from "./secret-store-conformance.test-support.js";
@@ -136,5 +139,22 @@ describe("OpenBao transport", () => {
       VAULT_ENGINE_CREDENTIAL: JSON.stringify({ roleId, secretId }),
     });
     await expect(remote.seal("secret", "record")).resolves.toMatch(/^vault:v1:/);
+  });
+
+  it("authenticates with mounted AppRole files", async () => {
+    const directory = mkdtempSync(join(tmpdir(), "tangow-vault-"));
+    try {
+      writeFileSync(join(directory, "role-id"), roleId);
+      writeFileSync(join(directory, "secret-id"), secretId);
+      vi.stubGlobal("fetch", fixture().fetch);
+      const remote = createVaultSecretStore("fixture-key", {
+        VAULT_ENGINE: "openbao",
+        VAULT_ENGINE_URL: baseUrl,
+        VAULT_ENGINE_CREDENTIAL_DIR: directory,
+      });
+      await expect(remote.seal("secret", "record")).resolves.toMatch(/^vault:v1:/);
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
   });
 });

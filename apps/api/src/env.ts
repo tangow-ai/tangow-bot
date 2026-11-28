@@ -27,6 +27,10 @@ export interface AppEnv {
   signupsEnabled: string | undefined;
   signupAllowlist: string | undefined;
   encryptionKey: string;
+  vault: Pick<
+    NodeJS.ProcessEnv,
+    "VAULT_ENGINE" | "VAULT_ENGINE_URL" | "VAULT_ENGINE_CREDENTIAL" | "VAULT_ENGINE_CREDENTIAL_DIR"
+  >;
   dataDir: string;
   /** SKILL_LEARNING: off, shadow (default) or on. */
   skillLearning: SkillLearningMode;
@@ -102,6 +106,12 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
     signupsEnabled: source.SIGNUPS_ENABLED,
     signupAllowlist: source.SIGNUP_ALLOWLIST,
     encryptionKey: resolveEncryptionKey(source),
+    vault: {
+      VAULT_ENGINE: source.VAULT_ENGINE,
+      VAULT_ENGINE_URL: source.VAULT_ENGINE_URL,
+      VAULT_ENGINE_CREDENTIAL: source.VAULT_ENGINE_CREDENTIAL,
+      VAULT_ENGINE_CREDENTIAL_DIR: source.VAULT_ENGINE_CREDENTIAL_DIR,
+    },
     dataDir: source.DATA_DIR ?? "./data",
     skillLearning: parseSkillLearningMode(source.SKILL_LEARNING),
     sandboxSupervisorUrl: source.SANDBOX_SUPERVISOR_URL ?? "http://127.0.0.1:7091",

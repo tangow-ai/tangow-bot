@@ -26,6 +26,7 @@ import {
   createSandboxProvider,
   createSkillLineSweep,
   createTraceExporterFromEnv,
+  createVaultSecretStore,
   createWebProvider,
   createWorkerProvider,
   databaseCapacityBackoffMs,
@@ -81,9 +82,11 @@ async function main() {
     connectionString: process.env.REALTIME_DATABASE_URL ?? databaseUrl,
     publisher: pool,
   });
-  const secrets = new EncryptedSecretStore(resolveEncryptionKey(process.env));
+  const encryptionKey = resolveEncryptionKey(process.env);
+  const secrets = new EncryptedSecretStore(encryptionKey);
+  const vaultSecrets = createVaultSecretStore(encryptionKey, process.env);
   const events = createThreadEvents(prisma, realtime, {
-    runSecretWriter: createRunSecretWriter(secrets),
+    runSecretWriter: createRunSecretWriter(secrets, vaultSecrets),
   });
   const dataDir = process.env.DATA_DIR ?? "./data";
   // Same resolver the API uses, so both processes agree on provider, model and key.
@@ -205,6 +208,7 @@ async function main() {
       feedback?.secret ?? "",
     ].filter(Boolean),
     secretStore: secrets,
+    vaultSecretStore: vaultSecrets,
     deploymentModelKey,
     dataDir,
     notifications: new ExpoPushProvider(dataDir),

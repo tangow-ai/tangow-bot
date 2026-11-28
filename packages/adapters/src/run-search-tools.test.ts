@@ -239,6 +239,7 @@ describe("search_runs authorization and archive discovery", () => {
       };
       let currentId = old.id;
       const requests: AgentRunRequest[] = [];
+      const secretStore = new EncryptedSecretStore("fixture-only-key");
       const executor = createRunExecutor({
         prisma: database.prisma,
         sessionLog: log,
@@ -248,7 +249,8 @@ describe("search_runs authorization and archive discovery", () => {
         dataDir: root,
         memory,
         memoryProviders: { resolve: async () => null },
-        secretStore: new EncryptedSecretStore("fixture-only-key"),
+        secretStore,
+        vaultSecretStore: secretStore,
         jobs: new InMemoryJobQueue(),
         skillLock: createInMemorySkillLock(),
         skillLearning: "off",

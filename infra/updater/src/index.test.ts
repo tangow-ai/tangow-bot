@@ -191,6 +191,65 @@ describe("updater HTTP surface", () => {
 });
 
 describe("updater orchestration", () => {
+  it.each([
+    { endpoint: "/apply", production: true, script: true, prepares: true },
+    { endpoint: "/apply", production: true, script: false, prepares: false },
+    { endpoint: "/apply", production: false, script: true, prepares: false },
+    { endpoint: "/rollback", production: true, script: true, prepares: false },
+  ])(
+    "prepares the vault for $endpoint with production=$production and script=$script",
+    async ({ endpoint, production, script, prepares }) => {
+      const { config, deployDir } = await checkoutDeployment();
+      const helper = path.join(deployDir, "scripts/tangow-vault.mjs");
+      if (script) {
+        await mkdir(path.dirname(helper));
+        await writeFile(helper, "");
+      }
+      const overlay = path.join(deployDir, "overlay.yml");
+      const composeFiles = production ? [...config.composeFiles, overlay] : [overlay];
+      const calls: Array<{ command: string; args: string[] }> = [];
+      const checkout = checkoutRunner();
+      const subject = createUpdaterApp(
+        { ...config, composeFiles },
+        {
+          run: async (command, args, options) => {
+            calls.push({ command, args });
+            return checkout(command, args, options);
+          },
+        },
+      );
+      const response = await request(
+        subject,
+        endpoint,
+        endpoint === "/apply"
+          ? {
+              repoUrl: "https://github.com/tangow-ai/tangow-bot",
+              branch: "main",
+            }
+          : undefined,
+      );
+      const record = (await response.json()) as ServerUpdateRun;
+      expect(record.ok).toBe(true);
+      expect(record.steps.map(({ id }) => id).slice(endpoint === "/apply" ? 3 : 0)).toEqual(
+        prepares ? ["prepare-vault", "pull-vault", "recreate"] : ["recreate"],
+      );
+      const prepare = calls.findIndex(
+        ({ command, args }) => command === "node" && args[0] === helper,
+      );
+      const pull = calls.findIndex(
+        ({ args }) => args.slice(-4).join(" ") === "pull --policy missing openbao",
+      );
+      if (prepares) {
+        expect(prepare).toBeGreaterThan(-1);
+        expect(pull).toBeGreaterThan(prepare);
+        expect(calls.findIndex(({ args }) => args.includes("--build"))).toBeGreaterThan(pull);
+      } else {
+        expect(prepare).toBe(-1);
+        expect(calls.some(({ args }) => args.includes("pull"))).toBe(false);
+      }
+    },
+  );
+
   it("serializes updates before their asynchronous preflight can race", async () => {
     const fixture = await checkoutDeployment();
     let releaseGate: ((result: ReturnType<typeof ok>) => void) | undefined;

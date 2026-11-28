@@ -1,4 +1,4 @@
-import type { AdapterContext, ManagedConnectorProvider } from "@tangow/adapter-kit";
+import type { AdapterContext, ManagedConnectorProvider, SecretStore } from "@tangow/adapter-kit";
 import { SecretAskPurpose } from "@tangow/contracts";
 import type { PrismaClient, RunSecretWriter } from "@tangow/db";
 import { type ApprovalPausedToolResult, resolveDuplicateEffectGate } from "./approval-effect.js";
@@ -109,13 +109,16 @@ export async function reconcileManagedConnection(
   return "pending";
 }
 
-export function createRunSecretWriter(secretStore: EncryptedSecretStore): RunSecretWriter {
+export function createRunSecretWriter(
+  secretStore: EncryptedSecretStore,
+  vaultSecretStore: SecretStore,
+): RunSecretWriter {
   return {
     async store({ runId, userId, spaceId, botId, credential, plaintext, tx }) {
       if (credential) {
         await storeBotSecret({
           tx,
-          secretStore,
+          secretStore: vaultSecretStore,
           scope: { userId, spaceId, botId },
           destination: credential,
           plaintext,

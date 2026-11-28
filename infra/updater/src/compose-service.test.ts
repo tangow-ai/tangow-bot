@@ -9,7 +9,7 @@ interface ComposeService {
   profiles?: string[];
   ports?: unknown[];
   networks?: string[];
-  volumes?: string[];
+  volumes?: Array<string | { source?: string; target: string }>;
   environment?: Record<string, string>;
   env_file?: unknown;
   command?: unknown;
@@ -63,14 +63,21 @@ describe("the updater compose service", () => {
   it("is the only service holding the Docker socket", () => {
     const withSocket = Object.entries(compose.services)
       .filter(([, service]) =>
-        (service.volumes ?? []).some((volume) => volume.includes("docker.sock")),
+        (service.volumes ?? []).some((volume) =>
+          typeof volume === "string"
+            ? volume.includes("docker.sock")
+            : volume.source?.endsWith("/docker.sock") || volume.target.endsWith("/docker.sock"),
+        ),
       )
       .map(([name]) => name);
     expect(withSocket).toEqual(["updater"]);
   });
 
   it("is bind-mounted at the same path it has on the host", () => {
-    const mount = (updater.volumes ?? []).find((volume) => volume.includes("TANGOW_DEPLOY_DIR"));
+    const mount = (updater.volumes ?? []).find(
+      (volume): volume is string =>
+        typeof volume === "string" && volume.includes("TANGOW_DEPLOY_DIR"),
+    );
     // biome-ignore lint/suspicious/noTemplateCurlyInString: this is the literal Compose expression
     const deployDir = "${TANGOW_DEPLOY_DIR:-/srv/tangow}";
     const separatorIndex = mount?.indexOf("}:${") ?? -1;
