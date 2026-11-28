@@ -15,7 +15,7 @@ import { IntegrationSetup } from "../components/integrations/IntegrationSetup";
 import type { ModelCatalogEntry } from "../lib/model-auth";
 import { rpc } from "../lib/rpc";
 import { useModelOAuthSignIn } from "../lib/use-model-oauth-signin";
-import { forgetPlate, OnboardingScreen, PlateScene } from "./onboarding-screen";
+import { OnboardingScreen, PlateScene } from "./onboarding-screen";
 
 const CUSTOM_MODEL_OPTION = "__tangow_custom_model__";
 const FIRST_BOT_NAME = "Chief";
@@ -309,7 +309,6 @@ export function OnboardingPage() {
       if (started) {
         await rpc.onboarding.promptFocus({ botId: bot.id }).catch(() => undefined);
       }
-      forgetPlate();
       navigate(`/app/${bot.id}`);
     } catch (err) {
       createStartedRef.current = false;

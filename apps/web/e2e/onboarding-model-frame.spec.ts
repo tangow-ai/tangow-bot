@@ -86,7 +86,7 @@ test("signing up plays the clay toward the model step, and a connected model ope
 
   await page.getByLabel("API key", { exact: true }).fill("fake-test-key");
   await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await expect(page.getByText("Opening chat…")).toBeVisible();
+  await expect.poll(() => plateFrames(page)).toContain(13);
 });
 
 for (const viewport of viewports) {
@@ -164,7 +164,7 @@ for (const viewport of viewports) {
     };
     const apiKey = page.getByLabel("API key", { exact: true });
 
-    await expect(page.locator(".rk-onboarding-stage img:not([hidden])")).toHaveCount(1);
+    await expect.poll(() => plateFrames(page)).toContain(11);
     await record("empty");
     await apiKey.fill("fake-test-key");
     await page.getByRole("button", { name: "Continue", exact: true }).click();

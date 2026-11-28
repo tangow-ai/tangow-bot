@@ -8,6 +8,7 @@ import { markAfterPaint, markOnce } from "../lib/performance";
 import { rpc } from "../lib/rpc";
 import { canTakeComputerControl } from "../lib/thread-events";
 import { userInitials } from "../lib/user-initials";
+import { forgetPlate } from "./onboarding-screen";
 import { useAgentSkillCatalog } from "./shell/agent-skill-catalog";
 import type { BotAction, BotCommands } from "./shell/bot-commands";
 import { downloadBotExport, useBotCommands } from "./shell/bot-commands";
@@ -48,6 +49,8 @@ export function ShellPage() {
     onBootstrapThread: store.primeFromBootstrap,
   });
   const { bots, archivedBots, active, activeGroup, inGroup, bootstrapMe, refreshBots } = roster;
+  // Every way into the app ends the steps before it, so a later /onboarding starts on a still.
+  useEffect(forgetPlate, []);
   useEffect(() => preloadClayBodies(bots.map((bot) => bot.avatarCharacter)), [bots]);
   const overlays = useShellOverlays(session.data?.user, bootstrapMe?.spaceId);
   const sidebar = useSidebarState({ userId, roster, navigate });
