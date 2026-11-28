@@ -384,9 +384,12 @@ TANGOW_IMAGE_TAG=local
 # TANGOW_UPDATER_TOKEN=replace-with-32-plus-character-updater-token
 ```
 
-4. Build the images from your checkout and start the stack, then verify its public health endpoint:
+4. Prepare the vault credentials, build the images from your checkout, and start the stack.
+   Then verify its public health endpoint.
 
 ```bash
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/checkout" -w /checkout node:22-bookworm@sha256:0557ac14e0d45d02ed563067b82856ca5e7aa3437fa28d98d4350ea9c3d9494a node scripts/tangow-vault.mjs
+docker compose --env-file .env -f infra/compose/docker-compose.prod.yml pull postgres openbao caddy
 docker compose --env-file .env -f infra/compose/docker-compose.prod.yml \
   build --build-arg GIT_SHA=$(git rev-parse HEAD)
 docker compose --env-file .env -f infra/compose/docker-compose.prod.yml \
@@ -403,10 +406,11 @@ Passing `GIT_SHA` is what makes `GET /health` report a `"revision"`; a locally b
 other way to know its commit.
 
 The root `.env` is excluded from both Git and the Docker build context. The database, application data,
-and Caddy certificates live in named Docker volumes.
+and Caddy certificates live in named Docker volumes. Production saves bot keys through the
+[OpenBao vault](./self-host-openbao.md). Its original credential files need a separate backup.
 
-The production Compose file pins Postgres and Caddy to multi-architecture manifest digests, and the
-application/updater Dockerfiles pin their base-image digests. Refresh those pins deliberately
+The production Compose file pins Postgres, OpenBao and Caddy by digest. The
+application and updater Dockerfiles also pin their base images. Refresh those pins deliberately
 when taking upstream security updates; changing only the visible major tag does not change the
 content while a digest is present.
 
@@ -414,7 +418,9 @@ For the single-VM production layout, install `infra/compose/backup-prod.sh` as
 `/usr/local/sbin/tangow-backup` and enable the supplied `tangow-backup.timer`. It creates a verified
 Postgres custom-format dump plus an application-data archive under `/var/backups/tangow`, with mode
 `0600` and seven-day rotation. These local snapshots help with operator mistakes but are not a
-substitute for an encrypted off-host backup or provider snapshot.
+substitute for an encrypted off-host backup or provider snapshot. Keep the
+[original vault files](./self-host-openbao.md#back-up-and-restore) separately so the
+production dump can be restored.
 
 ## Cloudflare Access
 
@@ -502,6 +508,8 @@ A Compose deployment upgrades by rebuilding its checkout:
 
 ```bash
 git pull
+docker run --rm --user "$(id -u):$(id -g)" -v "$PWD:/checkout" -w /checkout node:22-bookworm@sha256:0557ac14e0d45d02ed563067b82856ca5e7aa3437fa28d98d4350ea9c3d9494a node scripts/tangow-vault.mjs
+docker compose --env-file .env -f infra/compose/docker-compose.prod.yml pull --policy missing openbao
 GIT_SHA=$(git rev-parse HEAD) docker compose --env-file .env -f infra/compose/docker-compose.prod.yml \
   up -d --wait --pull never --build api worker web
 ```
@@ -509,11 +517,17 @@ GIT_SHA=$(git rev-parse HEAD) docker compose --env-file .env -f infra/compose/do
 `up --wait` does not report success until the new API is healthy and the worker and web containers
 are running. Compose stops the old API and worker, then the one-shot `migrate` service applies the
 migrations (`scripts/backfill-session-log.ts`) before the new ones start, so a migration failure
-keeps them stopped. A failed CLI recreate does not auto-roll back; recover with the previous
+keeps them stopped. Rolling back to a release before the production vault makes bot keys saved
+through OpenBao unreadable until you roll forward again. A failed CLI recreate does not auto-roll back; recover with the previous
 `TANGOW_IMAGE_TAG` (or rebuild `local`) and `up -d --wait --pull never --no-deps api worker web`.
 
 The updater sidecar has its own image and tag so an update never recreates the process performing
-it. Move it deliberately by rebuilding it from the checkout:
+it. Use the CLI upgrade above for the first release that enables the production vault, then
+rebuild the sidecar so subsequent automatic upgrades can prepare the vault before recreating
+the stack. If you previously used the separate OpenBao overlay, remove that file from your
+Compose file list and retain the existing vault files and Postgres volume.
+
+Rebuild the sidecar from the checkout:
 `docker compose … --profile updater up -d --wait --build updater`.
 Sidecar `/apply` and `/rollback` recover a failed recreate by redeploying the previously cached
 image when possible; if that also fails, they report a possible mixed-version runtime. Both stop a

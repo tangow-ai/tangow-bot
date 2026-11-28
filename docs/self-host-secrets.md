@@ -61,6 +61,13 @@ check that `SANDBOX_SUPERVISOR_TOKEN` is set and non-empty for the Docker
 computer path. A missing token is a setup failure, not an "optional tighten
 later" item.
 
+## Production bot keys
+
+Production Compose uses OpenBao for saved bot keys. Keep the original
+`unseal.key`, `role-id` and `secret-id` in a protected backup separate from
+the database dump. A sealed or unreachable vault blocks both saving and using
+bot keys. Other Tangow secrets continue to use `ENCRYPTION_KEY`.
+
 ## Recovery without reprinting secrets
 
 - Lost UI password: use SMTP recovery if configured; otherwise operator
@@ -74,4 +81,4 @@ later" item.
 ## Related
 
 - [Self-hosting](./self-host.md)
-- [Optional OpenBao vault](./self-host-openbao.md)
+- [Production OpenBao vault](./self-host-openbao.md)

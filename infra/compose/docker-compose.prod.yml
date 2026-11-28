@@ -1,5 +1,10 @@
 name: tangow-prod
 
+x-vault-env: &vault-env
+  VAULT_ENGINE: openbao
+  VAULT_ENGINE_URL: http://openbao:8200
+  VAULT_ENGINE_CREDENTIAL_DIR: /run/tangow-vault
+
 services:
   postgres:
     image: ${POSTGRES_IMAGE:-postgres:16@sha256:e17e86066e5ef83e0952a9347f5c792b7ece00972e2aa787a6986f471b3dd3d5}
@@ -21,6 +26,47 @@ services:
       interval: 5s
       timeout: 5s
       retries: 20
+
+  openbao:
+    image: openbao/openbao:2.7.3@sha256:ba4b133eb9586630024e71a617e66f37f29cc3534cdd46a6233e098ceded8dc9
+    command: ["server"]
+    restart: unless-stopped
+    pids_limit: 128
+    mem_limit: 512m
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      BAO_ADDR: http://openbao:8200
+      BAO_PG_CONNECTION_URL: postgres://${POSTGRES_USER:-tangow}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-tangow}?sslmode=disable
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [data]
+    healthcheck:
+      test: ["CMD", "bao", "status"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    volumes:
+      - ./openbao.hcl:/openbao/config/tangow.hcl:ro
+      - type: bind
+        source: ./openbao-private/unseal.key
+        target: /run/secrets/unseal.key
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./openbao-private/role-id
+        target: /run/secrets/role-id
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./openbao-private/secret-id
+        target: /run/secrets/secret-id
+        read_only: true
+        bind:
+          create_host_path: false
 
   # Applies the migrations before the API and the worker start, writing the session log from the
   # legacy messages first when an upgrade needs it. On a large database that takes minutes. The
@@ -76,6 +122,7 @@ services:
     env_file:
       - ../../.env
     environment:
+      <<: *vault-env
       NODE_ENV: production
       API_HOST: "0.0.0.0"
       DATABASE_URL: postgres://${POSTGRES_USER:-tangow}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-tangow}
@@ -85,20 +132,34 @@ services:
       # Optional egress proxy (Mainland / corporate). Empty = unset; either case works.
       HTTP_PROXY: ${HTTP_PROXY:-${http_proxy:-}}
       HTTPS_PROXY: ${HTTPS_PROXY:-${https_proxy:-}}
-      NO_PROXY: ${NO_PROXY:-${no_proxy:-}}
+      NO_PROXY: openbao,${NO_PROXY:-${no_proxy:-}}
       http_proxy: ${http_proxy:-${HTTP_PROXY:-}}
       https_proxy: ${https_proxy:-${HTTPS_PROXY:-}}
-      no_proxy: ${no_proxy:-${NO_PROXY:-}}
+      no_proxy: openbao,${no_proxy:-${NO_PROXY:-}}
       TANGOW_UPDATER_URL: http://updater:7092
     expose:
       - "3100"
     volumes:
       - appdata:/data
+      - type: bind
+        source: ./openbao-private/role-id
+        target: /run/tangow-vault/role-id
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./openbao-private/secret-id
+        target: /run/tangow-vault/secret-id
+        read_only: true
+        bind:
+          create_host_path: false
     networks:
       - app
       - data
       - control
     depends_on:
+      openbao:
+        condition: service_started
       postgres:
         condition: service_healthy
       migrate:
@@ -132,6 +193,7 @@ services:
     env_file:
       - ../../.env
     environment:
+      <<: *vault-env
       BETTER_AUTH_SECRET: ""
       NODE_ENV: production
       DATABASE_URL: postgres://${POSTGRES_USER:-tangow}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}@postgres:5432/${POSTGRES_DB:-tangow}
@@ -142,16 +204,30 @@ services:
       # Optional egress proxy (Mainland / corporate). Empty = unset; either case works.
       HTTP_PROXY: ${HTTP_PROXY:-${http_proxy:-}}
       HTTPS_PROXY: ${HTTPS_PROXY:-${https_proxy:-}}
-      NO_PROXY: ${NO_PROXY:-${no_proxy:-}}
+      NO_PROXY: openbao,${NO_PROXY:-${no_proxy:-}}
       http_proxy: ${http_proxy:-${HTTP_PROXY:-}}
       https_proxy: ${https_proxy:-${HTTPS_PROXY:-}}
-      no_proxy: ${no_proxy:-${NO_PROXY:-}}
+      no_proxy: openbao,${no_proxy:-${NO_PROXY:-}}
     volumes:
       - appdata:/data
+      - type: bind
+        source: ./openbao-private/role-id
+        target: /run/tangow-vault/role-id
+        read_only: true
+        bind:
+          create_host_path: false
+      - type: bind
+        source: ./openbao-private/secret-id
+        target: /run/tangow-vault/secret-id
+        read_only: true
+        bind:
+          create_host_path: false
     networks:
       - app
       - data
     depends_on:
+      openbao:
+        condition: service_started
       postgres:
         condition: service_healthy
       migrate:

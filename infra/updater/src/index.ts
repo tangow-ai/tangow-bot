@@ -8,6 +8,7 @@ import { MIGRATION_WAIT_TIMEOUT_S, type ServerUpdateRun } from "@tangow/contract
 import {
   type ComposeUpdateStep,
   composeMessagesDroppedArgv,
+  composePullArgv,
   composeStopMigrateArgv,
   composeUpArgv,
   composeUpdatePlan,
@@ -37,6 +38,7 @@ import { createRootLogger } from "@tangow/logging/axiom";
 import { requestLogging } from "@tangow/logging/hono";
 import { type Context, Hono } from "hono";
 import {
+  DEFAULT_COMPOSE_FILE,
   readTagState,
   resolveUpdaterConfig,
   truncateOutput,
@@ -587,6 +589,31 @@ export function createUpdaterApp(
       for (const step of gitSteps) {
         if (step.id === "checkout" || step.id === "merge") checkoutNeedsRestore = true;
         if (!(await runStep(record, step))) return record;
+      }
+
+      // Older revisions and alternate stacks have no production vault to prepare.
+      const vaultSetup = path.join(config.deployDir, "scripts/tangow-vault.mjs");
+      if (
+        input.toTag === null &&
+        config.composeFiles.includes(path.join(config.deployDir, DEFAULT_COMPOSE_FILE)) &&
+        (await access(vaultSetup).then(
+          () => true,
+          () => false,
+        ))
+      ) {
+        composeSteps.unshift(
+          {
+            id: "prepare-vault",
+            label: "Prepare production vault credentials",
+            command: "node",
+            args: [vaultSetup],
+          },
+          {
+            id: "pull-vault",
+            label: "Download the production vault image",
+            ...composePullArgv(composeTarget, "openbao"),
+          },
+        );
       }
 
       // An update only knows its tag after the fast-forward, because the tag is the commit.

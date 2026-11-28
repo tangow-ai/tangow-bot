@@ -61,7 +61,7 @@ describe("server update install kind", () => {
     expect(status.installKind).toBe("compose");
     expect(status.supported).toBe(false);
     expect(status.manualCommands.at(-1)).toMatch(/docker compose .*--build api worker web/);
-    expect(status.manualCommands[1]).toMatch(/up -d --wait --pull never/);
+    expect(status.manualCommands.at(-1)).toMatch(/up -d --wait --pull never/);
   });
 
   it("shows rebuild commands for a compose install on the local image tag", async () => {
