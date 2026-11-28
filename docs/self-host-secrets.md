@@ -74,3 +74,4 @@ later" item.
 ## Related
 
 - [Self-hosting](./self-host.md)
+- [Optional OpenBao vault](./self-host-openbao.md)

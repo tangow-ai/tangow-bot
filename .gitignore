@@ -70,3 +70,6 @@ apps/mobile/builds/
 # Tangow deployment lock and private atomic environment writes
 .env.tangow.*
 .env.tangow-*
+
+# OpenBao unseal key and bootstrap credentials
+/infra/compose/openbao-private/
